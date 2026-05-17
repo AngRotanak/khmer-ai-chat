@@ -5,7 +5,7 @@ import { SocialButtonLink } from '~/modules/navigation-bar/components/social-but
 import { useApplicationState } from '~/stores/application-state'
 import { trackSocialLinkClick } from '~/utils/ga4'
 import { useEffect, useState } from 'react'
-import { useAuthStore } from '~/stores/auth-store'   // ✅ import auth store
+import { useAuthStore } from '~/stores/auth-store'
 
 export function NavigationBarModule() {
   const [isMobileView] = useApplicationState(s => [s.view.mobile])
@@ -13,7 +13,7 @@ export function NavigationBarModule() {
     language: s.settings.language,
     setLanguage: s.actions.settings.setLanguage,
   }))
-  const { user } = useAuthStore()   // ✅ get current user
+  const { user, logout } = useAuthStore()   // ✅ get current user + logout
 
   const [isDark, setIsDark] = useState(() =>
     typeof window !== 'undefined'
@@ -65,94 +65,78 @@ export function NavigationBarModule() {
           <div className="flex items-center justify-end gap-x-4">
             {/* ✅ Navigation Links */}
             <nav className="flex gap-x-3 text-sm">
-              <Link
-                to="/dashboard/flow"
-                className="text-light-200 hover:text-teal-300"
-                activeProps={{ className: "underline text-teal-400" }}
-                activeOptions={{ exact: true }} // ensures only exact /dashboard matches
-              >
+              <Link to="/dashboard/flow" className="text-light-200 hover:text-teal-300" activeProps={{ className: "underline text-teal-400" }}>
                 Flow Builder
               </Link>
-
-              <Link
-                to="/dashboard/agents"
-                className="text-light-200 hover:text-teal-300"
-                activeProps={{ className: "underline text-teal-400" }}
-              >
+              <Link to="/dashboard/agents" className="text-light-200 hover:text-teal-300" activeProps={{ className: "underline text-teal-400" }}>
                 Agent Dashboard
               </Link>
-
-              {/* ✅ Show admin link only if user is admin */}
               {user?.role === "admin" && (
-                <Link
-                  to="/dashboard/admin/reply-helpers"
-                  className="text-light-200 hover:text-teal-300"
-                  activeProps={{ className: "underline text-teal-400 font-semibold" }}
-                >
-                  Manage Reply Helpers
-                </Link>
+                <>
+                  <Link to="/dashboard/admin/reply-helpers" className="text-light-200 hover:text-teal-300" activeProps={{ className: "underline text-teal-400 font-semibold" }}>
+                    Reply Helpers
+                  </Link>
+                  <Link to="/dashboard/admin/create-driver" className="text-light-200 hover:text-teal-300" activeProps={{ className: "underline text-teal-400" }}>
+                    Create Driver
+                  </Link>
+                  <Link to="/dashboard/admin/deliveries" className="text-light-200 hover:text-teal-300" activeProps={{ className: "underline text-teal-400" }}>
+                    Deliveries
+                  </Link>
+                </>
               )}
-
-                <Link
-                to="/smart-catalog"
-                className="text-light-200 hover:text-teal-300"
-                activeProps={{ className: "underline text-teal-400" }}
-              >
-               Smart e‑Catalog
+              <Link to="/smart-catalog" className="text-light-200 hover:text-teal-300" activeProps={{ className: "underline text-teal-400" }}>
+                Smart e‑Catalog
               </Link>
             </nav>
-   
 
+            {/* Social Links */}
+            <div className="flex items-stretch gap-x-0.5">
+              <SocialButtonLink onClick={() => trackSocialLinkClick('telegram')} href="https://t.me/angrotanak">
+                <div className="i-mynaui:brand-telegram size-4.5 text-light-100 dark:text-teal-300" />
+              </SocialButtonLink>
+              <SocialButtonLink onClick={() => trackSocialLinkClick('facebook')} href="https://www.facebook.com/KhmerAutosoft">
+                <div className="i-mynaui:brand-facebook size-4.5 text-light-100 dark:text-teal-300" />
+              </SocialButtonLink>
+            </div>
 
-        {/* Social Links */}
-        <div className="flex items-stretch gap-x-0.5">
-          <SocialButtonLink
-            onClick={() => trackSocialLinkClick('telegram')}
-            href="https://t.me/angrotanak"
-          >
-            <div className="i-mynaui:brand-telegram size-4.5 text-light-100 dark:text-teal-300" />
-          </SocialButtonLink>
-          <SocialButtonLink
-            onClick={() => trackSocialLinkClick('facebook')}
-            href="https://www.facebook.com/KhmerAutosoft"
-          >
-            <div className="i-mynaui:brand-facebook size-4.5 text-light-100 dark:text-teal-300" />
-          </SocialButtonLink>
-        </div>
+            {/* Language Selector */}
+            <select
+              value={language}
+              onChange={e => setLanguage(e.target.value as 'en' | 'km')}
+              className="rounded-md bg-dark-100/30 dark:bg-dark-900 px-2 py-1 text-sm text-light-100 dark:text-light-100 border-none outline-none"
+              title="Select language"
+            >
+              <option value="en">English</option>
+              <option value="km">ភាសាខ្មែរ</option>
+            </select>
 
-        {/* Language Selector */}
-        <select
-          value={language}
-          onChange={e => setLanguage(e.target.value as 'en' | 'km')}
-          className="rounded-md bg-dark-100/30 dark:bg-dark-900 px-2 py-1 text-sm text-light-100 dark:text-light-100 border-none outline-none"
-          title="Select language"
-        >
-          <option value="en">English</option>
-          <option value="km">ភាសាខ្មែរ</option>
-        </select>
+            {/* Dark Mode Toggle */}
+            <button type="button" onClick={toggleDarkMode} className={cn(
+              'flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition outline-none',
+              'bg-dark-100/30 dark:bg-teal-900/40',
+              'hover:bg-dark-200/40 dark:hover:bg-teal-800/60',
+              'active:bg-dark-300/50 dark:active:bg-teal-700/50',
+              'text-dark-700 dark:text-teal-200'
+            )}>
+              <div className={cn('size-5', isDark ? 'i-mynaui:sun text-teal-300' : 'i-mynaui:moon text-light-100')} />
+            </button>
 
-        {/* Dark Mode Toggle */}
-        <button
-          type="button"
-          onClick={toggleDarkMode}
-          className={cn(
-            'flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition outline-none',
-            'bg-dark-100/30 dark:bg-teal-900/40',
-            'hover:bg-dark-200/40 dark:hover:bg-teal-800/60',
-            'active:bg-dark-300/50 dark:active:bg-teal-700/50',
-            'text-dark-700 dark:text-teal-200'
-          )}
-        >
-          <div
-            className={cn(
-              'size-5',
-              isDark ? 'i-mynaui:sun text-teal-300' : 'i-mynaui:moon text-light-100'
+            {/* ✅ User + Logout */}
+            {user && (
+              <div className="flex items-center gap-x-2">
+                <span className="text-sm">{user.displayName}</span>
+                <button
+                  onClick={logout}
+                  className="flex items-center gap-2 px-3 py-1 rounded-md text-sm hover:bg-red-600 text-white"
+                >
+                  <div className="i-tabler:logout size-5 text-white dark:text-red-300" />
+                </button>
+
+              </div>
             )}
-          />
-        </button>
+          </div>
+        </Whenever>
       </div>
-    </Whenever>
-      </div >
-    </div >
+    </div>
   )
 }

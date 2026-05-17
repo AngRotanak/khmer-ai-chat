@@ -16,6 +16,8 @@ function SignupPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [name, setName] = useState('')
+  const [role, setRole] = useState('admin') // default role
+  const [businessId, setBusinessId] = useState('')
   const [error, setError] = useState<string | null>(null)
 
   const navigate = useNavigate()
@@ -35,25 +37,31 @@ function SignupPage() {
       const user = result.user
       const token = await user.getIdToken()
 
-      // Store role in Realtime Database
+      // ✅ Store role + business context in Realtime Database
       await set(ref(db, `khmer-ai-chat/users/${user.uid}`), {
         email: user.email,
         displayName: name,
-        role: 'admin', // default role
+        role,
+        businessId,
       })
 
       login(
         {
           id: user.uid,
           email: user.email || '',
-          role: 'admin',
+          role,
           displayName: name,
           avatarUrl: user.photoURL || '',
         },
         token
       )
 
-      navigate({ to: '/dashboard' })
+      // ✅ Navigate based on role
+      if (role === 'admin') {
+        navigate({ to: '/dashboard' })
+      } else if (role === 'driver') {
+        navigate({ to: '/dashboard/driver' })
+      }
     } catch (err: any) {
       setError(err.message || 'Signup failed')
     }
@@ -61,7 +69,7 @@ function SignupPage() {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-dark-900 text-white px-4">
-      <h1 className="text-2xl font-bold mb-6">Create Admin Account</h1>
+      <h1 className="text-2xl font-bold mb-6">Create Account</h1>
       <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-4">
         <input
           type="text"
@@ -84,7 +92,28 @@ function SignupPage() {
           onChange={(e) => setPassword(e.target.value)}
           className="w-full px-4 py-2 rounded bg-dark-700 text-white border border-teal-500"
         />
+
+        {/* ✅ Role selector */}
+        <select
+          value={role}
+          onChange={(e) => setRole(e.target.value)}
+          className="w-full px-4 py-2 rounded bg-dark-700 text-white border border-teal-500"
+        >
+          <option value="admin">Admin</option>
+          <option value="driver">Driver</option>
+        </select>
+
+        {/* ✅ Optional business ID */}
+        <input
+          type="text"
+          placeholder="Business ID (optional)"
+          value={businessId}
+          onChange={(e) => setBusinessId(e.target.value)}
+          className="w-full px-4 py-2 rounded bg-dark-700 text-white border border-teal-500"
+        />
+
         {error && <p className="text-red-500 text-sm">{error}</p>}
+
         <button
           type="submit"
           className="w-full bg-teal-500 hover:bg-teal-600 text-white font-bold py-2 px-4 rounded"
@@ -92,6 +121,7 @@ function SignupPage() {
           Sign Up
         </button>
       </form>
+
       <p className="text-sm text-gray-300 mt-4">
         Already have an account?{' '}
         <a href="/login" className="text-teal-400 underline">

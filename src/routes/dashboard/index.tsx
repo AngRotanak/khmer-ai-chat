@@ -1,20 +1,14 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { ReactFlowProvider } from '@xyflow/react'
 import { Helmet, HelmetProvider } from 'react-helmet-async'
 import { useEffect, useState } from 'react'
-
-import { FlowBuilderModule } from '~/modules/flow-builder/flow-builder-module'
-import { NavigationBarModule } from '~/modules/navigation-bar/navigation-bar-module'
-import { SidebarModule } from '~/modules/sidebar/sidebar-module'
-import { ToasterModule } from '~/modules/toaster/toaster-module'
-import { AddNodeOnEdgeDropStateProvider } from '~/stores/add-node-on-edge-drop-state'
 import { useAuthStore } from '~/stores/auth-store'
+import { NavigationBarModule } from '~/modules/navigation-bar/navigation-bar-module'
 
 export const Route = createFileRoute('/dashboard/')({
-  component: DashboardPage,
+  component: AdminDashboardPage,
 })
 
-function DashboardPage() {
+function AdminDashboardPage() {
   const navigate = useNavigate()
   const { user, token, restore } = useAuthStore()
   const [loading, setLoading] = useState(true)
@@ -35,58 +29,72 @@ function DashboardPage() {
     }
   }, [loading, token, user?.role, navigate])
 
-
-  useEffect(() => {
-    const setVH = () => {
-      const vh = window.innerHeight * 0.01
-      document.documentElement.style.setProperty('--vh', `${vh}px`)
-    }
-
-    setVH()
-    window.addEventListener('resize', setVH)
-    return () => window.removeEventListener('resize', setVH)
-  }, [])
-
   if (loading || !token || user?.role !== 'admin') return null
 
   return (
     <HelmetProvider>
       <Helmet>
-        <title>KhmerAi.Chat Flow Builder</title>
-        <link rel="icon" href="/favicon.ico" />
-        <link rel="manifest" href="/manifest.json" />
-        <link rel="apple-touch-icon" href="/icon-192.png" />
+        <title>KhmerAi.Chat Admin Dashboard</title>
         <meta name="theme-color" content="#009CA6" />
       </Helmet>
 
-      <ReactFlowProvider>
-        <div
-          className="transition-colors duration-300 flex flex-col"
-          style={{ height: 'calc(var(--vh, 1vh) * 100)' }}
-        >
-          <NavigationBarModule />
+      <div className="flex flex-col min-h-screen bg-dark-900 text-white">
+        {/* ✅ Top navigation bar */}
+        <NavigationBarModule />
 
-          <div className="flex grow overflow-hidden divide-x divide-light-300 dark:divide-dark-600">
-            {/* Canvas Panel */}
-            <div className="flex flex-col grow bg-light-100 dark:bg-dark-900 transition-colors duration-300 overflow-hidden">
-              <main className="flex flex-col overflow-y-auto grow">
-                <section className="flex-grow">
-                  <AddNodeOnEdgeDropStateProvider>
-                    <FlowBuilderModule />
-                  </AddNodeOnEdgeDropStateProvider>
-                </section>
-              </main>
-            </div>
+        {/* ✅ Central hub content */}
+        <div className="flex flex-col items-center justify-center flex-1 px-4">
+          <h1 className="text-3xl font-bold mb-6">Admin Dashboard</h1>
+          <p className="mb-4 text-gray-300">Select a module to manage:</p>
 
-            {/* Sidebar */}
-            <SidebarModule />
+          <div className="grid grid-cols-1 gap-3 w-full max-w-sm">
+            <button
+              onClick={() => navigate({ to: '/dashboard/flow' })}
+              className="bg-teal-500 hover:bg-teal-600 text-white font-bold py-2 px-4 rounded"
+            >
+              Flow Builder
+            </button>
+            <button
+              onClick={() => navigate({ to: '/dashboard/agents' })}
+              className="bg-teal-500 hover:bg-teal-600 text-white font-bold py-2 px-4 rounded"
+            >
+              Agent Dashboard
+            </button>
+            <button
+              onClick={() => navigate({ to: '/dashboard/admin/reply-helpers' })}
+              className="bg-teal-500 hover:bg-teal-600 text-white font-bold py-2 px-4 rounded"
+            >
+              Manage Reply Helpers
+            </button>
+            <button
+              onClick={() => navigate({ to: '/smart-catalog' })}
+              className="bg-teal-500 hover:bg-teal-600 text-white font-bold py-2 px-4 rounded"
+            >
+              Smart e‑catalog
+            </button>
+            <button
+              onClick={() => navigate({ to: '/dashboard/admin/create-driver' })}
+              className="bg-teal-500 hover:bg-teal-600 text-white font-bold py-2 px-4 rounded"
+            >
+              Create Driver
+            </button>
+            <button
+              onClick={() => navigate({ to: '/dashboard/admin/deliveries' })}
+              className="bg-teal-500 hover:bg-teal-600 text-white font-bold py-2 px-4 rounded"
+            >
+              Delivery Management
+            </button>
+            <button
+              onClick={() => navigate({ to: '/dashboard/admin/driver-map' })}
+              className="bg-teal-500 hover:bg-teal-600 text-white font-bold py-2 px-4 rounded"
+            >
+              Driver Activity Map
+            </button>
           </div>
-
-          <ToasterModule />
         </div>
-      </ReactFlowProvider>
+      </div>
     </HelmetProvider>
   )
 }
 
-export default DashboardPage
+export default AdminDashboardPage

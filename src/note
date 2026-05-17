@@ -65,12 +65,17 @@ This keeps your stable code untouched while we build:
 git add .
 git commit -m "✅ Final type-safe build: Messenger export and admin UX validated"
 git push origin main
+git status
 
 
 git add src/assets/styles/overrides/reactflow.scss
 git commit -m "🎯 Patch: Improve mobile connector UX with larger handles and visual feedback"
 git push origin main
 
+
+git add .
+git commit -m "feat: update tracking page header"
+git push origin main
 
 
 git remote add origin https://github.com/AngRotanak/Khmer-AiChatbot-Flow-Builder.git
@@ -511,3 +516,29 @@ rules database
   }
 }
 
+
+
+git add .
+git commit -m "add new src-16-5 folder with calendar updates"
+
+git push origin main
+
+git branch
+git checkout main
+git pull origin main
+
+git status
+
+git add .
+ git commit -m "chore: trigger redeploy"
+git push origin main
+
+vercel --prod
+
+
+
+pnpm run build
+
+git add .
+git commit -m "fix: align Attendance props and type-only imports"
+git push origin main

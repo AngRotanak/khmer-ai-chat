@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Telegram WebApp Test</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+<body style="font-family:sans-serif; text-align:center; padding:2em;">
+  <h2>Telegram WebApp Test</h2>
+  <p id="status">🔴 Not initialized</p>
+
+  <button id="sendBtn" style="padding:1em; font-size:16px;">
+    ✅ Send Test Payload
+  </button>
+
+  <script>
+    const tg = window.Telegram.WebApp;
+
+    // Mark WebApp ready
+    tg.ready();
+    tg.expand();
+    document.getElementById("status").textContent = "🟢 Telegram WebApp Ready";
+
+    document.getElementById("sendBtn").onclick = () => {
+      const payload = {
+        action: "Check-In",
+        timestamp: new Date().toISOString(),
+        lat: 12.2331,
+        lon: 105.9595
+      };
+
+      console.log("Sending payload:", payload);
+      tg.sendData(JSON.stringify(payload));
+      tg.close();
+    };
+  </script>
+</body>
+</html>

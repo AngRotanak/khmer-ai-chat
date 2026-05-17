@@ -46,9 +46,6 @@ import { useApplicationState } from '~/stores/application-state'
 import { createRootRoute } from '@tanstack/react-router'
 import { useLoadGoogleMaps } from '~/lib/useLoadGoogleMaps'
 
-import { getDatabase, ref, set } from 'firebase/database'
-import { getApp } from 'firebase/app'
-
 const TanStackRouterDevtools = import.meta.env.PROD
   ? () => null
   : lazy(() =>
@@ -70,19 +67,6 @@ function RootLayout() {
   }, [isMobile])
 
   const apiKey = import.meta.env.VITE_GOOGLE_MAPS_KEY
-
-  useEffect(() => {
-    const db = getDatabase(getApp())
-    const logRef = ref(db, `/khmer-autobot/logs/maps_key_usage/${Date.now()}`)
-    set(logRef, {
-      platform: /iPhone|iPad|iPod/.test(navigator.userAgent) ? 'iOS' : 'Desktop',
-      apiKey: apiKey || 'undefined',
-      timestamp: new Date().toISOString(),
-    }).catch(err => {
-      console.warn('Firebase log write failed', err)
-    })
-  }, [apiKey])
-
   const mapsLoaded = useLoadGoogleMaps(apiKey!)
 
   if (!mapsLoaded) {

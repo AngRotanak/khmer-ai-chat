@@ -11,10 +11,10 @@ import { AddNodeOnEdgeDropStateProvider } from '~/stores/add-node-on-edge-drop-s
 import { useAuthStore } from '~/stores/auth-store'
 
 export const Route = createFileRoute('/dashboard/flow')({
-  component: DashboardPage,
+  component: FlowBuilderdPage,
 })
 
-function DashboardPage() {
+function FlowBuilderdPage() {
   const navigate = useNavigate()
   const { user, token, restore } = useAuthStore()
   const [loading, setLoading] = useState(true)
@@ -89,4 +89,4 @@ function DashboardPage() {
   )
 }
 
-export default DashboardPage
+export default FlowBuilderdPage

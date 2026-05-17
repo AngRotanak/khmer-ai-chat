@@ -24,6 +24,96 @@ import { Route as SmartCatalogPageIdAdminRouteImport } from './routes/smart-cata
 import { Route as DashboardFlowRouteImport } from './routes/dashboard/flow'
 
 import { Route as TrackTrackingIdRouteImport } from './routes/track/$tracking_id'
+import { Route as DeliveryRouteImport } from './routes/delivery/delivery'
+
+import { Route as DashboardAdminCreateDriverRouteImport } from './routes/dashboard/admin/create-driver'
+import { Route as DashboardAdminDeliveriesRouteImport } from './routes/dashboard/admin/deliveries'
+import { Route as DashboardDriverRouteImport } from './routes/dashboard/driver'
+import { Route as DashboardAdminDriverMapRouteImport } from './routes/dashboard/admin/driver-map'
+import { Route as AttendanceRouteImport } from './routes/attendance/attendance'
+import { Route as AttendanceReportRouteImport } from './routes/attendance/report'
+import { Route as AttendanceSettingsRouteImport } from './routes/attendance/settings'
+import { Route as AttendanceAdminRolesRouteImport } from './routes/attendance/admin/roles'
+import { Route as AttendanceAdminConfigRouteImport } from './routes/attendance/admin/attendance_config'
+import { Route as AttendanceViewHistoryRouteImport } from './routes/attendance/viewhistory'
+import { Route as AttendanceRegisterRouteImport } from './routes/attendance/register'
+
+const AttendanceRegisterRoute = AttendanceRegisterRouteImport.update({
+  id: '/attendance/register',
+  path: '/attendance/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
+
+
+const AttendanceViewHistoryRoute = AttendanceViewHistoryRouteImport.update({
+  id: '/attendance/viewhistory',
+  path: '/attendance/viewhistory',
+  getParentRoute: () => rootRouteImport,
+} as any)
+
+
+const AttendanceAdminRolesRoute = AttendanceAdminRolesRouteImport.update({
+  id: '/attendance/admin/roles',
+  path: '/attendance/admin/roles',
+  getParentRoute: () => rootRouteImport,
+} as any)
+
+const AttendanceAdminConfigRoute = AttendanceAdminConfigRouteImport.update({
+  id: '/attendance/admin/config',
+  path: '/attendance/admin/config',
+  getParentRoute: () => rootRouteImport,
+} as any)
+
+
+const AttendanceSettingsRoute = AttendanceSettingsRouteImport.update({
+  id: '/attendance/settings',
+  path: '/attendance/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+
+const AttendanceReportRoute = AttendanceReportRouteImport.update({
+  id: '/attendance/report',
+  path: '/attendance/report',
+  getParentRoute: () => rootRouteImport,
+} as any)
+
+
+const AttendanceRoute = AttendanceRouteImport.update({
+  id: '/attendance',
+  path: '/attendance',
+  getParentRoute: () => rootRouteImport,
+} as any)
+
+const DashboardAdminDriverMapRoute = DashboardAdminDriverMapRouteImport.update({
+  id: '/dashboard/admin/driver-map',
+  path: '/dashboard/admin/driver-map',
+  getParentRoute: () => rootRouteImport,
+} as any)
+
+const DashboardAdminCreateDriverRoute = DashboardAdminCreateDriverRouteImport.update({
+  id: '/dashboard/admin/create-driver',
+  path: '/dashboard/admin/create-driver',
+  getParentRoute: () => rootRouteImport,
+} as any)
+
+const DashboardAdminDeliveriesRoute = DashboardAdminDeliveriesRouteImport.update({
+  id: '/dashboard/admin/deliveries',
+  path: '/dashboard/admin/deliveries',
+  getParentRoute: () => rootRouteImport,
+} as any)
+
+const DashboardDriverRoute = DashboardDriverRouteImport.update({
+  id: '/dashboard/driver',
+  path: '/dashboard/driver',
+  getParentRoute: () => rootRouteImport,
+} as any)
+
+
+const DeliveryRoute = DeliveryRouteImport.update({
+  id: '/delivery',
+  path: '/delivery',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 const TrackTrackingIdRoute = TrackTrackingIdRouteImport.update({
   id: '/track/$tracking_id',
@@ -113,6 +203,19 @@ export interface FileRoutesByFullPath {
   '/smart-catalog/$pageId/admin': typeof SmartCatalogPageIdAdminRoute
   '/dashboard/flow': typeof DashboardFlowRoute
   '/track/$tracking_id': typeof TrackTrackingIdRoute
+  '/delivery': typeof DeliveryRoute
+  '/dashboard/admin/create-driver': typeof DashboardAdminCreateDriverRoute
+  '/dashboard/admin/deliveries': typeof DashboardAdminDeliveriesRoute
+  '/dashboard/driver': typeof DashboardDriverRoute
+  '/dashboard/admin/driver-map': typeof DashboardAdminDriverMapRoute
+  '/attendance': typeof AttendanceRoute
+  '/attendance/report': typeof AttendanceReportRoute   // ✅ NEW
+  '/attendance/settings': typeof AttendanceSettingsRoute
+  '/attendance/admin/roles': typeof AttendanceAdminRolesRoute
+  '/attendance/admin/config': typeof AttendanceAdminConfigRoute
+  '/attendance/viewhistory': typeof AttendanceViewHistoryRoute
+  '/attendance/register': typeof AttendanceRegisterRoute
+
 }
 
 export interface FileRoutesByTo {
@@ -129,6 +232,19 @@ export interface FileRoutesByTo {
   '/smart-catalog/$pageId/admin': typeof SmartCatalogPageIdAdminRoute
   '/dashboard/flow': typeof DashboardFlowRoute              // ✅ NEW
   '/track/$tracking_id': typeof TrackTrackingIdRoute
+  '/delivery': typeof DeliveryRoute
+  '/dashboard/admin/create-driver': typeof DashboardAdminCreateDriverRoute
+  '/dashboard/admin/deliveries': typeof DashboardAdminDeliveriesRoute
+  '/dashboard/driver': typeof DashboardDriverRoute
+  '/dashboard/admin/driver-map': typeof DashboardAdminDriverMapRoute
+  '/attendance': typeof AttendanceRoute
+  '/attendance/report': typeof AttendanceReportRoute   // ✅ NEW
+  '/attendance/settings': typeof AttendanceSettingsRoute
+  '/attendance/admin/roles': typeof AttendanceAdminRolesRoute
+  '/attendance/admin/config': typeof AttendanceAdminConfigRoute
+  '/attendance/viewhistory': typeof AttendanceViewHistoryRoute
+  '/attendance/register': typeof AttendanceRegisterRoute
+
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -145,6 +261,19 @@ export interface FileRoutesById {
   '/smart-catalog/$pageId/admin': typeof SmartCatalogPageIdAdminRoute
   '/dashboard/flow': typeof DashboardFlowRoute              // ✅ NEW
   '/track/$tracking_id': typeof TrackTrackingIdRoute
+  '/delivery': typeof DeliveryRoute
+  '/dashboard/admin/create-driver': typeof DashboardAdminCreateDriverRoute
+  '/dashboard/admin/deliveries': typeof DashboardAdminDeliveriesRoute
+  '/dashboard/driver': typeof DashboardDriverRoute
+  '/dashboard/admin/driver-map': typeof DashboardAdminDriverMapRoute
+  '/attendance': typeof AttendanceRoute
+  '/attendance/report': typeof AttendanceReportRoute   // ✅ NEW
+  '/attendance/settings': typeof AttendanceSettingsRoute
+  '/attendance/admin/roles': typeof AttendanceAdminRolesRoute
+  '/attendance/admin/config': typeof AttendanceAdminConfigRoute
+  '/attendance/viewhistory': typeof AttendanceViewHistoryRoute
+  '/attendance/register': typeof AttendanceRegisterRoute
+
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -160,6 +289,18 @@ export interface FileRouteTypes {
   | '/smart-catalog'                                      // ✅ NEW
   | '/dashboard/flow'                                     // ✅ NEW
   | '/track/$tracking_id'
+  | '/delivery'
+  | '/dashboard/admin/create-driver'
+  | '/dashboard/admin/deliveries'
+  | '/dashboard/driver'
+  | '/dashboard/admin/driver-map'
+  | '/attendance/report'   // ✅ NEW
+  | '/attendance/settings'
+  | '/attendance/admin/roles'
+  | '/attendance/admin/config'
+  | '/attendance/register'
+
+
   fileRoutesByTo: FileRoutesByTo
   to:
   | '/'
@@ -175,6 +316,19 @@ export interface FileRouteTypes {
   | '/smart-catalog/$pageId/admin'
   | '/dashboard/flow'                                     // ✅ NEW
   | '/track/$tracking_id'
+  | '/delivery'
+  | '/dashboard/admin/create-driver'
+  | '/dashboard/admin/deliveries'
+  | '/dashboard/driver'
+  | '/dashboard/admin/driver-map'
+  | '/attendance'
+  | '/attendance/report'   // ✅ NEW
+  | '/attendance/settings'
+  | '/attendance/admin/roles'
+  | '/attendance/admin/config'
+  | '/attendance/viewhistory'
+  | '/attendance/register'
+
   id:
   | '__root__'
   | '/'
@@ -190,6 +344,19 @@ export interface FileRouteTypes {
   | '/smart-catalog/$pageId/admin'
   | '/dashboard/flow'                                     // ✅ NEW
   | '/track/$tracking_id'
+  | '/delivery'
+  | '/dashboard/admin/create-driver'
+  | '/dashboard/admin/deliveries'
+  | '/dashboard/driver'
+  | '/dashboard/admin/driver-map'
+  | '/attendance'
+  | '/attendance/report'   // ✅ NEW
+  | '/attendance/settings'
+  | '/attendance/admin/roles'
+  | '/attendance/admin/config'
+  | '/attendance/viewhistory'
+  | '/attendance/register'
+
   fileRoutesById: FileRoutesById
 }
 
@@ -205,7 +372,23 @@ export interface RootRouteChildren {
   SmartCatalogRoute: typeof SmartCatalogRoute               // ✅ NEW
   DashboardFlowRoute: typeof DashboardFlowRoute             // ✅ NEW
   TrackTrackingIdRoute: typeof TrackTrackingIdRoute
+  DeliveryRoute: typeof DeliveryRoute
+  DashboardAdminCreateDriverRoute: typeof DashboardAdminCreateDriverRoute
+  DashboardAdminDeliveriesRoute: typeof DashboardAdminDeliveriesRoute
+  DashboardDriverRoute: typeof DashboardDriverRoute
+  DashboardAdminDriverMapRoute: typeof DashboardAdminDriverMapRoute
+  AttendanceRoute: typeof AttendanceRoute
+  AttendanceReportRoute: typeof AttendanceReportRoute       // ✅ NEW
+  AttendanceSettingsRoute: typeof AttendanceSettingsRoute
+  AttendanceAdminRolesRoute: typeof AttendanceAdminRolesRoute
+  AttendanceAdminConfigRoute: typeof AttendanceAdminConfigRoute
+  AttendanceViewHistoryRoute: typeof AttendanceViewHistoryRoute,
+  AttendanceRegisterRoute: typeof AttendanceRegisterRoute
+
 }
+
+
+
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
@@ -258,6 +441,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardAgentsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/dashboard/admin/reply-helpers': {
+      id: '/dashboard/admin/reply-helpers'
+      path: '/dashboard/admin/reply-helpers'
+      fullPath: '/dashboard/admin/reply-helpers'
+      preLoaderRoute: typeof DashboardAdminReplyHelpersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard/admin/create-driver': {
+      id: '/dashboard/admin/create-driver'
+      path: '/dashboard/admin/create-driver'
+      fullPath: '/dashboard/admin/create-driver'
+      preLoaderRoute: typeof DashboardAdminCreateDriverRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard/admin/deliveries': {
+      id: '/dashboard/admin/deliveries'
+      path: '/dashboard/admin/deliveries'
+      fullPath: '/dashboard/admin/deliveries'
+      preLoaderRoute: typeof DashboardAdminDeliveriesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard/driver': {
+      id: '/dashboard/driver'
+      path: '/dashboard/driver'
+      fullPath: '/dashboard/driver'
+      preLoaderRoute: typeof DashboardDriverRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/smart-catalog': {
       id: '/smart-catalog'
       path: '/smart-catalog'
@@ -286,13 +497,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardFlowRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/dashboard/admin/reply-helpers': {
-      id: '/dashboard/admin/reply-helpers'
-      path: '/dashboard/admin/reply-helpers'
-      fullPath: '/dashboard/admin/reply-helpers'
-      preLoaderRoute: typeof DashboardAdminReplyHelpersRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/track/$tracking_id': {
       id: '/track/$tracking_id'
       path: '/track/$tracking_id'
@@ -300,9 +504,74 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TrackTrackingIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/delivery': {
+      id: '/delivery'
+      path: '/delivery'
+      fullPath: '/delivery'
+      preLoaderRoute: typeof DeliveryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard/admin/driver-map': {
+      id: '/dashboard/admin/driver-map'
+      path: '/dashboard/admin/driver-map'
+      fullPath: '/dashboard/admin/driver-map'
+      preLoaderRoute: typeof DashboardAdminDriverMapRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+
+    '/attendance': {
+      id: '/attendance'
+      path: '/attendance'
+      fullPath: '/attendance'
+      preLoaderRoute: typeof AttendanceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/attendance/report': {                     // ✅ NEW
+      id: '/attendance/report'
+      path: '/attendance/report'
+      fullPath: '/attendance/report'
+      preLoaderRoute: typeof AttendanceReportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/attendance/settings': {                      // ✅ NEW
+      id: '/attendance/settings'
+      path: '/attendance/settings'
+      fullPath: '/attendance/settings'
+      preLoaderRoute: typeof AttendanceSettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/attendance/admin/roles': {
+      id: '/attendance/admin/roles'
+      path: '/attendance/admin/roles'
+      fullPath: '/attendance/admin/roles'
+      preLoaderRoute: typeof AttendanceAdminRolesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/attendance/admin/config': {
+      id: '/attendance/admin/config'
+      path: '/attendance/admin/config'
+      fullPath: '/attendance/admin/config'
+      preLoaderRoute: typeof AttendanceAdminConfigRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/attendance/viewhistory': {
+      id: '/attendance/viewhistory'
+      path: '/attendance/viewhistory'
+      fullPath: '/attendance/viewhistory'
+      preLoaderRoute: typeof AttendanceViewHistoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+ '/attendance/register': {
+      id: '/attendance/register'
+      path: '/attendance/register'
+      fullPath: '/attendance/register'
+      preLoaderRoute: typeof AttendanceRegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
 
   }
 }
+
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
@@ -318,6 +587,19 @@ const rootRouteChildren: RootRouteChildren = {
   SmartCatalogPageIdAdminRoute,   // ✅ NEW
   DashboardFlowRoute,
   TrackTrackingIdRoute,
+  DeliveryRoute,
+  DashboardAdminCreateDriverRoute,   // ✅ NEW
+  DashboardAdminDeliveriesRoute,     // ✅ NEW
+  DashboardDriverRoute,              // ✅ NEW
+  DashboardAdminDriverMapRoute,   // ✅ NEW
+  AttendanceRoute,
+  AttendanceReportRoute,
+  AttendanceSettingsRoute,
+  AttendanceAdminRolesRoute,
+  AttendanceAdminConfigRoute,
+  AttendanceViewHistoryRoute,
+  AttendanceRegisterRoute,
+
 }
 
 export const routeTree = rootRouteImport

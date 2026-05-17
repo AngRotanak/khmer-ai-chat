@@ -19,7 +19,6 @@ function LoginPage() {
   const [password, setPassword] = useState('')
   const [rememberMe, setRememberMe] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [loggedIn, setLoggedIn] = useState(false)
 
   const navigate = useNavigate()
   const login = useAuthStore((s) => s.login)
@@ -42,21 +41,28 @@ function LoginPage() {
       const token = await user.getIdToken()
 
       const snapshot = await get(ref(db, `khmer-ai-chat/users/${user.uid}`))
-      const role = snapshot.exists() ? snapshot.val().role : 'viewer'
+      const userRole = snapshot.exists() ? snapshot.val().role : 'viewer'
 
+      // ✅ Store user in auth store
       login(
         {
           id: user.uid,
           email: user.email || '',
-          role,
-          displayName: user.displayName || 'Khmer Admin',
+          role: userRole,
+          displayName: user.displayName || 'Khmer User',
           avatarUrl: user.photoURL || '',
         },
         token
       )
 
-      // ✅ Instead of redirecting immediately, show selection screen
-      setLoggedIn(true)
+      // ✅ Navigate immediately based on role
+      if (userRole === 'admin') {
+        navigate({ to: '/dashboard' })
+      } else if (userRole === 'driver') {
+        navigate({ to: '/dashboard/driver' })
+      } else {
+        navigate({ to: '/unauthorized' })
+      }
     } catch (err: any) {
       setError(err.message || 'Login failed')
     }
@@ -71,61 +77,9 @@ function LoginPage() {
     localStorage.setItem('rememberMe', String(rememberMe))
   }, [rememberMe])
 
-  // ✅ If logged in, show selection screen
-  if (loggedIn) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-dark-900 text-white px-4">
-        <h1 className="text-2xl font-bold mb-6">Welcome</h1>
-        <p className="mb-4 text-gray-300">Select where you want to go:</p>
-        <div className="space-y-3 w-full max-w-sm">
-          <button
-            onClick={() => navigate({ to: '/dashboard/flow' })}
-            className="w-full bg-teal-500 hover:bg-teal-600 text-white font-bold py-2 px-4 rounded"
-          >
-            Flow Builder
-          </button>
-          <button
-            onClick={() => navigate({ to: '/dashboard/agents' })}
-            className="w-full bg-teal-500 hover:bg-teal-600 text-white font-bold py-2 px-4 rounded"
-          >
-            Agent Dashboard
-          </button>
-          <button
-            onClick={() => navigate({ to: '/dashboard/admin/reply-helpers' })}
-            className="w-full bg-teal-500 hover:bg-teal-600 text-white font-bold py-2 px-4 rounded"
-          >
-            Manage Reply Helpers
-          </button>
-          <button
-            onClick={() => navigate({ to: '/smart-catalog' })}
-            className="w-full bg-teal-500 hover:bg-teal-600 text-white font-bold py-2 px-4 rounded"
-          >
-            Smart e‑catalog
-          </button>
-
-          {/* <button
-            onClick={() =>
-              navigate({
-                to: '/track/$tracking_id',
-                params: { tracking_id: delivery.tracking_id },
-              })
-            }
-
-            className="w-full bg-teal-500 hover:bg-teal-600 text-white font-bold py-2 px-4 rounded"
-          >
-            Track Delivery
-          </button> */}
-
-
-        </div>
-      </div>
-    )
-  }
-
-  // ✅ Default login form
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-dark-900 text-white px-4">
-      <h1 className="text-2xl font-bold mb-6">Admin Login</h1>
+      <h1 className="text-2xl font-bold mb-6">Login</h1>
       <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-4">
         <input
           type="email"
@@ -142,10 +96,7 @@ function LoginPage() {
           className="w-full px-4 py-2 rounded bg-dark-700 text-white border border-teal-500"
         />
 
-        <label
-          className="flex items-center space-x-2 text-sm text-gray-300 group"
-          title="Stay logged in after closing the browser. រក្សាទុកការចូលប្រើប្រាស់"
-        >
+        <label className="flex items-center space-x-2 text-sm text-gray-300 group">
           <input
             type="checkbox"
             checked={rememberMe}
