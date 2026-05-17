@@ -243,13 +243,14 @@ export function ConversationTimeline({
   </div>
 </header>
 
-
-      {/* Main content area: timeline + reply bar */}
-      <div className="flex flex-col flex-grow h-0">
-        {timeline.length === 0 ? (
-          <div className="text-light-50 text-sm px-3 py-2">No activity yet…</div>
-        ) : (
-          <Virtuoso
+{/* Main content area: timeline + reply bar */}
+<div className="flex flex-col flex-grow min-h-0">
+  {/* Scrollable timeline */}
+  <div className="flex-grow overflow-y-auto">
+    {timeline.length === 0 ? (
+      <div className="text-light-50 text-sm px-3 py-2">No activity yet…</div>
+    ) : (
+       <Virtuoso
             ref={virtuosoRef}
             style={{ height: "100%", width: "100%" }}
             data={timeline}
@@ -413,60 +414,60 @@ export function ConversationTimeline({
             }}
           />
         )}
-      </div>
+  </div>
 
-
-
-      {/* Reply helpers bar pinned at bottom */}
+  {/* Sticky reply helpers + bar */}
+  <div
+    ref={helpersRef}
+    className="sticky bottom-0 bg-dark-900 border-t border-dark-600 w-full flex flex-col"
+  >
+    {/* Helpers toggle */}
+    <div className="bg-dark-900 border-t border-dark-600">
       <div
-        ref={helpersRef}
-        className="sticky bottom-0 bg-dark-900 border-t border-dark-600 w-full"
+        className={`transition-all duration-300 ease-in-out ${
+          showHelpers
+            ? "opacity-100 translate-y-0 max-h-40"
+            : "opacity-0 translate-y-2 max-h-0 overflow-hidden"
+        }`}
       >
-
-        {/* Helpers + toggle inline */}
-        <div className="bg-dark-900 border-t border-dark-600">
-          <div
-            className={`transition-all duration-300 ease-in-out ${showHelpers
-              ? "opacity-100 translate-y-0 max-h-40"
-              : "opacity-0 translate-y-2 max-h-0 overflow-hidden"
-              }`}
-          >
-            <ReplyHelpers setDraft={setDraft} activeConversation={conversation} />
-          </div>
-
-          <div className="flex justify-center">
-            <button
-              onClick={() => setShowHelpers(!showHelpers)}
-              className="appearance-none bg-transparent border-none outline-none cursor-pointer text-light-400 hover:text-teal-400 transition-transform duration-300"
-              aria-label="Toggle reply helpers"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className={`h-5 w-5 transform transition-transform duration-300 ${showHelpers ? "rotate-180" : "rotate-0"
-                  }`}
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-              </svg>
-            </button>
-          </div>
-        </div>
-
-
-
-        {/* ✅ wrap ReplyBar in a full-width container */}
-        <div className="w-full">
-          <ReplyBar
-            draft={draft}
-            setDraft={setDraft}
-            pageId={currentPageId}
-            activeConversation={conversation}
-            onSendMessage={handleSend}
-          />
-        </div>
+        <ReplyHelpers setDraft={setDraft} activeConversation={conversation} />
       </div>
+
+      <div className="flex justify-center mt-1">
+        <button
+          onClick={() => setShowHelpers(!showHelpers)}
+          className="appearance-none bg-transparent border-none outline-none cursor-pointer text-light-400 hover:text-teal-400 transition-transform duration-300 rounded-full p-1"
+          aria-label="Toggle reply helpers"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className={`h-5 w-5 transform transition-transform duration-300 ${
+              showHelpers ? "rotate-180" : "rotate-0"
+            }`}
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    {/* ReplyBar pinned full-width */}
+    <div className="w-full border-t border-dark-600 bg-dark-900">
+      <ReplyBar
+        draft={draft}
+        setDraft={setDraft}
+        pageId={currentPageId}
+        activeConversation={conversation}
+        onSendMessage={handleSend}
+      />
+    </div>
+  </div>
+</div>
+
+
 
 
       {/* 🔎 Lightbox overlay with navigation */}
