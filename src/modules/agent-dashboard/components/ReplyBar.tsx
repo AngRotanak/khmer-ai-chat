@@ -56,7 +56,7 @@ export function ReplyBar({
     <div className="sticky bottom-0 bg-dark-800 border-t border-dark-600 px-4 pt-2 pb-[calc(env(safe-area-inset-bottom)+0.5rem)]">
       {/* Input row */}
       <div className="flex items-end gap-2 w-full min-w-0">
-        {/* Textarea + emoji */}
+        {/* Textarea + emoji ...*/}
         <div className="flex-grow flex flex-col min-w-0">
           <div className="flex items-center bg-dark-700 rounded-full px-2 py-1">
             <textarea
