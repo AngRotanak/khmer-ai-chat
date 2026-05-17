@@ -283,7 +283,7 @@ function RegisterPage() {
       </div>
 
 {/* Sticky footer bar */}
-<div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[92%] max-w-md bg-white border border-gray-200 px-4 py-4 rounded-xl shadow-footer z-50 animate-slideup
+<div className="fixed bottom-15 left-1/2 -translate-x-1/2 w-[92%] max-w-md bg-white border border-gray-200 px-4 py-4 rounded-xl shadow-footer z-50 animate-slideup
                 md:static md:w-full md:translate-x-0 md:rounded-none md:shadow-none">
   <div className="flex items-center justify-between gap-3">
     {/* Total amount badge */}
