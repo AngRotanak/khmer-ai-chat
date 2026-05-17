@@ -88,7 +88,7 @@ export function ReplyBar({
 
           </div>
 
-          {/* Character counter + soft warning */}
+          {/* Character counter + soft warning ..*/}
           <div className="flex justify-between mt-1">
             {draft.length > MAX_CHARS * 0.9 && draft.length <= MAX_CHARS && (
               <span className="text-xs text-yellow-400">
