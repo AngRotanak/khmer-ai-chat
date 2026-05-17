@@ -134,112 +134,114 @@ export function ConversationTimeline({
 
   return (
     <div className="flex flex-col h-full bg-dark-900">
-      {/* Sticky Header */}
-      <header className="sticky top-0 z-10 px-3 py-2 border-b border-dark-600 bg-dark-900 flex flex-col sm:flex-row sm:items-center sm:justify-between">
-        {/* Row 1: back (mobile only) + avatar + name + status */}
-        <div className="flex items-center gap-2 min-w-0 flex-shrink">
-          <button
-            onClick={() => setViewMode("queue")}
-            className="flex items-center text-light-300 hover:text-teal-400 sm:hidden"
-            title="Back to queue"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-          </button>
+{/* Sticky Header */}
+<header className="sticky top-0 z-10 px-3 py-2 border-b border-dark-600 bg-dark-900 flex items-center justify-between">
+  {/* Left side: back button (mobile only) + avatar + name + status */}
+  <div className="flex items-center gap-2 min-w-0">
+    {/* Back button only on mobile */}
+    <button
+      onClick={() => setViewMode("queue")}
+      className="sm:hidden flex items-center text-light-300 hover:text-teal-400"
+      title="Back to queue"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+      </svg>
+    </button>
 
-          {conversation.avatar ? (
-            <img
-              src={conversation.avatar}
-              alt={conversation.customerName || "User"}
-              className="w-8 h-8 rounded-full object-cover"
-            />
-          ) : (
-            <div className="w-8 h-8 rounded-full bg-dark-700 flex items-center justify-center text-xs">?</div>
-          )}
+    {/* Avatar */}
+    {conversation.avatar ? (
+      <img
+        src={conversation.avatar}
+        alt={conversation.customerName || "User"}
+        className="w-8 h-8 rounded-full object-cover"
+      />
+    ) : (
+      <div className="w-8 h-8 rounded-full bg-dark-700 flex items-center justify-center text-xs">?</div>
+    )}
 
-          <span className="font-bold truncate max-w-[120px] sm:max-w-[200px]">
-            {conversation.customerName || conversation.user_id}
-          </span>
+    {/* Name + status */}
+    <span className="font-bold truncate max-w-[120px] sm:max-w-[200px]">
+      {conversation.customerName || conversation.user_id}
+    </span>
 
-          <span
-            className={`ml-2 px-2 py-0.5 rounded text-xs whitespace-nowrap ${conversation.status === "Waiting"
-              ? "bg-yellow-700 text-yellow-200"
-              : conversation.status === "Agent active"
-                ? "bg-teal-700 text-teal-200"
-                : conversation.status === "Bot active"
-                  ? "bg-blue-700 text-blue-200"
-                  : conversation.status === "Pending"
-                    ? "bg-purple-700 text-purple-200"
-                    : "bg-gray-700 text-gray-200"
-              }`}
-          >
-            {conversation.status}
-          </span>
+    <span
+      className={`ml-2 px-2 py-0.5 rounded text-xs whitespace-nowrap ${
+        conversation.status === "Waiting"
+          ? "bg-yellow-700 text-yellow-200"
+          : conversation.status === "Agent active"
+          ? "bg-teal-700 text-teal-200"
+          : conversation.status === "Bot active"
+          ? "bg-blue-700 text-blue-200"
+          : conversation.status === "Pending"
+          ? "bg-purple-700 text-purple-200"
+          : "bg-gray-700 text-gray-200"
+      }`}
+    >
+      {conversation.status}
+    </span>
+  </div>
+
+  {/* Right side: action buttons */}
+  <div className="flex gap-2 ml-auto">
+    <div className="relative">
+      <button
+        className="px-2 py-1 bg-teal-700 rounded text-xs sm:text-sm"
+        onClick={() => {
+          takeOverConversation(currentPageId, conversation)
+          sendMessage("takeover")
+        }}
+        onMouseEnter={() => handlePreview("takeover")}
+        onMouseLeave={() => setPreview(null)}
+      >
+        Take Over
+      </button>
+      {preview?.type === "takeover" && (
+        <div className="absolute mt-1 p-2 bg-dark-700 text-light-100 text-xs rounded shadow-lg w-64">
+          {preview.text}
         </div>
+      )}
+    </div>
 
-        {/* Row 2 on mobile, inline on desktop */}
-        <div className="mt-2 sm:mt-0 flex gap-2 sm:ml-auto">
-          {/* Action buttons */}
-          <div className="relative">
-            <button
-              className="px-2 py-1 bg-teal-700 rounded text-xs sm:text-sm"
-              onClick={() => {
-                takeOverConversation(currentPageId, conversation)
-                sendMessage("takeover")
-              }}
-              onMouseEnter={() => handlePreview("takeover")}
-              onMouseLeave={() => setPreview(null)}
-            >
-              Take Over
-            </button>
-            {preview?.type === "takeover" && (
-              <div className="absolute mt-1 p-2 bg-dark-700 text-light-100 text-xs rounded shadow-lg w-64">
-                {preview.text}
-              </div>
-            )}
-          </div>
-
-          <div className="relative">
-            <button
-              className="px-2 py-1 bg-dark-600 rounded text-xs sm:text-sm"
-              onClick={() => {
-                returnToBot(currentPageId, conversation)
-                sendMessage("return")
-              }}
-              onMouseEnter={() => handlePreview("return")}
-              onMouseLeave={() => setPreview(null)}
-            >
-              Return to Bot
-            </button>
-            {preview?.type === "return" && (
-              <div className="absolute mt-1 p-2 bg-dark-700 text-light-100 text-xs rounded shadow-lg w-64">
-                {preview.text}
-              </div>
-            )}
-          </div>
-
-          <div className="relative">
-            <button
-              className="px-2 py-1 bg-red-700 rounded text-xs sm:text-sm"
-              onClick={() => {
-                closeConversation(currentPageId, conversation)
-                sendMessage("close")
-              }}
-              onMouseEnter={() => handlePreview("close")}
-              onMouseLeave={() => setPreview(null)}
-            >
-              Close Conversation
-            </button>
-            {preview?.type === "close" && (
-              <div className="absolute mt-1 p-2 bg-dark-700 text-light-100 text-xs rounded shadow-lg w-64">
-                {preview.text}
-              </div>
-            )}
-          </div>
+    <div className="relative">
+      <button
+        className="px-2 py-1 bg-dark-600 rounded text-xs sm:text-sm"
+        onClick={() => {
+          returnToBot(currentPageId, conversation)
+          sendMessage("return")
+        }}
+        onMouseEnter={() => handlePreview("return")}
+        onMouseLeave={() => setPreview(null)}
+      >
+        Return to Bot
+      </button>
+      {preview?.type === "return" && (
+        <div className="absolute mt-1 p-2 bg-dark-700 text-light-100 text-xs rounded shadow-lg w-64">
+          {preview.text}
         </div>
+      )}
+    </div>
 
-      </header>
+    <div className="relative">
+      <button
+        className="px-2 py-1 bg-red-700 rounded text-xs sm:text-sm"
+        onClick={() => {
+          closeConversation(currentPageId, conversation)
+          sendMessage("close")
+        }}
+        onMouseEnter={() => handlePreview("close")}
+        onMouseLeave={() => setPreview(null)}
+      >
+        Close Conversation
+      </button>
+      {preview?.type === "close" && (
+        <div className="absolute mt-1 p-2 bg-dark-700 text-light-100 text-xs rounded shadow-lg w-64">
+          {preview.text}
+        </div>
+      )}
+    </div>
+  </div>
+</header>
 
 
       {/* Main content area: timeline + reply bar */}
