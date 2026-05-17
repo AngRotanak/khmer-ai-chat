@@ -212,7 +212,7 @@ return (
               {bucket === "today" ? "Today" : bucket === "yesterday" ? "Yesterday" : "Older"}
             </h3>
 
-            {/* 🔹 Compact comment items */}
+            {/* 🔹 Full-width comment items */}
             <div className="space-y-3">
               {grouped[bucket].map(conv => {
                 const isActive = conv.id === activeCommentId
@@ -221,7 +221,7 @@ return (
                   <button
                     key={conv.id}
                     onClick={() => onSelect(conv)}
-                    className={`w-auto max-w-full text-left p-2 rounded-lg flex items-center gap-2 border border-dark-700 shadow-sm 
+                    className={`w-full text-left p-2 rounded-lg flex items-center gap-2 border border-dark-700 shadow-sm 
                       transition-all duration-200 
                       ${isActive 
                         ? "bg-teal-800" 
@@ -229,9 +229,9 @@ return (
                   >
                     {/* Avatar */}
                     {conv.avatar ? (
-                      <img src={conv.avatar} alt={userName} className="h-8 w-8 rounded-full object-cover" />
+                      <img src={conv.avatar} alt={userName} className="h-8 w-8 rounded-full object-cover flex-shrink-0" />
                     ) : (
-                      <div className="h-8 w-8 rounded-full bg-dark-600 flex items-center justify-center text-light-400">?</div>
+                      <div className="h-8 w-8 rounded-full bg-dark-600 flex items-center justify-center text-light-400 flex-shrink-0">?</div>
                     )}
 
                     {/* Info */}
@@ -292,5 +292,6 @@ return (
     )}
   </div>
 )
+
 
 }
