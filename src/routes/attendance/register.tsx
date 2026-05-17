@@ -83,41 +83,54 @@ function RegisterPage() {
     }
   }
 
-  // Poll backend every minute
-  useEffect(() => {
-    if (!md5 || paymentComplete || timeoutReached) return
+ // Unified countdown + polling
+useEffect(() => {
+  if (!md5 || paymentComplete || timeoutReached) return
 
-    let minutesPassed = 0
-    const interval = setInterval(async () => {
-      minutesPassed += 1
-      setMinutesLeft(10 - minutesPassed)
-      setCountdown(60)
+  let minutesPassed = 0
 
-      if (minutesPassed >= 10) {
-        setTimeoutReached(true)
-        clearInterval(interval)
-        return
-      }
+  const interval = setInterval(async () => {
+    setCountdown(prev => {
+      if (prev > 1) {
+        return prev - 1
+      } else {
+        // reset countdown to 60 and decrement minutes
+        minutesPassed += 1
+        setMinutesLeft(10 - minutesPassed)
 
-      try {
-        const res = await fetch("https://b0df-136-228-130-3.ngrok-free.app", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "check_payment", md5, selected_package: selectedPackage }),
-        })
-        const data = await res.json()
-        if (data.status === "PAID") {
-          setPaymentComplete(true)
-          setLicenseInfo(data.license)
+        if (minutesPassed >= 10) {
+          setTimeoutReached(true)
           clearInterval(interval)
+          return 0
         }
-      } catch (err) {
-        console.error("Error checking payment:", err)
-      }
-    }, 60000)
 
-    return () => clearInterval(interval)
-  }, [md5, paymentComplete, timeoutReached])
+        // 🔹 Poll backend once per minute
+        try {
+          fetch("https://b0df-136-228-130-3.ngrok-free.app", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "check_payment", md5, selected_package: selectedPackage }),
+          })
+            .then(res => res.json())
+            .then(data => {
+              if (data.status === "PAID") {
+                setPaymentComplete(true)
+                setLicenseInfo(data.license)
+                clearInterval(interval)
+              }
+            })
+        } catch (err) {
+          console.error("Error checking payment:", err)
+        }
+
+        return 60
+      }
+    })
+  }, 1000)
+
+  return () => clearInterval(interval)
+}, [md5, paymentComplete, timeoutReached])
+
 
   // Countdown display
   useEffect(() => {
@@ -202,7 +215,7 @@ function RegisterPage() {
             bg-dark-800 border-t border-gray-700 p-4`}
         >
           {qrImage && !paymentComplete && !timeoutReached && (
-            <div className="max-w-md mx-auto rounded-xl shadow-lg p-4 flex flex-col items-center relative">
+            <div className="max-w-md mx-auto rounded-xl shadow-lg p-6 flex flex-col items-center relative">
               {/* Close button */}
               <button
                 onClick={() => setQrImage(null)}
