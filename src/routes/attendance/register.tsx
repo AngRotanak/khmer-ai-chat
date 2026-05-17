@@ -193,21 +193,34 @@ function RegisterPage() {
           )}
         </div>
 
-        {/* Show QR */}
-        {qrImage && !paymentComplete && !timeoutReached && (
-          <div className="rounded-xl shadow-lg p-4 w-full flex flex-col items-center">
-            <div className="relative inline-block">
-              <div className="flex justify-center w-full">
-                <img
-                  src={qrImage}
-                  alt="Bakong QR"
-                  className="rounded-lg border border-gray-200 shadow-md"
-                />
-              </div>
+        {/* ✅ Animated QR bottom sheet */}
+        <div
+          className={`fixed bottom-0 left-0 right-0 transition-all duration-500 ease-in-out 
+            ${qrImage && !paymentComplete && !timeoutReached 
+              ? "max-h-[500px] opacity-100 translate-y-0" 
+              : "max-h-0 opacity-0 translate-y-4"} 
+            bg-dark-800 border-t border-gray-700 p-4`}
+        >
+          {qrImage && !paymentComplete && !timeoutReached && (
+            <div className="max-w-md mx-auto rounded-xl shadow-lg p-4 flex flex-col items-center relative">
+              {/* Close button */}
+              <button
+                onClick={() => setQrImage(null)}
+                className="absolute top-2 right-2 text-light-400 hover:text-red-400"
+              >
+                ✕
+              </button>
 
-              {/* Top overlay */}
-              <div className="absolute top-2 left-0 right-0 text-center">
-                <h3 className="text-black font-bold text-sm">Scan to Pay</h3>
+              {/* QR image */}
+              <img
+                src={qrImage}
+                alt="Bakong QR"
+                className="rounded-lg border border-gray-200 shadow-md"
+              />
+
+              {/* Payment info */}
+              <div className="mt-3 text-center">
+                <h3 className="text-teal-400 font-bold">Scan to Pay</h3>
                 {timeoutReached ? (
                   <p className="text-red-600 font-semibold text-base">❌ Payment Timeout</p>
                 ) : (
@@ -220,32 +233,27 @@ function RegisterPage() {
                     </p>
                   </>
                 )}
+                <p className="text-light-300 text-sm">Plan: {selectedPackage}</p>
+                {amount && <p className="text-light-300 text-sm">Amount: {amount} KHR</p>}
               </div>
 
-              {/* Bottom overlay */}
-              <div className="absolute bottom-5 left-0 right-0 text-center">
-                <p className="text-black font-semibold text-base">KHMER AUTOSOFT</p>
-                <p className="text-black text-sm">Plan: {selectedPackage}</p>
-                {amount && <p className="text-black text-sm">Amount: {amount} KHR</p>}
+              {/* Footer */}
+              <div className="mt-2 text-xs text-gray-400">
+                Secure KHQR Payment • Licensed by Bakong
               </div>
-            </div>
 
-            {/* Footer below QR */}
-            <div className="mt-4 text-xs text-gray-400">
-              <p>Secure KHQR Payment • Licensed by Bakong</p>
+              {/* Retry button if timeout */}
+              {timeoutReached && (
+                <button
+                  onClick={handleGenerateQR}
+                  className="mt-4 w-full py-2 rounded-lg bg-red-600 hover:bg-red-500 text-white font-semibold transition"
+                >
+                  Retry Payment
+                </button>
+              )}
             </div>
-
-            {/* Retry button if timeout */}
-            {timeoutReached && (
-              <button
-                onClick={handleGenerateQR}
-                className="mt-4 w-full py-2 rounded-lg bg-red-600 hover:bg-red-500 text-white font-semibold transition"
-              >
-                Retry Payment
-              </button>
-            )}
-          </div>
-        )}
+          )}
+        </div>
 
         {/* Thank-you screen */}
         {paymentComplete && licenseInfo && (

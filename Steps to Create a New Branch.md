@@ -97,3 +97,11 @@ git push -u origin feature/my-branch
 ---
 
 👉 Once you push, Vercel will pick it up. If you want, I can also show you how to **promote a Preview Deployment to Production** directly in Vercel, so you don’t have to merge into `main` first. Would you like me to walk you through that?
+
+
+Invoke-WebRequest -Method POST "https://api.vercel.com/v1/integrations/deploy/prj_K0DthcsbqtxqI3SitILU56jeTB0e/4vw16XFEgj"
+
+
+git add . 
+git commit -m "Update reply bar with fixed emoji button"
+git push -u origin feature/my-branch
