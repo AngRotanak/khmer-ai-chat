@@ -301,7 +301,7 @@ function RegisterPage() {
             </span>
           )}
 
-          {/* Pay button */}
+          {/* Pay button .....*/}
           <button
             ref={payButtonRef}
             onClick={handleGenerateQR}
