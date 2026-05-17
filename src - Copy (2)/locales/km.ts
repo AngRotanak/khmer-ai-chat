@@ -1,0 +1,43 @@
+export const km = {
+  insertFeature: 'បញ្ចូលលក្ខណៈពិសេស Khmer AI',
+  delete: 'លុប',
+  snapshot: 'ថតស្ថានភាព',
+  flowBuilder: 'កម្មវិធីបង្កើតលំហូរ',
+  byKhmerAutosoft: 'ដោយ KhmerAutosoft',
+  KhmerAIFeatures: 'មុខងារខ្មែរអេអាយ',
+  Tap_to_insert_Khmer_AI_Features: "ចុចដើម្បីបញ្ចូលលក្ខណៈពិសេស Khmer AI",
+  Drag_and_drop_nodes_to_build_Khmer_AI_Features: "អូសនិងទម្លាក់បណ្តាញដើម្បីបង្កើតលក្ខណៈពិសេស Khmer AI",
+  ManageCustomIntents: 'ត្រួតពិនិត្យកែសំរួល intents',
+  Hide_or_edit_existing_intents: 'បិតឬកែសំរួល intents',
+  Create_and_customize_your_own_AI_intents: 'បង្កើតទិន្នន័យ សម្រាប់ ai ព្យាករណ៍',
+
+  TopicName: 'ចំណងជើងប្រធានបទ',
+  TriggerKeywords: 'ពាក្យគន្លឹះចាប់ផ្តើម',
+  TriggerIntents: 'Intents ចាប់ផ្តើម',
+  WelcomeMessage: 'សារស្វាគមន៍',
+  LockConversationContext: 'ចាក់សោប្រធានបទ',
+  FallbackMessage: 'សារបញ្ជាក់ fallback',
+  SubIntentRouting: 'ការបញ្ជូន Intent រង',
+  IntentID: 'លេខសម្គាល់ Intent',
+  ReplyType: 'ប្រភេទការឆ្លើយតប',
+  ConfidenceThreshold: 'កម្រិតជឿជាក់',
+  ReplyMessage: 'សារឆ្លើយតប',
+  FlowToTrigger: 'Flow ដែលត្រូវបើក',
+
+  // Optional placeholders
+  TopicNamePlaceholder: 'ឧ. ថែសម្រស់មុខ',
+  TriggerKeywordsPlaceholder: 'ឧ. ថែសម្រស់, គ្រីមមុខ',
+  TriggerIntentsPlaceholder: 'ឧ. want_skincare_info',
+  WelcomeMessagePlaceholder: 'ឧ. សូមស្វាគមន៍! តើអ្នកកំពុងស្វែងរកផលិតផលថែសម្រស់មុខ?',
+  FallbackMessagePlaceholder: 'ឧ. សូមអភ័យទោស ខ្ញុំមិនយល់អំពីសំណួរនេះទេ។',
+  GlobalTriggerKeywords: 'ពាក្យគន្លឹះសរុប',
+  GlobalTriggerKeywordsPlaceholder: 'ឧ. ថែសម្រស់, ដឹកជញ្ជូន, ការកក់',
+  
+  Remove: 'លុប',
+  Add: 'បន្ថែម',
+  Keyword: 'ពាក្យគន្លឹះ',
+  Match: 'លក្ខខណ្ឌផ្គូផ្គង',
+  Includes: 'មានពាក្យនេះ',
+  Equals: 'ដូចគ្នាពីต้นចុង',
+  'Starts With': 'ចាប់ផ្តើមដោយ'
+}

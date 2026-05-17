@@ -1,0 +1,8 @@
+[
+  {
+    "origin": ["http://localhost:5173", "https://mediocre-visaged-romaine.ngrok-free.dev"],
+    "method": ["GET", "POST", "PUT"],
+    "maxAgeSeconds": 3600,
+    "responseHeader": ["Content-Type", "Authorization"]
+  }
+]

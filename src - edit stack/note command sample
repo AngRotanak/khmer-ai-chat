@@ -1,0 +1,11 @@
+npx tsr generate
+
+
+rm src/routeTree.gen.ts
+# or if using Windows:
+
+
+del src\routeTree.gen.ts
+npx tsr generate
+
+mv src/routes/dashboard/__layout.tsx src/routes/dashboard.tsx

@@ -1,0 +1,131 @@
+"welcome": {
+      "en": [
+        {
+          "is_active": true,
+          "template_type": "text",
+          "text": "🙏 Welcome to E-SHOP KH! I am your digital assistant, how can I help you today?"
+        },
+        {
+          "cards": [
+            {
+              "image_url": "https://storage.googleapis.com/khmer_aichatbot/clients/708759082319392/photo/Home.jpg",
+              "layout": "hero",
+              "options": [
+                {
+                  "label_en": "ℹ️ General Info",
+                  "payload": "info",
+                  "type": "postback"
+                },
+                {
+                  "label_en": "📚 Product List & Prices",
+                  "type": "web_url",
+                  "url": "http://eskh-030423.com"
+                },
+                {
+                  "label_en": "💬 Chat with Shop",
+                  "payload": "chatshop",
+                  "type": "postback"
+                }
+              ],
+              "subtitle": "Please choose one of the options below",
+              "title": "🏡 Home"
+            },
+            {
+              "image_url": "https://storage.googleapis.com/khmer_aichatbot/clients/708759082319392/photo/Home.jpg",
+              "layout": "hero",
+              "options": [
+                {
+                  "label_en": "📦 Problem/Request",
+                  "payload": "problem",
+                  "type": "postback"
+                },
+                {
+                  "label_en": "💳 Payment Method",
+                  "payload": "payment",
+                  "type": "postback"
+                },
+                {
+                  "label_en": "🇰🇭 ខ្មែរ / 🇺🇸 Eng",
+                  "payload": "language",
+                  "type": "postback"
+                }
+              ],
+              "subtitle": "Please choose one of the options below",
+              "title": "🏡 Home"
+            }
+          ],
+          "is_active": true,
+          "silent": false,
+          "template_type": "generic"
+        }
+      ],
+      "kh": [
+        {
+          "is_active": true,
+          "template_type": "text",
+          "text": "🙏 ជម្រាបសួស្តិ៍ សូមស្វាគមន៍ មកកាន់ហាង E-SHOP KH! ខ្ញុំគឺជាជំនួយការឌីជីថល, តើមានអ្វីឲ្យខ្ញុំជួយបាន?"
+        },
+        {
+          "cards": [
+            {
+              "image_url": "https://storage.googleapis.com/khmer_aichatbot/clients/708759082319392/photo/Home.jpg",
+              "layout": "hero",
+              "options": [
+                {
+                  "label_kh": "ℹ️ អំពីពត៍មានទូទៅ",
+                  "payload": "info",
+                  "type": "postback"
+                },
+                {
+                  "label_kh": "📚 បញ្ជីផលិតផល និង តម្លៃ",
+                  "type": "web_url",
+                  "url": "http://eskh-030423.com"
+                },
+                {
+                  "label_kh": "💬 ឆាតជាមួយបុគ្គលិកហាង",
+                  "payload": "chatshop",
+                  "type": "postback"
+                }
+              ],
+              "subtitle": "ជ្រើសរើសជម្រើសខាងក្រោម",
+              "title": "🏡 ទំព័រដើម"
+            },
+            {
+              "image_url": "https://storage.googleapis.com/khmer_aichatbot/clients/708759082319392/photo/Home.jpg",
+              "layout": "hero",
+              "options": [
+                {
+                  "label_kh": "📦 បញ្ញាឥវ៉ាន/ការស្នើសុំ",
+                  "payload": "problem",
+                  "type": "postback"
+                },
+                {
+                  "label_kh": "💳 ការទូទាត់",
+                  "payload": "payment",
+                  "type": "postback"
+                },
+                {
+                  "label_kh": "🇰🇭 ខ្មែរ / 🇺🇸 Eng",
+                  "payload": "language",
+                  "type": "postback"
+                }
+              ],
+              "subtitle": "ជ្រើសរើសជម្រើសខាងក្រោម",
+              "title": "🏡 ទំព័រដើម"
+            }
+          ],
+          "is_active": true,
+          "silent": false,
+          "template_type": "generic"
+        }
+      ],
+      "metadata": {
+        "created_by": "admin001",
+        "is_active": true,
+        "last_updated": "2025-09-24T15:46",
+        "linked_pages": [
+          "708759082319392"
+        ],
+        "version": 1
+      }
+    }

@@ -1,0 +1,38 @@
+@use "sass:meta";
+@use 'base';
+@import '@xyflow/react/dist/style.css';
+@import 'overlayscrollbars/styles/overlayscrollbars.css';
+@import 'split-pane-react/esm/themes/default.css';
+@include meta.load-css('overrides/overlayscrollbars');
+@include meta.load-css('overrides/reactflow');
+
+body {
+  @apply font-normal w-full of-x-hidden text-light-50 bg-dark-700 scroll-smooth min-h-screen;
+}
+
+
+#root {
+  @apply w-full h-full of-hidden;
+}
+
+
+.scrollbar-dark-teal::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.scrollbar-dark-teal::-webkit-scrollbar-track {
+  background: #1f2937; // dark-800
+}
+
+.scrollbar-dark-teal::-webkit-scrollbar-thumb {
+  background-color: #0d9488; // teal-600
+  border-radius: 4px;
+  border: 2px solid #1f2937;
+}
+
+// Firefox support
+.scrollbar-dark-teal {
+  scrollbar-color: #0d9488 #1f2937;
+  scrollbar-width: thin;
+}

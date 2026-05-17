@@ -1,0 +1,47 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "ESNext",
+    "moduleResolution": "node",
+    "jsx": "react-jsx",
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "useDefineForClassFields": true,
+
+    /* Path aliases */
+    "baseUrl": ".",
+    "paths": {
+      "~@/*": ["src/bootstrap/*"],
+      "~/*": ["src/*"],
+      "~pages/*": ["src/routes/*"]
+    },
+
+    /* Module compatibility */
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "allowImportingTsExtensions": true,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+    "skipLibCheck": true,
+
+    /* Type support */
+    "types": ["vite/client", "google.maps"],   // ✅ Added google.maps here
+
+    /* Linting */
+    "strict": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noEmit": true
+  },
+  "exclude": ["vite.config.ts"],
+  "include": [
+    "src",
+    "src/types",
+    ".generated/**/*.ts",
+    "tsr.config.ts"
+  ],
+  "references": [
+    { "path": "./tsconfig.node.json" }
+  ]
+}

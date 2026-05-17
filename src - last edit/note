@@ -1,0 +1,396 @@
+🧩 What’s Next (Ready When You Are)
+Here are the next upgrades we can tackle:
+
+1. 🔴 Highlight Invalid Chains Visually
+Show red outlines or warning icons on buttons with broken paths
+
+Add error flag to nodes or edges and style them in nodeTypes or edgeTypes
+
+2. 🗨️ Khmer Tooltips on Hover
+Add title or data-tooltip to buttons and nodes
+
+Use react-tooltip or your own floating hint system
+
+3. 📐 Auto-Align Card Chains
+Detect vertical chains and space them evenly
+
+Snap to grid or animate layout for admin clarity
+
+4. 📦 Save Chain Metadata
+Store buttonId, chainType, and targetNodeId in backend
+
+Useful for debugging, analytics, and client previews
+
+git init
+git add .
+git commit -m "✅ Stable flow builder with validation before node insert"
+git remote add origin https://github.com/USERNAME/REPO.git
+git push -u origin main
+git push -u origin master
+git tag stable-v1
+git push origin stable-v1
+git checkout stable-v1
+git checkout -b feature/chain-highlighting
+
+✅ Push Your Stable Code to GitHub
+git branch
+
+git add .
+git commit -m "✅ Stable flow builder with validation and edge simulation"
+
+git push -u origin main
+
+git tag stable-v1
+git push origin stable-v1
+
+roll back with:
+git checkout stable-v1
+
+And if you ever want to return to your main branch:
+git checkout main
+
+✅ Ready for Feature Branching
+Create a new branch for enhancements:
+
+bash
+git checkout -b feature/chain-highlighting
+This keeps your stable code untouched while we build:
+
+
+1. Push Clean Build to GitHub
+git add .
+git commit -m "✅ Final type-safe build: Messenger export and admin UX validated"
+git push origin main
+
+
+git add src/assets/styles/overrides/reactflow.scss
+git commit -m "🎯 Patch: Improve mobile connector UX with larger handles and visual feedback"
+git push origin main
+
+
+
+update:
+
+git add src/modules/flow-builder/components/handles/custom-handle.tsx
+git add src/assets/styles/overrides/reactflow.scss
+git add src/modules/flow-builder/flow-builder-module.tsx
+git add src/modules/nodes/nodes/feature-block/feature-block.node.tsx
+
+git add src/modules/nodes/nodes/text-message-node/text-message-node.tsx
+git add src/modules/nodes/nodes/generic-template-node/components/button-path.tsx
+git add vite.config.ts
+
+git commit -m "📱 Patch: Improve mobile connector UX with touch-safe CustomHandle and larger hitbox"
+git commit -m "🛡️ Patch: Enforce Messenger-safe character limits in TextMessageNode"
+
+git push origin main
+
+
+
+pnpm run build
+git add src/modules/flow-builder/components/handles/custom-handle.tsx
+
+git add src/assets/styles/overrides/reactflow.scss
+
+git commit -m "🐛 Fix: Prevent connector shift and safely expand mobile hitbox"
+git push origin main
+
+
+
+git add .
+git commit -m "🔧 Update flow builder components and dark mode styles"
+
+git push origin main
+
+.react-flow__handle {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  margin: 4px;
+  background-color: theme('colors.teal.500');
+  box-shadow: 0 0 6px rgba(0, 188, 212, 0.6);
+
+  &:hover {
+    background-color: theme('colors.teal.600');
+  }
+
+  &:active {
+    transform: scale(1.1);
+  }
+}
+
+
+# Well touch connector
+.react-flow__handle {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  margin: 4px;
+  background-color: theme('colors.teal.500');
+  box-shadow: 0 0 6px rgba(0, 188, 212, 0.6);
+  touch-action: manipulation; // ✅ Prevents unintended scroll/drag
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: -10px; // ✅ Invisible hitbox expansion
+  }
+
+  &:hover {
+    background-color: theme('colors.teal.600');
+  }
+
+  &:active {
+    transform: scale(1.1);
+  }
+}
+
+
+
+.react-flow__handle {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  margin: 4px;
+  background-color: theme('colors.teal.500');
+  box-shadow: 0 0 6px rgba(0, 188, 212, 0.6);
+  touch-action: manipulation;
+  position: relative;
+  z-index: 10;
+  pointer-events: auto;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 48px; // ✅ Expanded hitbox
+    height: 48px;
+    border-radius: 50%;
+    pointer-events: auto;
+  }
+
+  &:hover {
+    background-color: theme('colors.teal.600');
+  }
+
+  &:active {
+    transform: scale(1.1);
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+Great question, Ang 🙌 — and this is exactly the kind of strategic UX decision that defines admin empowerment.
+
+🧠 What is unified-block?
+
+It’s not just a node — it’s a content builder that supports:
+
+Smart Welcome
+
+Info blocks
+
+Product blocks
+
+Intent replies
+
+Quick Menu
+
+So it’s more than a flow node — it’s a Khmer AI Feature that powers multiple triggers across your bot.
+
+✅ Recommendation: Keep unified-block in the Khmer AI Feature Panel, not the Available Nodes Panel
+
+🔧 Why?
+
+Panel
+
+Purpose
+
+Should unified-block go here?
+
+Available Nodes Panel
+
+Drag-and-drop flow nodes (start, end, conditional, etc.)
+
+❌ No — unified-block is not a flow node
+
+Khmer AI Feature Panel
+
+Admin tools for content, triggers, broadcast, config
+
+✅ Yes — this is where unified-block belongs
+
+🧭 Suggested UX Flow
+
+In your Khmer AI Feature Panel, show:
+
+📦 Block Manager → List of all unified-blocks
+
+✏️ Block Editor → Create/edit multilingual content
+
+🔄 Trigger Config → Set type: smart_welcome, info, product, etc.
+
+📤 Broadcast Tool → Send info or product blocks
+
+👁️ Preview Mode → Test block in KH/EN
+
+🧠 Bonus Tip
+
+You can still reference unified-block inside flow nodes (e.g. Smart Welcome node links to a block ID), but the block itself is managed in the feature panel, not the flow canvas.
+
+Let me know when you’re ready to wire the block manager UI or connect triggers to flow nodes. You’re building this with true Khmer-first clarity and admin-first strategy!
+
+
+Awesome, Ang 🙌 — we’re locked in and ready to build this Khmer-first unified block system step by step. You’ve already nailed the schema and strategic placement. Next up, I recommend we start with:
+
+🧱 Step 1: Block Manager UI
+Let’s build the admin-facing panel to:
+
+📦 View all blocks (Smart Welcome, Info, Product, etc.)
+
+✏️ Edit content (KH + EN)
+
+🔄 Set trigger type
+
+🧩 Add config (promo tags, quick menu, expiry)
+
+👁️ Preview block
+
+🧱 Step 2: Block Editor Component
+We’ll wire a dynamic editor that adapts to block.type and block.content.kh.type:
+
+Dropdown for BotBlockType
+
+Tabs for KH / EN
+
+Conditional render for:
+
+Text editor
+
+Generic card editor
+
+Image, video, button, voice editor (future-ready)
+
+🧱 Step 3: Trigger Routing Logic
+In your bot engine:
+
+smart_welcome → auto-trigger on new/return user
+
+info → trigger via !info key
+
+product → trigger via promo tag or deep link
+
+intent → match user message to intent
+
+quick_menu → always-on buttons
+
+🧱 Step 4: Preview + Broadcast
+👁️ Preview block in KH or EN
+
+📤 Send block to user via !send info key
+
+🧠 Add analytics later (views, clicks, conversions)
+
+
+5. Design KhmerAi.Chat Dashboard
+Let’s scaffold:
+
+📦 Flow Builder entry point
+
+📁 Catalog management
+
+🔮 Predict API tester
+
+🧠 Messenger preview simulator (Phase 6)
+
+⚠️ Fallback block validator (Phase 5)
+
+
+npx tsr generate
+
+
+
+
+✅ Step 32: Khmer Block Linking Visualizer
+This will show how blocks connect via triggers, fallback, and step references — perfect for debugging and onboarding.
+
+🔧 What it includes:
+Visual map of block relationships
+
+Highlighted fallback block
+
+Optional arrows from triggers to blocks
+
+✅ Step 33: Admin-Safe Draft Mode
+This lets admins:
+
+Stage changes before publishing
+
+Preview flow updates
+
+Restore previous published versions
+
+✅ Step 34: KhmerAi.Chat Onboarding Checklist
+A guided setup for new admins:
+
+✅ Add fallback block
+
+✅ Create first trigger
+
+✅ Add first step
+
+✅ Test Messenger preview
+
+
+
+
+
+
+🧩 Component: PageSwitcher.tsx
+✅ Lists all pages linked to the current admin UID
+
+✅ Khmer label: “ជ្រើសរើសទំព័រ”
+
+✅ Button per page with name and ID
+
+✅ Redirects to /dashboard/{pageId} on click
+
+✅ Defensive fallback if UID is missing
+
+✅ Confirmed Working
+✅ Pages load correctly from Firebase
+
+✅ Switching works across multiple bots
+
+✅ Handles empty state gracefully
+
+✅ No crash if UID is undefined
+
+✅ Next Steps to Review
+Let’s continue reviewing each step in order:
+
+✅ Activated Pages on Home Page ← just completed
+
+✅ Role Manager with UID validation and real-time sync
+
+✅ Block Editor with Messenger-safe character limits
+
+✅ Khmer search and filter for steps
+
+✅ Activity Log with undo-safe logging
+
+✅ Bulk delete for triggers and steps
+
+✅ Multi-page dashboard switcher ← just confirmed

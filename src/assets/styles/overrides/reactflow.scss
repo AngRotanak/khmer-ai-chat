@@ -1,0 +1,31 @@
+.react-flow__panel {
+  @apply m-6;
+
+  &.react-flow__controls {
+    @apply p-1 border z-10 border-dark-300 flex flex-col gap-y-1 bg-dark-400 shadow-xl shadow-dark-900/10 rounded-lg;
+  }
+}
+
+.react-flow__handle {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  margin: 4px;
+  background-color: theme('colors.teal.500');
+  box-shadow: 0 0 6px rgba(0, 188, 212, 0.6);
+  touch-action: manipulation; // ✅ Prevents unintended scroll/drag
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: -10px; // ✅ Invisible hitbox expansion
+  }
+
+  &:hover {
+    background-color: theme('colors.teal.600');
+  }
+
+  &:active {
+    transform: scale(1.1);
+  }
+}

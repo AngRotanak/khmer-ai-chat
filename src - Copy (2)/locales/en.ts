@@ -1,0 +1,43 @@
+export const en = {
+  insertFeature: 'Insert Khmer AI Feature',
+  delete: 'Delete',
+  snapshot: 'Snapshot',
+  flowBuilder: 'Flow Builder',
+  byKhmerAutosoft: 'By KhmerAutosoft',
+  KhmerAIFeatures: ' Khmer AI Features',
+  Tap_to_insert_Khmer_AI_Features: 'Tap to insert Khmer AI Features',
+  Drag_and_drop_nodes_to_build_Khmer_AI_Features: "Drag and drop nodes to build Khmer AI Features",
+  ManageCustomIntents: 'Manage Custom Intents',
+  Hide_or_edit_existing_intents: 'Hide or edit existing intents',
+  Create_and_customize_your_own_AI_intents: 'Create and customize your own AI intents',
+
+  TopicName: 'Topic Name',
+  TriggerKeywords: 'Trigger Keywords',
+  TriggerIntents: 'Trigger Intents',
+  WelcomeMessage: 'Welcome Message',
+  LockConversationContext: 'Lock Conversation Context',
+  FallbackMessage: 'Fallback Message',
+  SubIntentRouting: 'Sub-Intent Routing',
+  IntentID: 'Intent ID',
+  ReplyType: 'Reply Type',
+  ConfidenceThreshold: 'Confidence Threshold',
+  ReplyMessage: 'Reply Message',
+  FlowToTrigger: 'Flow to Trigger',
+
+  // Optional placeholders
+  TopicNamePlaceholder: 'e.g. skincare',
+  TriggerKeywordsPlaceholder: 'e.g. skincare, face cream',
+  TriggerIntentsPlaceholder: 'e.g. want_skincare_info',
+  WelcomeMessagePlaceholder: 'e.g. Welcome! Looking for skincare products?',
+  FallbackMessagePlaceholder: 'e.g. Sorry, I didn’t understand that.',
+  GlobalTriggerKeywords: 'Global Trigger Keywords',
+  GlobalTriggerKeywordsPlaceholder: 'e.g. skincare, shipping, booking',
+
+  Remove: 'Remove',
+  Add: 'Add',
+  Keyword: 'Keyword',
+  Match: 'Match',
+  Includes: 'Includes',
+  Equals: 'Equals',
+  'Starts With': 'Starts With'
+}

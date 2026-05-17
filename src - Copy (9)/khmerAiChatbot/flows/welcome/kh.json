@@ -1,0 +1,32 @@
+[
+  {
+    "template_type": "text",
+    "text": "🙏 Welcome to E-SHOP KH!",
+    "is_active": true
+  },
+  {
+    "template_type": "generic",
+    "is_active": true,
+    "silent": false,
+    "cards": [
+      {
+        "title": "🏡 Home",
+        "subtitle": "Choose an option",
+        "layout": "hero",
+        "image_url": "https://storage.googleapis.com/khmer_aichatbot/default.jpg",
+        "options": [
+          {
+            "label_kh": "ℹ️ Info",
+            "payload": "info",
+            "type": "postback"
+          },
+          {
+            "label_kh": "🛍️ Products",
+            "type": "web_url",
+            "url": "http://eshop.com"
+          }
+        ]
+      }
+    ]
+  }
+]

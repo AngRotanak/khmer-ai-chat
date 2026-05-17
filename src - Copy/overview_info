@@ -1,0 +1,99 @@
+{
+  "rules": {
+    "khmer-ai-chat": {
+      "pages": {
+        "$pageId": {
+          ".read": "auth != null && root.child('khmer-ai-chat/pages/' + $pageId + '/roles/' + auth.uid).val() === 'admin'",
+          ".write": "auth != null && root.child('khmer-ai-chat/pages/' + $pageId + '/roles/' + auth.uid).val() === 'admin'"
+        }
+      }
+    }
+  }
+}
+
+
+🧩 Core Concept: Page-Centric Dashboard
+Each client can:
+
+🔓 Activate a Page using its Page ID
+
+📋 View a list of their activated Pages
+
+🔁 Switch between Pages
+
+🧠 Build or manage flows per Page
+
+🖼️ Suggested UI Layout
+🏠 Dashboard Home
+Once a Page is activated, show:
+
+✅ Active Page ID
+
+🧠 Flow summary or preview
+
+🔁 “Switch Page” button
+
+➕ “Activate New Page” button
+
+📋 Page List View
+Let users see all their activated Page IDs:
+
+Show as cards or a simple list
+
+Each card has:
+
+Page ID
+
+Optional name or label
+
+“Open” button
+
+“Remove” or “Deactivate” option
+
+
+🔧 Backend Structure (Firebase)
+Firestore Example:
+plaintext
+users/
+  [userId]/
+    pages: [pageId1, pageId2, pageId3]
+
+pages/
+  [pageId]/
+    name: "My Chat Page"
+    flowData: {...}
+    createdAt: timestamp
+You can store the user’s activated Page IDs locally (e.g., in localStorage) or associate them with a user account if login is supported.
+
+⚙️ Activation Logic
+When user enters a Page ID:
+Check if it exists in pages/
+
+If valid, add to their local list
+
+Load the flow for that Page
+
+🧠 Flow Management Per Page
+Once a Page is active:
+
+Show flow builder or chat interface
+
+Save all flow data under that Page ID
+
+Allow editing, saving, and previewing
+
+🧪 Optional Features
+🔍 Search for Page ID
+
+🏷️ Add custom labels to Pages
+
+📤 Export or share Page flow
+
+🔐 PIN protection for sensitive Pages
+
+Would you like help building the Page List U
+
+
+
+
+
