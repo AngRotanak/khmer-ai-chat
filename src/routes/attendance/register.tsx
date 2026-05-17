@@ -196,8 +196,8 @@ function RegisterPage() {
         {/* ✅ Animated QR bottom sheet */}
         <div
           className={`fixed bottom-0 left-0 right-0 transition-all duration-500 ease-in-out 
-            ${qrImage && !paymentComplete && !timeoutReached 
-              ? "max-h-[500px] opacity-100 translate-y-0" 
+            ${qrImage && !paymentComplete && !timeoutReached
+              ? "max-h-[500px] opacity-100 translate-y-0"
               : "max-h-0 opacity-0 translate-y-4"} 
             bg-dark-800 border-t border-gray-700 p-4`}
         >
@@ -290,33 +290,33 @@ function RegisterPage() {
         )}
       </div>
 
-{/* Sticky footer bar */}
-<div className="fixed bottom-15 left-1/2 -translate-x-1/2 w-[92%] max-w-md bg-white border border-gray-200 px-4 py-4 rounded-xl shadow-footer z-50 animate-slideup
+      {/* Sticky footer bar */}
+      <div className="fixed bottom-15 left-1/2 -translate-x-1/2 w-[92%] max-w-md bg-white border border-gray-200 px-4 py-4 rounded-xl shadow-footer z-50 animate-slideup
                 md:static md:w-full md:translate-x-0 md:rounded-none md:shadow-none">
-  <div className="flex items-center justify-between gap-3">
-    {/* Total amount badge */}
-    {plans.find((p) => p.id === selectedPackage) && (
-      <span className="inline-block px-3 py-2 rounded-lg bg-teal-100 text-teal-700 font-semibold text-sm">
-        {plans.find((p) => p.id === selectedPackage)?.price}
-      </span>
-    )}
+        <div className="flex items-center justify-between gap-3">
+          {/* Total amount badge */}
+          {plans.find((p) => p.id === selectedPackage) && (
+            <span className="inline-block px-3 py-2 rounded-lg bg-teal-100 text-teal-700 font-semibold text-sm">
+              {plans.find((p) => p.id === selectedPackage)?.price}
+            </span>
+          )}
 
-    {/* Pay button */}
-    <button
-      ref={payButtonRef}
-      onClick={handleGenerateQR}
-      disabled={loading}
-      className="flex-1 py-3 rounded-lg bg-teal-600 hover:bg-teal-500 text-white font-semibold transition disabled:opacity-50"
-    >
-      {loading ? "Preparing Payment QR..." : "Pay with KHQR"}
-    </button>
-  </div>
+          {/* Pay button */}
+          <button
+            ref={payButtonRef}
+            onClick={handleGenerateQR}
+            disabled={loading}
+            className="flex-1 py-3 rounded-lg bg-teal-600 hover:bg-teal-500 text-white font-semibold transition disabled:opacity-50"
+          >
+            {loading ? "Processing..." : "Pay with KHQR"}
+          </button>
+        </div>
 
-  {/* Reassurance line */}
-  <p className="mt-2 text-xs text-gray-400 text-center">
-    You’ll be redirected to KHQR secure payment
-  </p>
-</div>
+        {/* Reassurance line */}
+        <p className="mt-2 text-xs text-gray-400 text-center">
+          You’ll be redirected to KHQR secure payment
+        </p>
+      </div>
 
 
 
