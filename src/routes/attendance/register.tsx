@@ -59,7 +59,7 @@ function RegisterPage() {
     setCountdown(60)
 
     try {
-      const res = await fetch("https://545c-136-228-130-1.ngrok-free.app/", {
+      const res = await fetch("https://b0df-136-228-130-3.ngrok-free.app/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -100,7 +100,7 @@ function RegisterPage() {
       }
 
       try {
-        const res = await fetch("https://545c-136-228-130-1.ngrok-free.app", {
+        const res = await fetch("https://b0df-136-228-130-3.ngrok-free.app", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ action: "check_payment", md5, selected_package: selectedPackage }),
