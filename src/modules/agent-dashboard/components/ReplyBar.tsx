@@ -40,7 +40,7 @@ export function ReplyBar({
   const handleSendText = async () => {
     if (!draft.trim() || !activeConversation) return
 
-    // 🚨 Block if over character limit.....
+    // 🚨 Block if over character limit
     if (draft.length > MAX_CHARS) {
       setPolicyWarning(`Your message exceeds the ${MAX_CHARS} character limit.`)
       return
