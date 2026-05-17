@@ -11,12 +11,12 @@ body {
   @apply font-normal w-full of-x-hidden text-light-50 bg-dark-700 scroll-smooth min-h-screen;
 }
 
-/* ✅ Removed overflow hidden from #root so global toasts aren’t clipped */
+/* Root container */
 #root {
   @apply w-full h-full;
 }
 
-/* ✅ Ensure Sonner toasts float above everything */
+/* Toasts above everything */
 .sonner-toast {
   z-index: 9999 !important;
 }
@@ -25,7 +25,6 @@ body {
 .canvas-panel {
   @apply of-hidden;
 }
-
 .sidebar-panel {
   @apply of-hidden;
 }
@@ -35,19 +34,14 @@ body {
   width: 8px;
   height: 8px;
 }
-
 .scrollbar-dark-teal::-webkit-scrollbar-track {
-  background: #1f2937;
-  /* dark-800 */
+  background: #1f2937; /* dark-800 */
 }
-
 .scrollbar-dark-teal::-webkit-scrollbar-thumb {
-  background-color: #0d9488;
-  /* teal-600 */
+  background-color: #0d9488; /* teal-600 */
   border-radius: 4px;
   border: 2px solid #1f2937;
 }
-
 /* Firefox support */
 .scrollbar-dark-teal {
   scrollbar-color: #0d9488 #1f2937;
@@ -56,118 +50,64 @@ body {
 
 /* Split gutter styling */
 .gutter {
-  background-color: #2d3748;
-  /* dark gray */
+  background-color: #2d3748; /* dark gray */
   background-repeat: no-repeat;
   background-position: 50%;
 }
-
 .gutter.gutter-horizontal {
   cursor: col-resize;
   width: 6px;
 }
-
 .gutter.gutter-vertical {
   cursor: row-resize;
   height: 6px;
 }
 
-/* Ensure the map always has height on mobile */
+/* Map height fix for iOS Safari */
 #map {
-  height: 100dvh;
-  /* dynamic viewport height for iOS Safari */
+  height: 100dvh; /* dynamic viewport height */
   width: 100%;
 }
-
-html,
-body {
+html, body {
   height: 100%;
   margin: 0;
   padding: 0;
 }
-
 .flex-grow {
   flex-grow: 1;
-  min-height: 100vh;
-  /* force height on mobile */
+  min-height: 100vh; /* force height on mobile */
 }
 
-/* Glow animation for logos or highlights */
+/* Glow animation for logos */
 @keyframes pulseGlow {
-
-  0%,
-  100% {
-    box-shadow: 0 0 10px rgba(20, 184, 166, 0.6);
-  }
-
-  50% {
-    box-shadow: 0 0 20px rgba(20, 184, 166, 0.9);
-  }
+  0%, 100% { box-shadow: 0 0 10px rgba(20, 184, 166, 0.6); }
+  50% { box-shadow: 0 0 20px rgba(20, 184, 166, 0.9); }
 }
-
 .logo-glow {
   animation: pulseGlow 2s infinite;
 }
 
-/* Tailwind layers */
-/* Remove these lines */
-/* @tailwind base;
-@tailwind components;
-@tailwind utilities; */
-
-
-/* Sticky footer slide-up + fade utilities */
+/* Utility layer */
 @layer utilities {
   @keyframes tealGlow {
-
-    0%,
-    100% {
-      box-shadow: 0 0 10px rgba(20, 184, 166, 0.6);
-    }
-
-    50% {
-      box-shadow: 0 0 20px rgba(20, 184, 166, 0.9);
-    }
+    0%, 100% { box-shadow: 0 0 10px rgba(20, 184, 166, 0.6); }
+    50% { box-shadow: 0 0 20px rgba(20, 184, 166, 0.9); }
   }
-
-  .animate-tealGlow {
-    animation: tealGlow 2s infinite;
-  }
-
+  .animate-tealGlow { animation: tealGlow 2s infinite; }
 
   @keyframes slideup {
-    0% {
-      transform: translateY(100%);
-      opacity: 0;
-    }
-
-    100% {
-      transform: translateY(0);
-      opacity: 1;
-    }
+    0% { transform: translateY(100%); opacity: 0; }
+    100% { transform: translateY(0); opacity: 1; }
   }
-
-  .animate-slideup {
-    animation: slideup 0.4s ease-out;
-  }
+  .animate-slideup { animation: slideup 0.4s ease-out; }
 
   @keyframes fade {
-    0% {
-      opacity: 0;
-    }
-
-    100% {
-      opacity: 1;
-    }
+    0% { opacity: 0; }
+    100% { opacity: 1; }
   }
-
-  .animate-fade {
-    animation: fade 0.5s ease-in-out;
-  }
+  .animate-fade { animation: fade 0.5s ease-in-out; }
 
   .shadow-footer {
     box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.15);
-
   }
-
 }
