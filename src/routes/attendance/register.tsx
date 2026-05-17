@@ -83,7 +83,7 @@ function RegisterPage() {
     }
   }
 
- // Unified countdown + polling
+  // Unified countdown + polling
 useEffect(() => {
   if (!md5 || paymentComplete || timeoutReached) return
 
@@ -105,23 +105,23 @@ useEffect(() => {
         }
 
         // 🔹 Poll backend once per minute
-        try {
-          fetch("https://b0df-136-228-130-3.ngrok-free.app", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ action: "check_payment", md5, selected_package: selectedPackage }),
-          })
-            .then(res => res.json())
-            .then(data => {
-              if (data.status === "PAID") {
-                setPaymentComplete(true)
-                setLicenseInfo(data.license)
-                clearInterval(interval)
-              }
+        ;(async () => {
+          try {
+            const res = await fetch("https://b0df-136-228-130-3.ngrok-free.app", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ action: "check_payment", md5, selected_package: selectedPackage }),
             })
-        } catch (err) {
-          console.error("Error checking payment:", err)
-        }
+            const data = await res.json()
+            if (data.status === "PAID") {
+              setPaymentComplete(true)
+              setLicenseInfo(data.license)
+              clearInterval(interval)
+            }
+          } catch (err) {
+            console.error("Error checking payment:", err)
+          }
+        })()
 
         return 60
       }
@@ -130,7 +130,6 @@ useEffect(() => {
 
   return () => clearInterval(interval)
 }, [md5, paymentComplete, timeoutReached])
-
 
   // Countdown display
   useEffect(() => {
@@ -224,12 +223,32 @@ useEffect(() => {
                 ✕
               </button>
 
-              {/* QR image */}
-              <img
-                src={qrImage}
-                alt="Bakong QR"
-                className="rounded-lg border border-gray-200 shadow-md"
-              />
+              {/* QR image with overlay */}
+              <div className="relative">
+                <img
+                  src={qrImage}
+                  alt="Bakong QR"
+                  className="rounded-lg border border-gray-200 shadow-md"
+                />
+                {/* Countdown badge overlay */}
+                {!timeoutReached && !paymentComplete && (
+                  <div className="absolute bottom-2 right-2 bg-black/70 text-red-400 px-3 py-1 rounded-lg text-sm font-semibold">
+                    {minutesLeft}m : {countdown}s
+                  </div>
+                )}
+              </div>
+
+              {/* Progress bar */}
+              {!timeoutReached && !paymentComplete && (
+                <div className="w-full bg-gray-700 rounded-full h-2 mt-3">
+                  <div
+                    className={`h-2 rounded-full transition-all duration-1000 ease-linear ${
+                      countdown > 40 ? "bg-green-500" : countdown > 20 ? "bg-yellow-500" : "bg-red-500"
+                    }`}
+                    style={{ width: `${(countdown / 60) * 100}%` }}
+                  />
+                </div>
+              )}
 
               {/* Payment info */}
               <div className="mt-3 text-center">
@@ -238,21 +257,10 @@ useEffect(() => {
                   <p className="text-red-600 font-semibold text-base">❌ Payment Timeout</p>
                 ) : (
                   <>
-                    <p className="text-red-500 font-semibold text-base">
-                      Payment window: {minutesLeft} min left
-                    </p>
-                    <p className="text-red-500 text-sm">
-                      Next check in {countdown}s
-                    </p>
+                    <p className="text-light-300 text-sm">Plan: {selectedPackage}</p>
+                    {amount && <p className="text-light-300 text-sm">Amount: {amount} KHR</p>}
                   </>
                 )}
-                <p className="text-light-300 text-sm">Plan: {selectedPackage}</p>
-                {amount && <p className="text-light-300 text-sm">Amount: {amount} KHR</p>}
-              </div>
-
-              {/* Footer */}
-              <div className="mt-2 text-xs text-gray-400">
-                Secure KHQR Payment • Licensed by Bakong
               </div>
 
               {/* Retry button if timeout */}
