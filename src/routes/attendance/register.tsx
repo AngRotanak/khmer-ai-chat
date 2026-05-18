@@ -16,67 +16,104 @@ function RegisterPage() {
   const [minutesLeft, setMinutesLeft] = useState(10)
   const [countdown, setCountdown] = useState(60)
   const [paymentComplete, setPaymentComplete] = useState(false)
+
+  const [showQRPanel, setShowQRPanel] = useState(false)
+  const [showThankYou, setShowThankYou] = useState(false)
+
   const [licenseInfo, setLicenseInfo] = useState<{
     package: string
     expires: string
     license_id: string
     download_url: string
   } | null>(null)
+
   const thankYouRef = useRef<HTMLDivElement | null>(null)
+  const payButtonRef = useRef<HTMLButtonElement | null>(null)
 
   const groupId = "-1002174749045"
-  const payButtonRef = useRef<HTMLButtonElement | null>(null)
 
   const plans = [
     {
       id: "basic",
       name: "Basic Plan",
       price: "10,000 KHR",
-      features: ["✔ Core features", "✔ 1 user license", "✔ Email support"],
+      features: [
+        "✔ Core features",
+        "✔ 1 user license",
+        "✔ Email support",
+      ],
     },
     {
       id: "pro",
       name: "Pro Plan",
       price: "30,000 KHR",
-      features: ["✔ All Basic features", "✔ 5 user licenses", "✔ Priority support", "✔ Advanced analytics"],
+      features: [
+        "✔ All Basic features",
+        "✔ 5 user licenses",
+        "✔ Priority support",
+        "✔ Advanced analytics",
+      ],
       recommended: true,
     },
     {
       id: "enterprise",
       name: "Enterprise Plan",
       price: "100,000 KHR",
-      features: ["✔ Unlimited users", "✔ Dedicated account manager", "✔ Custom integrations", "✔ SLA guarantee"],
+      features: [
+        "✔ Unlimited users",
+        "✔ Dedicated account manager",
+        "✔ Custom integrations",
+        "✔ SLA guarantee",
+      ],
     },
   ]
 
-  const handleGenerateQR = async () => {
-    setLoading(true)
-    setTimeoutReached(false)
-    setPaymentComplete(false)
+  const resetPaymentState = () => {
     setQrImage(null)
     setAmount(null)
     setMd5(null)
+    setTimeoutReached(false)
     setMinutesLeft(10)
     setCountdown(60)
+    setPaymentComplete(false)
+    setLicenseInfo(null)
+    setShowQRPanel(false)
+    setShowThankYou(false)
+  }
+
+  const handleGenerateQR = async () => {
+    setLoading(true)
+    resetPaymentState()
 
     try {
       const res = await fetch("https://b0df-136-228-130-3.ngrok-free.app/", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({
           action: "register",
           group_id: groupId,
-          user: { id: "12345", name: "Demo User" },
+          user: {
+            id: "12345",
+            name: "Demo User",
+          },
           bot_username: "autobot",
           package: selectedPackage,
           timestamp: new Date().toISOString(),
         }),
       })
+
       const data = await res.json()
 
       setQrImage(`data:image/jpeg;base64,${data.qr_image}`)
       setAmount(data.amount)
       setMd5(data.md5)
+
+      // smooth QR animation
+      setTimeout(() => {
+        setShowQRPanel(true)
+      }, 150)
     } catch (err) {
       console.error("Error generating QR:", err)
     } finally {
@@ -84,69 +121,79 @@ function RegisterPage() {
     }
   }
 
-  // Unified countdown + polling
+  // Countdown + payment polling
   useEffect(() => {
     if (!md5 || paymentComplete || timeoutReached) return
 
     let minutesPassed = 0
 
     const interval = setInterval(async () => {
-      setCountdown(prev => {
+      setCountdown((prev) => {
         if (prev > 1) {
           return prev - 1
-        } else {
-          // reset countdown to 60 and decrement minutes
-          minutesPassed += 1
-          setMinutesLeft(10 - minutesPassed)
+        }
 
-          if (minutesPassed >= 10) {
-            setTimeoutReached(true)
-            clearInterval(interval)
-            return 0
-          }
+        minutesPassed += 1
+        setMinutesLeft(10 - minutesPassed)
 
-          // 🔹 Poll backend once per minute
-          ; (async () => {
-            try {
-              const res = await fetch("https://b0df-136-228-130-3.ngrok-free.app", {
+        if (minutesPassed >= 10) {
+          setTimeoutReached(true)
+          clearInterval(interval)
+          return 0
+        }
+
+        // Poll payment status every minute
+        ;(async () => {
+          try {
+            const res = await fetch(
+              "https://b0df-136-228-130-3.ngrok-free.app",
+              {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ action: "check_payment", md5, selected_package: selectedPackage }),
-              })
-              const data = await res.json()
-              if (data.status === "PAID") {
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  action: "check_payment",
+                  md5,
+                  selected_package: selectedPackage,
+                }),
+              }
+            )
+
+            const data = await res.json()
+
+            if (data.status === "PAID") {
+              clearInterval(interval)
+
+              // hide QR first
+              setShowQRPanel(false)
+
+              setTimeout(() => {
                 setPaymentComplete(true)
                 setLicenseInfo(data.license)
-                clearInterval(interval)
-              }
-            } catch (err) {
-              console.error("Error checking payment:", err)
+                setShowThankYou(true)
+              }, 500)
             }
-          })()
+          } catch (err) {
+            console.error("Error checking payment:", err)
+          }
+        })()
 
-          return 60
-        }
+        return 60
       })
     }, 1000)
 
     return () => clearInterval(interval)
-  }, [md5, paymentComplete, timeoutReached])
-
-  // Countdown display
-  useEffect(() => {
-    if (!md5 || paymentComplete || timeoutReached) return
-    const timer = setInterval(() => {
-      setCountdown((prev) => (prev > 0 ? prev - 1 : 0))
-    }, 1000)
-    return () => clearInterval(timer)
-  }, [md5, paymentComplete, timeoutReached])
+  }, [md5, paymentComplete, timeoutReached, selectedPackage])
 
   useEffect(() => {
     if (paymentComplete && thankYouRef.current) {
-      thankYouRef.current.scrollIntoView({ behavior: "smooth", block: "center" })
+      thankYouRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      })
     }
   }, [paymentComplete])
-
 
   return (
     <AdminLayout title="📝 Register / Lease License">
@@ -156,19 +203,24 @@ function RegisterPage() {
           Quick Registration
         </h2>
 
-        {/* Plan selection cards */}
+        {/* Plans */}
         <div className="space-y-4">
           {plans.map((plan) => (
             <label
               key={plan.id}
-              className={`block rounded-lg border-2 p-4 cursor-pointer transition-all duration-300 hover:shadow-lg hover:border-teal-400 ${selectedPackage === plan.id
-                ? "border-teal-600 bg-teal-50 shadow-md scale-[1.02]"
-                : "border-gray-300 bg-white"
-                }`}
+              className={`block rounded-lg border-2 p-4 cursor-pointer transition-all duration-300 hover:shadow-lg hover:border-teal-400 ${
+                selectedPackage === plan.id
+                  ? "border-teal-600 bg-teal-50 shadow-md scale-[1.02]"
+                  : "border-gray-300 bg-white"
+              }`}
               onClick={() => {
                 setSelectedPackage(plan.id)
+
                 setTimeout(() => {
-                  payButtonRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
+                  payButtonRef.current?.scrollIntoView({
+                    behavior: "smooth",
+                    block: "center",
+                  })
                 }, 150)
               }}
             >
@@ -180,6 +232,7 @@ function RegisterPage() {
                 onChange={(e) => setSelectedPackage(e.target.value)}
                 className="hidden"
               />
+
               <div className="flex justify-between items-center">
                 <h3 className="font-bold text-teal-600 flex items-center gap-2">
                   {plan.name}
@@ -187,13 +240,18 @@ function RegisterPage() {
                     <span className="text-green-600 text-lg">✅</span>
                   )}
                 </h3>
-                <span className="text-sm font-semibold text-gray-700">{plan.price}</span>
+
+                <span className="text-sm font-semibold text-gray-700">
+                  {plan.price}
+                </span>
               </div>
+
               {plan.recommended && (
                 <span className="inline-block mt-1 text-xs font-bold text-white bg-teal-600 px-2 py-1 rounded">
                   Recommended
                 </span>
               )}
+
               <ul className="mt-2 text-sm text-gray-600 space-y-1">
                 {plan.features.map((f, i) => (
                   <li key={i}>{f}</li>
@@ -203,160 +261,173 @@ function RegisterPage() {
           ))}
         </div>
 
-        {/* Selected plan summary */}
-        <div className="text-center mt-4 transition-opacity duration-500 ease-in-out">
-          {plans.find((p) => p.id === selectedPackage) && (
-            <p key={selectedPackage} className="text-sm font-semibold text-gray-700 animate-fade">
-              You will pay {plans.find((p) => p.id === selectedPackage)?.price} for{" "}
-              {plans.find((p) => p.id === selectedPackage)?.name}
-            </p>
-          )}
+        {/* Selected summary */}
+        <div className="text-center">
+          <p className="text-sm font-semibold text-gray-700">
+            You will pay{" "}
+            {plans.find((p) => p.id === selectedPackage)?.price}
+          </p>
         </div>
 
-{/* ✅ QR panel */}
-<div
-  className={`transition-all duration-500 ease-in-out overflow-hidden ${
-    qrImage && !paymentComplete
-      ? "max-h-[600px] opacity-100 mt-6 transform translate-y-0"
-      : "max-h-0 opacity-0 transform translate-y-full"
-  } max-w-md mx-auto rounded-xl shadow-lg bg-dark-800 border border-gray-700 p-6 relative flex flex-col items-center`}
->
-  {qrImage && !paymentComplete && (
-    <>
-      {/* Close button */}
-      <button
-        onClick={() => setQrImage(null)}
-        className="absolute top-2 right-2 text-light-400 hover:text-red-400"
-      >
-        ✕
-      </button>
-
-      {/* QR image with centered countdown */}
-      <div className="relative">
-        <img
-          src={qrImage}
-          alt="Bakong QR"
-          className="rounded-lg border border-gray-200 shadow-md"
-        />
-        {!timeoutReached && (
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 
-                          bg-black/70 text-red-400 px-4 py-2 rounded-lg text-lg font-bold">
-            {minutesLeft}m : {countdown}s
-          </div>
-        )}
-      </div>
-
-      {/* Progress bar directly under QR */}
-      {!timeoutReached && (
-        <div className="w-full bg-gray-700 rounded-full h-2 mt-4">
-          <div
-            className={`h-2 rounded-full transition-all duration-1000 ease-linear ${
-              countdown > 40 ? "bg-green-500" : countdown > 20 ? "bg-yellow-500" : "bg-red-500"
-            }`}
-            style={{ width: `${(countdown / 60) * 100}%` }}
-          />
-        </div>
-      )}
-
-      {/* Payment info */}
-      <div className="mt-3 text-center">
-        <h3 className="text-teal-400 font-bold">Scan to Pay</h3>
-        {timeoutReached ? (
-          <p className="text-red-600 font-semibold text-base">❌ Payment Timeout</p>
-        ) : (
-          <>
-            <p className="text-light-300 text-sm">Plan: {selectedPackage}</p>
-            {amount && <p className="text-light-300 text-sm">Amount: {amount} KHR</p>}
-          </>
-        )}
-      </div>
-
-      {/* Retry button */}
-      {timeoutReached && (
-        <button
-          onClick={handleGenerateQR}
-          className="mt-4 w-full py-2 rounded-lg bg-red-600 hover:bg-red-500 text-white font-semibold transition"
+        {/* QR PANEL */}
+        <div
+          className={`transition-all duration-700 ease-out overflow-hidden ${
+            showQRPanel && qrImage && !paymentComplete
+              ? "max-h-[700px] opacity-100 translate-y-0 scale-100 mt-6"
+              : "max-h-0 opacity-0 translate-y-10 scale-95"
+          }`}
         >
-          Retry Payment
-        </button>
-      )}
-    </>
-  )}
-</div>
+          {qrImage && !paymentComplete && (
+            <div className="rounded-xl shadow-lg bg-white p-6 relative flex flex-col items-center">
+              
+              <button
+                onClick={() => {
+                  setShowQRPanel(false)
 
+                  setTimeout(() => {
+                    setQrImage(null)
+                    setMd5(null)
+                  }, 500)
+                }}
+                className="absolute top-2 right-2 text-gray-500 hover:text-red-500"
+              >
+                ✕
+              </button>
 
- {/* ✅ Thank-you screen*/}
-<div
-  ref={thankYouRef}
-  className={`transition-all duration-500 ease-in-out overflow-hidden ${
-    paymentComplete && licenseInfo
-      ? "max-h-[600px] opacity-100 mt-6 transform translate-y-0"
-      : "max-h-0 opacity-0 transform translate-y-full"
-  } bg-green-50 rounded-xl shadow-lg w-full flex flex-col items-center text-center p-8 mx-auto`}
->
-  {paymentComplete && licenseInfo && (
-    <>
-      <h3 className="text-green-600 font-bold text-lg mb-2 animate-bounce">✅ Payment Complete</h3>
-      <p className="text-black font-semibold text-base">Thank you for your payment!</p>
-      <p className="text-black text-sm mt-2">Your license has been activated.</p>
-      <p className="text-black text-sm">Plan: {licenseInfo.package}</p>
-      <p className="text-black text-sm">License ID: {licenseInfo.license_id}</p>
-      <p className="text-black text-sm">Expires: {licenseInfo.expires}</p>
+              <div className="relative">
+                <img
+                  src={qrImage}
+                  alt="Bakong QR"
+                  className="rounded-lg shadow-md"
+                />
 
-      <a
-        href={licenseInfo.download_url}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="mt-4 w-full py-2 rounded-lg bg-teal-600 hover:bg-teal-500 text-white font-semibold transition"
-      >
-        Download License PDF
-      </a>
+                {!timeoutReached && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="bg-black/70 text-white px-4 py-2 rounded-lg font-bold">
+                      {minutesLeft}m : {countdown}s
+                    </div>
+                  </div>
+                )}
+              </div>
 
-      <button
-        onClick={() => navigator.clipboard.writeText(licenseInfo.license_id)}
-        className="mt-2 w-full py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-white font-semibold transition"
-      >
-        Copy License ID
-      </button>
+              {!timeoutReached && (
+                <div className="w-full bg-gray-200 rounded-full h-2 mt-4">
+                  <div
+                    className={`h-2 rounded-full transition-all duration-1000 ${
+                      countdown > 40
+                        ? "bg-green-500"
+                        : countdown > 20
+                        ? "bg-yellow-500"
+                        : "bg-red-500"
+                    }`}
+                    style={{
+                      width: `${(countdown / 60) * 100}%`,
+                    }}
+                  />
+                </div>
+              )}
 
-      <div className="mt-4 text-xs text-gray-500">
-        <p>KHMER AUTOSOFT • Licensed</p>
-      </div>
-    </>
-  )}
-</div>
+              <div className="mt-4 text-center">
+                <h3 className="font-bold text-teal-600">
+                  Scan to Pay
+                </h3>
 
+                {timeoutReached ? (
+                  <p className="text-red-500 font-semibold">
+                    Payment Timeout
+                  </p>
+                ) : (
+                  <>
+                    <p>Plan: {selectedPackage}</p>
+                    <p>Amount: {amount} KHR</p>
+                  </>
+                )}
+              </div>
 
-      </div>
-
-      {/* Sticky footer bar */}
-      <div className="fixed bottom-15 left-1/2 -translate-x-1/2 w-[92%] max-w-md bg-white border border-gray-200 px-4 py-4 rounded-xl shadow-footer z-50 animate-slideup
-                md:static md:w-full md:translate-x-0 md:rounded-none md:shadow-none">
-        <div className="flex items-center justify-between gap-3">
-          {/* Total amount badge */}
-          {plans.find((p) => p.id === selectedPackage) && (
-            <span className="inline-block px-3 py-2 rounded-lg bg-teal-100 text-teal-700 font-semibold text-sm">
-              {plans.find((p) => p.id === selectedPackage)?.price}
-            </span>
+              {timeoutReached && (
+                <button
+                  onClick={handleGenerateQR}
+                  className="mt-4 w-full py-2 rounded-lg bg-red-600 text-white"
+                >
+                  Retry Payment
+                </button>
+              )}
+            </div>
           )}
+        </div>
 
-          {/* Pay button*/}
+        {/* THANK YOU SCREEN */}
+        <div
+          ref={thankYouRef}
+          className={`transition-all duration-700 ease-out overflow-hidden ${
+            showThankYou && paymentComplete && licenseInfo
+              ? "max-h-[700px] opacity-100 translate-y-0 scale-100 mt-6"
+              : "max-h-0 opacity-0 translate-y-10 scale-95"
+          }`}
+        >
+          {paymentComplete && licenseInfo && (
+            <div className="bg-green-50 rounded-xl shadow-lg p-8 text-center">
+              <h3 className="text-green-600 font-bold text-lg mb-3 animate-bounce">
+                ✅ Payment Complete
+              </h3>
+
+              <p>Your license has been activated.</p>
+              <p>Plan: {licenseInfo.package}</p>
+              <p>License ID: {licenseInfo.license_id}</p>
+              <p>Expires: {licenseInfo.expires}</p>
+
+              <a
+                href={licenseInfo.download_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block mt-4 py-2 rounded-lg bg-teal-600 text-white"
+              >
+                Download License PDF
+              </a>
+
+              <button
+                onClick={() =>
+                  navigator.clipboard.writeText(
+                    licenseInfo.license_id
+                  )
+                }
+                className="mt-2 w-full py-2 rounded-lg bg-gray-800 text-white"
+              >
+                Copy License ID
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Sticky Footer */}
+      <div className="fixed bottom-15 left-1/2 -translate-x-1/2 w-[92%] max-w-md bg-white border px-4 py-4 rounded-xl shadow-lg z-50">
+        <div className="flex items-center gap-3">
+          <span className="px-3 py-2 rounded-lg bg-teal-100 text-teal-700 font-semibold text-sm">
+            {plans.find((p) => p.id === selectedPackage)?.price}
+          </span>
+
           <button
             ref={payButtonRef}
             onClick={handleGenerateQR}
             disabled={loading}
-            className="flex-1 py-3 rounded-lg bg-teal-600 hover:bg-teal-500 text-white font-semibold transition disabled:opacity-50"
+            className="flex-1 py-3 rounded-lg bg-teal-600 hover:bg-teal-500 text-white font-semibold disabled:opacity-50"
           >
-            {loading ? "Processing..." : "Pay with KHQR"}
+            {loading ? (
+              <span className="flex items-center justify-center gap-2">
+                <span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>
+                Generating QR...
+              </span>
+            ) : (
+              "Pay with KHQR"
+            )}
           </button>
         </div>
 
-        {/* Reassurance line */}
         <p className="mt-2 text-xs text-gray-400 text-center">
-          You’ll be redirected to KHQR secure payment
+          Secure KHQR payment
         </p>
       </div>
-
     </AdminLayout>
   )
 }
