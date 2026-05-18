@@ -7,12 +7,16 @@ import AttendanceCalendar from "./components/AttendanceCalendar"
 import StaffCalendar from "./components/StaffCalendar"
 import AdminSummaryCalendar from "./components/AdminSummaryCalendar"
 import ViewModeFAB from "./components/ViewModeFAB"   // ✅ FAB with icons
-
+import { z } from "zod"
+import { getGroupId } from "./components/utils/telegram"
 import { db } from "~/lib/firebase"
 import { ref, get, push } from "firebase/database"
 
 export const Route = createFileRoute("/attendance/report")({
   component: ReportPage,
+   validateSearch: z.object({
+      groupId: z.string().optional(),
+    }),
 })
 
 function ReportPage() {
@@ -24,9 +28,7 @@ function ReportPage() {
   const [selectedKey, setSelectedKey] = useState<string>()
   const [viewMode, setViewMode] = useState<"report" | "calendar" | "summary">("report")
 
-  const tg = (window as any).Telegram?.WebApp
-  const rawParam = tg?.initDataUnsafe?.start_param
-  const groupId = new URLSearchParams(rawParam).get("group_id") || "-1002174749045"
+  const groupId = getGroupId()
 
   // ✅ Fetch staff list
   useEffect(() => {
@@ -54,6 +56,7 @@ function ReportPage() {
     fetchStaff()
   }, [groupId])
 
+  
   // ✅ Attendance records
   const { records, groupedRecords, summary } = useAttendanceRecords(
     groupId,

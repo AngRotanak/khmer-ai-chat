@@ -2,10 +2,11 @@ import { useState, useEffect, useRef } from "react"
 import { createFileRoute } from "@tanstack/react-router"
 import { AdminLayout } from "./components/AdminLayout"
 import { z } from "zod"
+import { getGroupId } from "./components/utils/telegram"
 
 export const Route = createFileRoute("/attendance/register")({
   component: RegisterPage,
-   validateSearch: z.object({
+  validateSearch: z.object({
     groupId: z.string().optional(),
   }),
 })
@@ -19,16 +20,7 @@ function RegisterPage() {
   const [minutesLeft, setMinutesLeft] = useState(TIMEOUT_MINUTES)
   const [countdown, setCountdown] = useState(60)
 
-  const params = new URLSearchParams(location.search)
-  let groupId = params.get("group_id")
-
-  if (!groupId || groupId === "unknown") {
-    const tg = (window as any).Telegram?.WebApp
-    const rawParam = tg?.initDataUnsafe?.start_param
-    if (rawParam) {
-      groupId = rawParam
-    }
-  }
+  const groupId = getGroupId()
 
 
   const [selectedPackage, setSelectedPackage] = useState("basic")
@@ -342,7 +334,7 @@ function RegisterPage() {
                       className={`px-4 py-2 rounded-lg font-bold text-lg ${countdown <= 30 ? "text-red-500 animate-shake" : "text-red-500"
                         }`}
                     >
-                    ⏳ {countdown === 60 ? minutesLeft - 1 : minutesLeft}m : {countdown}s
+                      ⏳ {countdown === 60 ? minutesLeft - 1 : minutesLeft}m : {countdown}s
                     </div>
                   </div>
                 )}
