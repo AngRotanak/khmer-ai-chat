@@ -198,20 +198,28 @@ function RegisterPage() {
     }
   }, [showThankYou])
 
-  useEffect(() => {
-    if (showQRPanel && qrRef.current) {
-      setTimeout(() => {
-        qrRef.current?.scrollIntoView({
-          behavior: "smooth",
-          block: "center",
-        })
-      }, 300) // wait for animation render
-    }
-  }, [showQRPanel])
+useEffect(() => {
+  if (!showQRPanel) return
+  if (!qrRef.current) return
 
+  const timer = setTimeout(() => {
+    const element = qrRef.current
+    if (!element) return
+
+    const rect = element.getBoundingClientRect()
+    const offsetTop = window.pageYOffset + rect.top - 120
+
+    window.scrollTo({
+      top: offsetTop,
+      behavior: "smooth",
+    })
+  }, 300)
+
+  return () => clearTimeout(timer)
+}, [showQRPanel])
   return (
     <AdminLayout title="📝 Register / Lease License">
-      <div className="flex-1 px-4 py-6 max-w-md mx-auto space-y-6 pb-32">
+     <div className="flex-1 px-4 py-6 max-w-md mx-auto space-y-6 pb-44">
 
         <h2 className="text-teal-400 text-lg font-bold text-center">
           Quick Registration
