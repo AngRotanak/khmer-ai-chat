@@ -123,7 +123,7 @@ function RegisterPage() {
       setAmount(data.amount)
       setMd5(data.md5)
 
-      // smooth QR animation
+      // smooth QR animation ..
       setTimeout(() => {
         setShowQRPanel(true)
       }, 150)
