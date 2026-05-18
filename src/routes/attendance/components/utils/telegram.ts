@@ -1,24 +1,18 @@
-// src/utils/telegram.ts
 export function getGroupId(): string {
   const params = new URLSearchParams(location.search)
+  const urlParam = params.get("group_id")
+  if (urlParam) return urlParam
 
-  // ✅ Support both snake_case and camelCase
-  const urlParam = params.get("group_id") || params.get("groupId")
-  if (urlParam) {
-    console.log("Resolved groupId from URL:", urlParam)
-    return urlParam
-  }
-
-  // ✅ Fallback to Telegram WebApp context
   const tg = (window as any).Telegram?.WebApp
   const rawParam = tg?.initDataUnsafe?.start_param || ""
-  const parsed = new URLSearchParams(rawParam).get("group_id") || rawParam
-  if (parsed) {
-    console.log("Resolved groupId from Telegram start_param:", parsed)
-    return parsed
+
+  // Handle both "group_id=..." and plain "-1002174749045"
+  if (rawParam.includes("=")) {
+    const parsed = new URLSearchParams(rawParam).get("group_id")
+    if (parsed) return parsed
+  } else if (rawParam) {
+    return rawParam
   }
 
-  // ✅ Final fallback (safe default)
-  console.warn("Using default groupId fallback")
-  return "-1002174749045xxx"
+  return "-1002174749045xxx" // safe default
 }
