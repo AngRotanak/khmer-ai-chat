@@ -10,8 +10,9 @@ function RegisterPage() {
   // At the top of your component
   const TIMEOUT_MINUTES = 2   // change to 10 for production
   const TIMEOUT_SECONDS = TIMEOUT_MINUTES * 60
-  const [minutesLeft, setMinutesLeft] = useState(TIMEOUT_MINUTES)
+  const [minutesLeft, setMinutesLeft] = useState(TIMEOUT_MINUTES - 1)
   const [countdown, setCountdown] = useState(60)
+
 
 
   const [selectedPackage, setSelectedPackage] = useState("basic")
@@ -36,7 +37,10 @@ function RegisterPage() {
   const thankYouRef = useRef<HTMLDivElement | null>(null)
   const payButtonRef = useRef<HTMLButtonElement | null>(null)
 
-  const groupId = "-1002174749045"
+   const tg = (window as any).Telegram?.WebApp
+  const rawParam = tg?.initDataUnsafe?.start_param
+  const groupId = new URLSearchParams(rawParam).get("group_id") || "-xxxxxxxxxxxxxx"
+
 
   const plans = [
     {
@@ -199,7 +203,7 @@ function RegisterPage() {
 
   useEffect(() => {
     if (timeoutReached) {
-      const beep = new Audio("/ringtone.mp3")
+      const beep = new Audio("/warning.mp3")
       beep.play().catch(err => console.error("Beep error:", err))
       alert("⏳ Payment window expired. Please retry.")
     }
@@ -312,7 +316,7 @@ function RegisterPage() {
                 />
 
                 {/* Brand overlay near bottom */}
-                <div className="absolute bottom-20 left-0 right-0 text-center">
+                <div className="absolute bottom-21 left-0 right-0 text-center">
                   <p className="text-teal-400 font-bold text-base tracking-wide">
                     KHMER AUTOSOFT
                   </p>
