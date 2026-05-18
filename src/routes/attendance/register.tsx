@@ -217,13 +217,12 @@ function RegisterPage() {
 <div
   className={`transition-all duration-500 ease-in-out overflow-hidden mt-6
     ${qrImage && !paymentComplete
-      ? "max-h-[600px] opacity-100"
+      ? "max-h-[600px] opacity-100 animate-fade"
       : "max-h-0 opacity-0"} 
     max-w-md mx-auto rounded-xl shadow-lg p-6 flex flex-col items-center relative bg-dark-800 border border-gray-700`}
 >
   {qrImage && !paymentComplete && (
     <>
-      {/* Close button */}
       <button
         onClick={() => setQrImage(null)}
         className="absolute top-2 right-2 text-light-400 hover:text-red-400"
@@ -231,7 +230,6 @@ function RegisterPage() {
         ✕
       </button>
 
-      {/* QR image with overlay */}
       <div className="relative">
         <img
           src={qrImage}
@@ -245,7 +243,6 @@ function RegisterPage() {
         )}
       </div>
 
-      {/* Progress bar */}
       {!timeoutReached && (
         <div className="w-full bg-gray-700 rounded-full h-2 mt-3">
           <div
@@ -257,7 +254,6 @@ function RegisterPage() {
         </div>
       )}
 
-      {/* Payment info */}
       <div className="mt-3 text-center">
         <h3 className="text-teal-400 font-bold">Scan to Pay</h3>
         {timeoutReached ? (
@@ -270,7 +266,6 @@ function RegisterPage() {
         )}
       </div>
 
-      {/* Retry button */}
       {timeoutReached && (
         <button
           onClick={handleGenerateQR}
@@ -284,25 +279,24 @@ function RegisterPage() {
 </div>
 
 
-{/* ✅ Thank-you screen ...*/}
+{/* ✅ Thank-you screen */}
 <div
   ref={thankYouRef}
   className={`transition-all duration-500 ease-in-out overflow-hidden mt-6
     ${paymentComplete && licenseInfo
-      ? "max-h-[600px] opacity-100"
+      ? "max-h-[600px] opacity-100 animate-fade"
       : "max-h-0 opacity-0"} 
     bg-green-50 rounded-xl shadow-lg p-8 w-full flex flex-col items-center text-center`}
 >
   {paymentComplete && licenseInfo && (
     <>
-      <h3 className="text-green-600 font-bold text-lg mb-2">✅ Payment Complete</h3>
+      <h3 className="text-green-600 font-bold text-lg mb-2 animate-bounce">✅ Payment Complete</h3>
       <p className="text-black font-semibold text-base">Thank you for your payment!</p>
       <p className="text-black text-sm mt-2">Your license has been activated.</p>
       <p className="text-black text-sm">Plan: {licenseInfo.package}</p>
       <p className="text-black text-sm">License ID: {licenseInfo.license_id}</p>
       <p className="text-black text-sm">Expires: {licenseInfo.expires}</p>
 
-      {/* Download button */}
       <a
         href={licenseInfo.download_url}
         target="_blank"
@@ -312,7 +306,6 @@ function RegisterPage() {
         Download License PDF
       </a>
 
-      {/* Copy License ID button */}
       <button
         onClick={() => navigator.clipboard.writeText(licenseInfo.license_id)}
         className="mt-2 w-full py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-white font-semibold transition"
