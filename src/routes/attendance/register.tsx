@@ -18,6 +18,7 @@ function RegisterPage() {
   const TIMEOUT_MINUTES = 2   // change to 10 for production
   const TIMEOUT_SECONDS = TIMEOUT_MINUTES * 60
   const [minutesLeft, setMinutesLeft] = useState(TIMEOUT_MINUTES)
+  const [remainingSeconds, setRemainingSeconds] = useState(TIMEOUT_SECONDS)
   const [countdown, setCountdown] = useState(60)
 
   const groupId = getGroupId()
@@ -214,6 +215,32 @@ function RegisterPage() {
     }
   }, [timeoutReached])
 
+  useEffect(() => {
+    if (!md5 || paymentComplete || timeoutReached) return
+
+    const interval = setInterval(() => {
+      setRemainingSeconds(prev => {
+        if (prev <= 1) {
+          clearInterval(interval)
+          setTimeoutReached(true)
+          return 0
+        }
+        return prev - 1
+      })
+    }, 1000)
+
+    return () => clearInterval(interval)
+  }, [md5, paymentComplete, timeoutReached])
+
+
+
+  function formatTime(totalSeconds: number): string {
+    const minutes = Math.floor(totalSeconds / 60)
+    const seconds = totalSeconds % 60
+    return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`
+  }
+
+
   return (
     <AdminLayout title="📝 License">
       <div className="flex-1 px-4 py-6 max-w-md mx-auto space-y-6 pb-15">
@@ -330,13 +357,11 @@ function RegisterPage() {
                 {/* Countdown overlay just below brand */}
                 {!timeoutReached && (
                   <div className="absolute bottom-12 left-0 right-0 flex justify-center">
-                    <div
-                      className={`px-4 py-2 rounded-lg font-bold text-lg ${countdown <= 30 ? "text-red-500 animate-shake" : "text-red-500"
-                        }`}
-                    >
-                      ⏳ {countdown === 60 ? minutesLeft - 1 : minutesLeft}m : {countdown}s
+                    <div className={`px-4 py-2 rounded-lg font-bold text-lg text-red-500`}>
+                      ⏳ {formatTime(remainingSeconds)}
                     </div>
                   </div>
+
                 )}
 
               </div>
@@ -347,19 +372,18 @@ function RegisterPage() {
                   }`}
               >
                 <div
-                  className={`h-2 rounded-full transition-all duration-1000 ${minutesLeft > TIMEOUT_MINUTES * 0.6
-                    ? "bg-green-500"
-                    : minutesLeft > TIMEOUT_MINUTES * 0.3
-                      ? "bg-yellow-500"
-                      : "bg-red-500 animate-pulse"
+                  className={`h-2 rounded-full transition-all duration-1000 ${remainingSeconds > TIMEOUT_SECONDS * 0.6
+                      ? "bg-green-500"
+                      : remainingSeconds > TIMEOUT_SECONDS * 0.3
+                        ? "bg-yellow-500"
+                        : "bg-red-500 animate-pulse"
                     }`}
-
                   style={{
-                    width: `${((TIMEOUT_SECONDS - (minutesLeft * 60 + countdown)) / TIMEOUT_SECONDS) * 100}%`,
+                    width: `${((TIMEOUT_SECONDS - remainingSeconds) / TIMEOUT_SECONDS) * 100}%`,
                   }}
-
                 />
               </div>
+
 
               {/* Payment info */}
               <div className="mt-4 text-center">
