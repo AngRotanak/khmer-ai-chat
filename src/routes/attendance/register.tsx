@@ -386,7 +386,7 @@ function RegisterPage() {
                 )}
               </div>
 
-              {/* Retry button*/}
+              {/* Retry button ....*/}
               {timeoutReached && (
                 <button
                   onClick={handleGenerateQR}
