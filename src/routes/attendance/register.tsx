@@ -7,14 +7,19 @@ export const Route = createFileRoute("/attendance/register")({
 })
 
 function RegisterPage() {
+  // At the top of your component
+  const TIMEOUT_MINUTES = 2   // change to 10 for production
+  const TIMEOUT_SECONDS = TIMEOUT_MINUTES * 60
+  const [minutesLeft, setMinutesLeft] = useState(TIMEOUT_MINUTES)
+  const [countdown, setCountdown] = useState(60)
+
+
   const [selectedPackage, setSelectedPackage] = useState("basic")
   const [qrImage, setQrImage] = useState<string | null>(null)
   const [amount, setAmount] = useState<number | null>(null)
   const [md5, setMd5] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [timeoutReached, setTimeoutReached] = useState(false)
-  const [minutesLeft, setMinutesLeft] = useState(2)
-  const [countdown, setCountdown] = useState(60)
   const [paymentComplete, setPaymentComplete] = useState(false)
 
   const [showQRPanel, setShowQRPanel] = useState(false)
@@ -122,42 +127,43 @@ function RegisterPage() {
     }
   }
 
-useEffect(() => {
-  if (!md5 || paymentComplete || timeoutReached) return
+  useEffect(() => {
+    if (!md5 || paymentComplete || timeoutReached) return
 
-  let secondsPassed = 0
-  let countdownValue = 60
+    let secondsPassed = 0
+    let countdownValue = 60
 
-  const interval = setInterval(async () => {
-    countdownValue -= 1
-    secondsPassed += 1
-    setCountdown(countdownValue)
+    const interval = setInterval(async () => {
+      countdownValue -= 1
+      secondsPassed += 1
+      setCountdown(countdownValue)
 
-    if (countdownValue === 10) {
-      const beep = new Audio("/ringtone.mp3")
-      beep.play().catch(err => console.error("Beep error:", err))
-    }
+      if (countdownValue === 10) {
+        const beep = new Audio("/ringtone.mp3")
+        beep.play().catch(err => console.error("Beep error:", err))
+      }
 
-    if (countdownValue === 0) {
-      const beep = new Audio("/ringtone.mp3")
-      beep.play().catch(err => console.error("Beep error:", err))
-      countdownValue = 60
-      setMinutesLeft(Math.max(0, 2 - Math.floor(secondsPassed / 60)))
-    }
+      if (secondsPassed >= TIMEOUT_SECONDS) {
+        setTimeoutReached(true)
+        clearInterval(interval)
+        return
+      }
 
-    if (secondsPassed >= 120) {   // ✅ 2 minutes
-      setTimeoutReached(true)
-      clearInterval(interval)
-      return
-    }
+      if (countdownValue === 0) {
+        const beep = new Audio("/ringtone.mp3")
+        beep.play().catch(err => console.error("Beep error:", err))
+        countdownValue = 60
+        setMinutesLeft(Math.max(0, TIMEOUT_MINUTES - Math.floor(secondsPassed / 60)))
+      }
 
-    if (secondsPassed % 5 === 0) {
-      // poll backend
-    }
-  }, 1000)
 
-  return () => clearInterval(interval)
-}, [md5, paymentComplete, timeoutReached, selectedPackage])
+      if (secondsPassed % 5 === 0) {
+        // poll backend
+      }
+    }, 1000)
+
+    return () => clearInterval(interval)
+  }, [md5, paymentComplete, timeoutReached, selectedPackage])
 
   useEffect(() => {
     if (showThankYou && thankYouRef.current) {
@@ -190,13 +196,13 @@ useEffect(() => {
     return () => clearTimeout(timer)
   }, [showQRPanel])
 
-useEffect(() => {
-  if (timeoutReached) {
-    const beep = new Audio("/ringtone.mp3")
-    beep.play().catch(err => console.error("Beep error:", err))
-    alert("⏳ Payment window expired. Please retry.")
-  }
-}, [timeoutReached])
+  useEffect(() => {
+    if (timeoutReached) {
+      const beep = new Audio("/ringtone.mp3")
+      beep.play().catch(err => console.error("Beep error:", err))
+      alert("⏳ Payment window expired. Please retry.")
+    }
+  }, [timeoutReached])
 
   return (
     <AdminLayout title="📝 License">
@@ -331,16 +337,17 @@ useEffect(() => {
                   }`}
               >
                 <div
-                  className={`h-2 rounded-full transition-all duration-1000 ${minutesLeft > 6
+                  className={`h-2 rounded-full transition-all duration-1000 ${minutesLeft > TIMEOUT_MINUTES * 0.6
                       ? "bg-green-500"
-                      : minutesLeft > 3
+                      : minutesLeft > TIMEOUT_MINUTES * 0.3
                         ? "bg-yellow-500"
                         : "bg-red-500 animate-pulse"
                     }`}
+
                   style={{
-                    // width based on total 600s window
-                    width: `${((120 - (minutesLeft * 60 + countdown)) / 120) * 100}%`,
+                    width: `${((TIMEOUT_SECONDS - (minutesLeft * 60 + countdown)) / TIMEOUT_SECONDS) * 100}%`,
                   }}
+
                 />
               </div>
 
@@ -357,15 +364,15 @@ useEffect(() => {
                 )}
               </div>
 
-           {/* Retry button */}
-{timeoutReached && (
-  <button
-    onClick={handleGenerateQR}
-    className="mt-4 w-full py-2 rounded-lg bg-red-600 text-white animate-bounce"
-  >
-    🔄 Retry Payment
-  </button>
-)}
+              {/* Retry button */}
+              {timeoutReached && (
+                <button
+                  onClick={handleGenerateQR}
+                  className="mt-4 w-full py-2 rounded-lg bg-red-600 text-white animate-bounce"
+                >
+                  🔄 Retry Payment
+                </button>
+              )}
 
             </div>
           )}
