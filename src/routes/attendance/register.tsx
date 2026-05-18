@@ -203,13 +203,6 @@ function RegisterPage() {
           ))}
         </div>
 
-        {/* Countdown badge overlay */}
-        {!timeoutReached && !paymentComplete && (
-          <div className="absolute bottom-2 right-2 bg-black/70 text-red-400 px-3 py-1 rounded-lg text-sm font-semibold">
-            {minutesLeft}m : {countdown}s
-          </div>
-        )}
-
         {/* Selected plan summary */}
         <div className="text-center mt-4 transition-opacity duration-500 ease-in-out">
           {plans.find((p) => p.id === selectedPackage) && (
@@ -350,7 +343,7 @@ function RegisterPage() {
             disabled={loading}
             className="flex-1 py-3 rounded-lg bg-teal-600 hover:bg-teal-500 text-white font-semibold transition disabled:opacity-50"
           >
-            {loading ? "Start processing..." : "Pay with KHQR"}
+            {loading ? "Processing..." : "Pay with KHQR"}
           </button>
         </div>
 
