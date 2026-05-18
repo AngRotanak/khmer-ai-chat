@@ -566,11 +566,11 @@ function AttendancePage() {
             {/* Settings always visible...... */}
             <Link
               to="/attendance/register"
-               search={{groupId }}   // ✅ pass groupId here
+              search={{ group_id: groupId }}   // ✅ pass groupId here
               className="flex items-center gap-3 px-4 py-3 rounded-lg bg-gray-800 hover:bg-gray-700 text-teal-300 transition"
             >
               <span>📝</span><span>Register / Lease License</span>
-            </Link>          
+            </Link>
 
             <button
               onClick={openProfile}
@@ -599,7 +599,7 @@ function AttendancePage() {
 
                 <Link
                   to="/attendance/admin/config"
-                  search={{groupId }}   // ✅ pass groupId here
+                search={{ group_id: groupId }}
                   className="flex items-center gap-3 px-4 py-3 rounded-lg bg-gray-800 hover:bg-gray-700 text-teal-300 transition"
                 >
                   <span>🏢</span><span>Attendance Config</span>
@@ -607,7 +607,7 @@ function AttendancePage() {
 
                 <Link
                   to="/attendance/report"
-                   search={{groupId }}  
+                  search={{ group_id: groupId }}
                   className="flex items-center gap-3 px-4 py-3 rounded-lg bg-gray-800 hover:bg-gray-700 text-teal-300 transition"
                 >
                   <span>📊</span><span>Attendance Report</span>
