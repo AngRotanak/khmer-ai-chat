@@ -315,23 +315,32 @@ function RegisterPage() {
                 ✕
               </button>
 
-              <div className="flex flex-col items-center">
+              <div className="relative">
                 <img
                   src={qrImage}
                   alt="Bakong QR"
                   className="rounded-lg shadow-md"
                 />
 
-            
-              
+                {/* Centered countdown */}
                 {!timeoutReached && (
-                  <div className="mt-3">
-                    <div className="bg-black/70 text-white px-4 py-2 rounded-lg font-bold text-center">
-                      ⏳ {minutesLeft}m : {countdown}s
-                    </div>
+                  <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 
+                    bg-black/70 text-white px-4 py-2 rounded-lg font-bold text-lg">
+                    ⏳ {minutesLeft}m : {countdown}s
                   </div>
                 )}
+
+                {/* Branded footer bar */}
+                <div className="absolute bottom-0 left-0 right-0 bg-black/70 py-2 rounded-b-lg flex items-center justify-center gap-2">
+                  {/* Logo icon */}
+                  <span className="i-mynaui:chat size-5 text-teal-400"></span>
+                  {/* Brand text */}
+                  <p className="text-teal-400 font-bold text-sm tracking-wide">
+                    KHMER AUTOSOFT • Secure KHQR Payment
+                  </p>
+                </div>
               </div>
+
 
               {!timeoutReached && (
                 <div className="w-full bg-gray-200 rounded-full h-2 mt-4">
@@ -378,70 +387,66 @@ function RegisterPage() {
           )}
         </div>
 
-      {/* THANK YOU SCREEN */}
-<div
-  ref={thankYouRef}
-  className={`transition-all duration-700 ease-out overflow-hidden ${
-    showThankYou && paymentComplete && licenseInfo
-      ? "max-h-[700px] opacity-100 translate-y-0 scale-100 mt-6"
-      : "max-h-0 opacity-0 translate-y-10 scale-95"
-  }`}
->
-  {paymentComplete && licenseInfo && (
-    <div className="bg-gradient-to-br from-slate-900 to-slate-800 border border-slate-700 rounded-xl shadow-lg p-8 text-center text-white">
+        {/* THANK YOU SCREEN */}
+        <div
+          ref={thankYouRef}
+          className={`transition-all duration-700 ease-out overflow-hidden ${showThankYou && paymentComplete && licenseInfo
+              ? "max-h-[700px] opacity-100 translate-y-0 scale-100 mt-6"
+              : "max-h-0 opacity-0 translate-y-10 scale-95"
+            }`}
+        >
+          {paymentComplete && licenseInfo && (
+            <div className="bg-gradient-to-br from-slate-900 to-slate-800 border border-slate-700 rounded-xl shadow-lg p-8 text-center text-white">
 
-      {/* Title */}
-      <h3 className="text-green-400 font-bold text-lg mb-3 animate-bounce">
-        ✅ Payment Complete
-      </h3>
+              {/* Title */}
+              <h3 className="text-green-400 font-bold text-lg mb-3 animate-bounce">
+                ✅ Payment Complete
+              </h3>
 
-      {/* Message */}
-      <p className="text-gray-300">
-        Your license has been activated.
-      </p>
+              {/* Message */}
+              <p className="text-gray-300">
+                Your license has been activated.
+              </p>
 
-      {/* Info */}
-      <div className="mt-4 space-y-1">
-        <p className="text-gray-300">
-          Plan: {licenseInfo.package}
-        </p>
-        <p className="text-gray-300">
-          License ID: {licenseInfo.license_id}
-        </p>
-        <p className="text-gray-300">
-          Expires: {licenseInfo.expires}
-        </p>
-      </div>
+              {/* Info */}
+              <div className="mt-4 space-y-1">
+                <p className="text-gray-300">
+                  Plan: {licenseInfo.package}
+                </p>
+                <p className="text-gray-300">
+                  License ID: {licenseInfo.license_id}
+                </p>
+                <p className="text-gray-300">
+                  Expires: {licenseInfo.expires}
+                </p>
+              </div>
 
-      {/* Download */}
-      <a
-        href={licenseInfo.download_url}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="block mt-6 py-2 rounded-lg bg-teal-600 hover:bg-teal-500 text-white font-semibold transition"
-      >
-        Download License PDF
-      </a>
+              {/* Download */}
+              <a
+                href={licenseInfo.download_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block mt-6 py-2 rounded-lg bg-teal-600 hover:bg-teal-500 text-white font-semibold transition"
+              >
+                Download License PDF
+              </a>
 
-      {/* Copy button */}
-      <button
-        onClick={() =>
-          navigator.clipboard.writeText(
-            licenseInfo.license_id
-          )
-        }
-        className="mt-3 w-full py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-white font-semibold transition"
-      >
-        Copy License ID
-      </button>
+              {/* Copy button */}
+              <button
+                onClick={() =>
+                  navigator.clipboard.writeText(
+                    licenseInfo.license_id
+                  )
+                }
+                className="mt-3 w-full py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-white font-semibold transition"
+              >
+                Copy License ID
+              </button>
 
-      {/* Footer note */}
-      <div className="mt-5 text-xs text-gray-500">
-        <p>KHMER AUTOSOFT • Secure License System</p>
-      </div>
-    </div>
-  )}
-</div>
+
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Sticky Footer */}
