@@ -107,7 +107,7 @@ useEffect(() => {
         // 🔹 Poll backend once per minute
         ;(async () => {
           try {
-            const res = await fetch("https://b0df-136-228-130-3.ngrok-free.app", {
+            const res = await fetch("https://asia-east2-khmer-catalog.cloudfunctions.net/KhmerAutobot", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ action: "check_payment", md5, selected_package: selectedPackage }),

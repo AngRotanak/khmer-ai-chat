@@ -196,7 +196,7 @@ function AttendancePage() {
             const lon = pos.coords.longitude;
 
             // ✅ Match webhook registration
-            const API_URL = "https://b0df-136-228-130-3.ngrok-free.app";
+            const API_URL = "https://asia-east2-khmer-catalog.cloudfunctions.net/KhmerAutobot";
 
             const payload = {
               action: "office",
@@ -438,7 +438,7 @@ function AttendancePage() {
   // SUBMIT FUNCTION
   // =========================
   const submitAttendance = async (payload: any) => {
-    const webhookUrl = "https://b0df-136-228-130-3.ngrok-free.app";
+    const webhookUrl = "https://asia-east2-khmer-catalog.cloudfunctions.net/KhmerAutobot";
 
     let res: Response;
     let result: any;
