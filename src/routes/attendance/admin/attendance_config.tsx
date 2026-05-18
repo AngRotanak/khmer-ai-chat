@@ -38,7 +38,7 @@ function AttendanceConfigPage() {
     officeLocation: { lat: 13.3633, lng: 103.8564 },
   })
 
-  // ✅ Load offices
+  // ✅ Load offices..
   useEffect(() => {
     if (!groupId) return
     const officesPath = `khmer-autobot/attendance_config/${groupId}/offices`
