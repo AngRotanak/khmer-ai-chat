@@ -326,14 +326,17 @@ function RegisterPage() {
                     alt="Bakong QR"
                     className="rounded-lg border border-gray-200 shadow-md"
                   />
+
+                  {/* Bottom overlay */}
+                <div className="absolute bottom-5 left-0 right-0 text-center text-white">
+                  <p className="text-black font-semibold text-base"> AUTOSOFT</p>
+                </div>
                 </div>
 
 
                 {/* Bottom overlay */}
-                <div className="absolute bottom-5 left-0 right-0 text-center">
+                <div className="absolute bottom-5 left-0 right-0 text-center text-white">
                   <p className="text-black font-semibold text-base">KHMER AUTOSOFT</p>
-                  <p className="text-black text-sm">Plan: {selectedPackage}</p>
-                  {amount && <p className="text-black text-sm">Amount: {amount} KHR</p>}
                 </div>
 
 
