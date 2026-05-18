@@ -13,7 +13,7 @@ function RegisterPage() {
   const [md5, setMd5] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [timeoutReached, setTimeoutReached] = useState(false)
-  const [minutesLeft, setMinutesLeft] = useState(10)
+  const [minutesLeft, setMinutesLeft] = useState(1)
   const [countdown, setCountdown] = useState(60)
   const [paymentComplete, setPaymentComplete] = useState(false)
 
@@ -126,9 +126,27 @@ useEffect(() => {
   if (!md5 || paymentComplete || timeoutReached) return
 
   let secondsPassed = 0
+  let countdownValue = 60
+
   const interval = setInterval(async () => {
-    secondsPassed += 5 // if polling every 5s
-    setMinutesLeft(Math.max(0, 10 - Math.floor(secondsPassed / 60)))
+    countdownValue -= 1
+    setCountdown(countdownValue)
+
+    // 🔔 Play beep at 10s
+    if (countdownValue === 10) {
+      const beep = new Audio("/ringtone.mp3")
+      beep.play().catch(err => console.error("Beep error:", err))
+    }
+
+    // 🔔 Play final beep at 0s
+    if (countdownValue === 0) {
+      const beep = new Audio("/ringtone.mp3")
+      beep.play().catch(err => console.error("Beep error:", err))
+
+      countdownValue = 60
+      secondsPassed += 60
+      setMinutesLeft(Math.max(0, 10 - Math.floor(secondsPassed / 60)))
+    }
 
     if (secondsPassed >= 600) {
       setTimeoutReached(true)
@@ -136,30 +154,32 @@ useEffect(() => {
       return
     }
 
-    try {
-      const res = await fetch("https://b0df-136-228-130-3.ngrok-free.app", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "check_payment", md5, selected_package: selectedPackage }),
-      })
-      const data = await res.json()
-      if (data.status === "PAID") {
-        clearInterval(interval)
-        setShowQRPanel(false)
-        setTimeout(() => {
-          setPaymentComplete(true)
-          setLicenseInfo(data.license)
-          setShowThankYou(true)
-        }, 500)
+    // Poll backend every 5 seconds
+    if (secondsPassed % 5 === 0) {
+      try {
+        const res = await fetch("https://b0df-136-228-130-3.ngrok-free.app", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "check_payment", md5, selected_package: selectedPackage }),
+        })
+        const data = await res.json()
+        if (data.status === "PAID") {
+          clearInterval(interval)
+          setShowQRPanel(false)
+          setTimeout(() => {
+            setPaymentComplete(true)
+            setLicenseInfo(data.license)
+            setShowThankYou(true)
+          }, 500)
+        }
+      } catch (err) {
+        console.error("Error checking payment:", err)
       }
-    } catch (err) {
-      console.error("Error checking payment:", err)
     }
-  }, 5000) // poll every 5 seconds
+  }, 1000) // tick every second
 
   return () => clearInterval(interval)
 }, [md5, paymentComplete, timeoutReached, selectedPackage])
-
 
   useEffect(() => {
     if (showThankYou && thankYouRef.current) {
@@ -191,6 +211,8 @@ useEffect(() => {
 
     return () => clearTimeout(timer)
   }, [showQRPanel])
+
+
   return (
     <AdminLayout title="📝 License">
       <div className="flex-1 px-4 py-6 max-w-md mx-auto space-y-6 pb-15">
@@ -268,8 +290,8 @@ useEffect(() => {
         <div
           ref={qrRef}
           className={`transition-all duration-700 ease-out overflow-hidden ${showQRPanel && qrImage && !paymentComplete
-              ? "max-h-[700px] opacity-100 translate-y-0 scale-100 mt-6"
-              : "max-h-0 opacity-0 translate-y-10 scale-95"
+            ? "max-h-[700px] opacity-100 translate-y-0 scale-100 mt-6"
+            : "max-h-0 opacity-0 translate-y-10 scale-95"
             }`}
         >
           {qrImage && !paymentComplete && (
@@ -307,23 +329,35 @@ useEffect(() => {
                 {/* Countdown overlay just below brand */}
                 {!timeoutReached && (
                   <div className="absolute bottom-12 left-0 right-0 flex justify-center">
-                    <div className="text-red px-4 py-2 rounded-lg font-bold text-lg">
+                    <div
+                      className={`px-4 py-2 rounded-lg font-bold text-lg ${countdown <= 30 ? "text-red-500 animate-shake" : "text-red-500"
+                        }`}
+                    >
                       ⏳ {minutesLeft}m : {countdown}s
                     </div>
                   </div>
                 )}
+
               </div>
 
               {/* Progress bar */}
-              {!timeoutReached && (
-                <div className="w-full bg-gray-200 rounded-full h-2 mt-4">
-                  <div
-                    className={`h-2 rounded-full transition-all duration-1000 ${countdown > 40 ? "bg-green-500" : countdown > 20 ? "bg-yellow-500" : "bg-red-500"
-                      }`}
-                    style={{ width: `${(countdown / 60) * 100}%` }}
-                  />
-                </div>
-              )}
+              <div
+                className={`w-full bg-gray-200 rounded-full h-2 mt-4 transition-opacity duration-1000 ${timeoutReached ? "opacity-0" : "opacity-100"
+                  }`}
+              >
+                <div
+                  className={`h-2 rounded-full transition-all duration-1000 ${minutesLeft > 6
+                      ? "bg-green-500"
+                      : minutesLeft > 3
+                        ? "bg-yellow-500"
+                        : "bg-red-500 animate-pulse"
+                    }`}
+                  style={{
+                    // width based on total 600s window
+                    width: `${((600 - (minutesLeft * 60 + countdown)) / 600) * 100}%`,
+                  }}
+                />
+              </div>
 
               {/* Payment info */}
               <div className="mt-4 text-center">
