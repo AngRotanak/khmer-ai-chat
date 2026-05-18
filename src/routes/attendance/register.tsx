@@ -122,70 +122,44 @@ function RegisterPage() {
     }
   }
 
-  // Countdown + payment polling
-  useEffect(() => {
-    if (!md5 || paymentComplete || timeoutReached) return
+useEffect(() => {
+  if (!md5 || paymentComplete || timeoutReached) return
 
-    let minutesPassed = 0
+  let secondsPassed = 0
+  const interval = setInterval(async () => {
+    secondsPassed += 5 // if polling every 5s
+    setMinutesLeft(Math.max(0, 10 - Math.floor(secondsPassed / 60)))
 
-    const interval = setInterval(async () => {
-      setCountdown((prev) => {
-        if (prev > 1) {
-          return prev - 1
-        }
+    if (secondsPassed >= 600) {
+      setTimeoutReached(true)
+      clearInterval(interval)
+      return
+    }
 
-        minutesPassed += 1
-        setMinutesLeft(10 - minutesPassed)
-
-        if (minutesPassed >= 10) {
-          setTimeoutReached(true)
-          clearInterval(interval)
-          return 0
-        }
-
-        // Poll payment status every minute
-        ; (async () => {
-          try {
-            const res = await fetch(
-              "https://b0df-136-228-130-3.ngrok-free.app",
-              {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                  action: "check_payment",
-                  md5,
-                  selected_package: selectedPackage,
-                }),
-              }
-            )
-
-            const data = await res.json()
-
-            if (data.status === "PAID") {
-              clearInterval(interval)
-
-              // hide QR first
-              setShowQRPanel(false)
-
-              setTimeout(() => {
-                setPaymentComplete(true)
-                setLicenseInfo(data.license)
-                setShowThankYou(true)
-              }, 500)
-            }
-          } catch (err) {
-            console.error("Error checking payment:", err)
-          }
-        })()
-
-        return 60
+    try {
+      const res = await fetch("https://b0df-136-228-130-3.ngrok-free.app", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "check_payment", md5, selected_package: selectedPackage }),
       })
-    }, 1000)
+      const data = await res.json()
+      if (data.status === "PAID") {
+        clearInterval(interval)
+        setShowQRPanel(false)
+        setTimeout(() => {
+          setPaymentComplete(true)
+          setLicenseInfo(data.license)
+          setShowThankYou(true)
+        }, 500)
+      }
+    } catch (err) {
+      console.error("Error checking payment:", err)
+    }
+  }, 5000) // poll every 5 seconds
 
-    return () => clearInterval(interval)
-  }, [md5, paymentComplete, timeoutReached, selectedPackage])
+  return () => clearInterval(interval)
+}, [md5, paymentComplete, timeoutReached, selectedPackage])
+
 
   useEffect(() => {
     if (showThankYou && thankYouRef.current) {
