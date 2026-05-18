@@ -62,5 +62,17 @@ pnpm install
 pnpm run build
 
 git add .
-git commit -m "fix: add missing deps and typings"
-git push origin main --force
+git commit -m "Update Animation payment with KHQR"
+git push origin feature/my-branch
+
+git add .
+git commit -m "Update Animation payment with KHQR"
+git push origin main 
+
+Invoke-WebRequest -Method POST "https://api.vercel.com/v1/integrations/deploy/prj_K0DthcsbqtxqI3SitILU56jeTB0e/4vw16XFEgj"
+
+ git status
+git branch main 
+git pull origin main
+
+
