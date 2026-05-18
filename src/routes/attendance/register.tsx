@@ -326,7 +326,7 @@ function RegisterPage() {
 
 
                 {/* Brand overlay near bottom */}
-                <div className="absolute bottom-15 left-0 right-0 text-center">
+                <div className="absolute bottom-20 left-0 right-0 text-center">
                   <p className="text-teal-400 font-bold text-base tracking-wide">
                     KHMER AUTOSOFT
                   </p>
@@ -336,7 +336,7 @@ function RegisterPage() {
               {/* Countdown overlay */}
               {!timeoutReached && (
                 <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 
-                          bg-black/70 text-white px-4 py-2 rounded-lg font-bold text-lg">
+                          bg-black/70 text-white px-4 py-4 rounded-lg font-bold text-lg">
                   ⏳ {minutesLeft}m : {countdown}s
                 </div>
               )}
