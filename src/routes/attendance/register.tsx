@@ -283,12 +283,12 @@ function RegisterPage() {
         </div>
 
         {/* Selected summary */}
-        <div className="text-center">
+        {/* <div className="text-center">
           <p className="text-sm font-semibold text-gray-700">
             You will pay{" "}
             {plans.find((p) => p.id === selectedPackage)?.price}
           </p>
-        </div>
+        </div> */}
 
         {/* QR PANEL */}
         <div
