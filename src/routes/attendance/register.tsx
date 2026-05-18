@@ -86,6 +86,7 @@ function RegisterPage() {
     setQrImage(null)
     setAmount(null)
     setMd5(null)
+    setRemainingSeconds(TIMEOUT_SECONDS)
     setTimeoutReached(false)
     setPaymentComplete(false)
     setLicenseInfo(null)
