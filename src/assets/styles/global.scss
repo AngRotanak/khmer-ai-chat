@@ -111,3 +111,18 @@ html, body {
     box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.15);
   }
 }
+@keyframes slideUpFadeIn {
+  0% { transform: translateY(20px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+@keyframes slideDownFadeOut {
+  0% { transform: translateY(0); opacity: 1; }
+  100% { transform: translateY(20px); opacity: 0; }
+}
+
+.animate-slideUpFadeIn {
+  animation: slideUpFadeIn 0.5s ease-out forwards;
+}
+.animate-slideDownFadeOut {
+  animation: slideDownFadeOut 0.4s ease-in forwards;
+}
