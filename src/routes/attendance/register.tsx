@@ -17,9 +17,7 @@ function RegisterPage() {
   // At the top of your component ...
   const TIMEOUT_MINUTES = 2   // change to 10 for production
   const TIMEOUT_SECONDS = TIMEOUT_MINUTES * 60
-  const [minutesLeft, setMinutesLeft] = useState(TIMEOUT_MINUTES)
   const [remainingSeconds, setRemainingSeconds] = useState(TIMEOUT_SECONDS)
-  const [countdown, setCountdown] = useState(60)
 
   const groupId = getGroupId()
 
@@ -89,8 +87,6 @@ function RegisterPage() {
     setAmount(null)
     setMd5(null)
     setTimeoutReached(false)
-    setMinutesLeft(minutesLeft)
-    setCountdown(60)
     setPaymentComplete(false)
     setLicenseInfo(null)
     setShowQRPanel(false)
@@ -146,7 +142,6 @@ function RegisterPage() {
     const interval = setInterval(async () => {
       countdownValue -= 1
       secondsPassed += 1
-      setCountdown(countdownValue)
 
       if (countdownValue === 10) {
         const warningBeep = new Audio("/warning.mp3")
@@ -164,7 +159,7 @@ function RegisterPage() {
         timeoutBeep.play().catch(err => console.error("Timeout beep error:", err))
 
         countdownValue = 60
-        setMinutesLeft(Math.max(0, TIMEOUT_MINUTES - Math.floor(secondsPassed / 60)))
+       
       }
 
 
