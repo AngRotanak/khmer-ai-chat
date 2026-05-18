@@ -16,7 +16,7 @@ function RegisterPage() {
   // At the top of your component ...
   const TIMEOUT_MINUTES = 2   // change to 10 for production
   const TIMEOUT_SECONDS = TIMEOUT_MINUTES * 60
-  const [minutesLeft, setMinutesLeft] = useState(TIMEOUT_MINUTES - 1)
+  const [minutesLeft, setMinutesLeft] = useState(TIMEOUT_MINUTES)
   const [countdown, setCountdown] = useState(60)
 
   const params = new URLSearchParams(location.search)
@@ -342,7 +342,7 @@ function RegisterPage() {
                       className={`px-4 py-2 rounded-lg font-bold text-lg ${countdown <= 30 ? "text-red-500 animate-shake" : "text-red-500"
                         }`}
                     >
-                      ⏳ {minutesLeft}m : {countdown}s
+                    ⏳ {countdown === 60 ? minutesLeft - 1 : minutesLeft}m : {countdown}s
                     </div>
                   </div>
                 )}
