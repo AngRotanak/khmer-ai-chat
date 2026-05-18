@@ -310,41 +310,47 @@ function RegisterPage() {
                     setMd5(null)
                   }, 500)
                 }}
-                className="absolute top-2 right-2 text-gray-500 hover:text-red-500"
+                className="absolute top-2 right-2 text-gray-400 hover:text-red-400"
               >
                 ✕
               </button>
 
-              {/* QR image with overlays */}
+              {/* QR IMAGE */}
               <div className="relative flex justify-center w-full">
+
                 <img
                   src={qrImage}
                   alt="Bakong QR"
-                  className="rounded-lg border border-gray-200 shadow-md"
+                  className="rounded-lg border border-gray-200 shadow-md bg-white p-2"
                 />
 
-
+                {/* ❌ Countdown overlay (FIXED POSITION - NOT blocking center) */}
+                {!timeoutReached && (
+                  <div className="absolute top-2 right-2">
+                    <div className="bg-black/70 text-white px-3 py-2 rounded-lg font-bold text-sm">
+                      ⏳ {minutesLeft}m : {countdown}s
+                    </div>
+                  </div>
+                )}
 
                 {/* Brand overlay near bottom */}
-                <div className="absolute bottom-20 left-0 right-0 text-center">
-                  <p className="text-teal-400 font-bold text-base tracking-wide">
+                <div className="absolute bottom-2 left-0 right-0 text-center">
+                  <p className="text-teal-400 font-bold text-sm tracking-wide bg-black/40 inline-block px-3 py-1 rounded-md">
                     KHMER AUTOSOFT
                   </p>
                 </div>
+
               </div>
 
-              {/* Countdown overlay */}
-              {!timeoutReached && (
-                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 
-                          bg-black/70 text-white px-4 py-4 rounded-lg font-bold text-lg">
-                  ⏳ {minutesLeft}m : {countdown}s
-                </div>
-              )}
               {/* Progress bar */}
               {!timeoutReached && (
-                <div className="w-full bg-gray-200 rounded-full h-2 mt-4">
+                <div className="w-full bg-slate-700 rounded-full h-2 mt-5 overflow-hidden">
                   <div
-                    className={`h-2 rounded-full transition-all duration-1000 ${countdown > 40 ? "bg-green-500" : countdown > 20 ? "bg-yellow-500" : "bg-red-500"
+                    className={`h-2 transition-all duration-1000 ${countdown > 40
+                        ? "bg-green-500"
+                        : countdown > 20
+                          ? "bg-yellow-500"
+                          : "bg-red-500"
                       }`}
                     style={{ width: `${(countdown / 60) * 100}%` }}
                   />
@@ -353,13 +359,14 @@ function RegisterPage() {
 
               {/* Payment info */}
               <div className="mt-4 text-center">
-                <h3 className="font-bold text-teal-600">Scan to Pay</h3>
+                <h3 className="font-bold text-teal-400">Scan to Pay</h3>
+
                 {timeoutReached ? (
                   <p className="text-red-500 font-semibold">Payment Timeout</p>
                 ) : (
                   <>
-                    <p>Plan: {selectedPackage}</p>
-                    <p>Amount: {amount} KHR</p>
+                    <p className="text-gray-300">Plan: {selectedPackage}</p>
+                    <p className="text-gray-300">Amount: {amount} KHR</p>
                   </>
                 )}
               </div>
@@ -368,7 +375,7 @@ function RegisterPage() {
               {timeoutReached && (
                 <button
                   onClick={handleGenerateQR}
-                  className="mt-4 w-full py-2 rounded-lg bg-red-600 text-white"
+                  className="mt-4 w-full py-2 rounded-lg bg-red-600 hover:bg-red-500 text-white font-semibold transition"
                 >
                   Retry Payment
                 </button>
@@ -381,8 +388,8 @@ function RegisterPage() {
         <div
           ref={thankYouRef}
           className={`transition-all duration-700 ease-out overflow-hidden ${showThankYou && paymentComplete && licenseInfo
-              ? "max-h-[700px] opacity-100 translate-y-0 scale-100 mt-6"
-              : "max-h-0 opacity-0 translate-y-10 scale-95"
+            ? "max-h-[700px] opacity-100 translate-y-0 scale-100 mt-6"
+            : "max-h-0 opacity-0 translate-y-10 scale-95"
             }`}
         >
           {paymentComplete && licenseInfo && (
