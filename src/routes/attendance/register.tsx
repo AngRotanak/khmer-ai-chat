@@ -22,7 +22,6 @@ function RegisterPage() {
     license_id: string
     download_url: string
   } | null>(null)
-  const thankYouRef = useRef<HTMLDivElement | null>(null)
 
   const groupId = "-1002174749045"
   const payButtonRef = useRef<HTMLButtonElement | null>(null)
@@ -84,50 +83,38 @@ function RegisterPage() {
     }
   }
 
-  // Unified countdown + polling
+  // Poll backend every minute
   useEffect(() => {
     if (!md5 || paymentComplete || timeoutReached) return
 
     let minutesPassed = 0
-
     const interval = setInterval(async () => {
-      setCountdown(prev => {
-        if (prev > 1) {
-          return prev - 1
-        } else {
-          // reset countdown to 60 and decrement minutes
-          minutesPassed += 1
-          setMinutesLeft(10 - minutesPassed)
+      minutesPassed += 1
+      setMinutesLeft(10 - minutesPassed)
+      setCountdown(60)
 
-          if (minutesPassed >= 10) {
-            setTimeoutReached(true)
-            clearInterval(interval)
-            return 0
-          }
+      if (minutesPassed >= 10) {
+        setTimeoutReached(true)
+        clearInterval(interval)
+        return
+      }
 
-          // 🔹 Poll backend once per minute
-          ; (async () => {
-            try {
-              const res = await fetch("https://b0df-136-228-130-3.ngrok-free.app", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ action: "check_payment", md5, selected_package: selectedPackage }),
-              })
-              const data = await res.json()
-              if (data.status === "PAID") {
-                setPaymentComplete(true)
-                setLicenseInfo(data.license)
-                clearInterval(interval)
-              }
-            } catch (err) {
-              console.error("Error checking payment:", err)
-            }
-          })()
-
-          return 60
+      try {
+        const res = await fetch("https://b0df-136-228-130-3.ngrok-free.app", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "check_payment", md5, selected_package: selectedPackage }),
+        })
+        const data = await res.json()
+        if (data.status === "PAID") {
+          setPaymentComplete(true)
+          setLicenseInfo(data.license)
+          clearInterval(interval)
         }
-      })
-    }, 1000)
+      } catch (err) {
+        console.error("Error checking payment:", err)
+      }
+    }, 60000)
 
     return () => clearInterval(interval)
   }, [md5, paymentComplete, timeoutReached])
@@ -140,13 +127,6 @@ function RegisterPage() {
     }, 1000)
     return () => clearInterval(timer)
   }, [md5, paymentComplete, timeoutReached])
-
-  useEffect(() => {
-    if (paymentComplete && thankYouRef.current) {
-      thankYouRef.current.scrollIntoView({ behavior: "smooth", block: "center" })
-    }
-  }, [paymentComplete])
-
 
   return (
     <AdminLayout title="📝 Register / Lease License">
@@ -213,7 +193,7 @@ function RegisterPage() {
           )}
         </div>
 
-  {/* Show QR */}
+        {/* Show QR */}
         {qrImage && !paymentComplete && !timeoutReached && (
           <div className="rounded-xl shadow-lg p-4 w-full flex flex-col items-center">
             <div className="relative inline-block">
@@ -300,37 +280,38 @@ function RegisterPage() {
             </div>
           </div>
         )}
-
-
+        
       </div>
 
-      {/* Sticky footer bar */}
-      <div className="fixed bottom-15 left-1/2 -translate-x-1/2 w-[92%] max-w-md bg-white border border-gray-200 px-4 py-4 rounded-xl shadow-footer z-50 animate-slideup
+{/* Sticky footer bar */}
+<div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[92%] max-w-md bg-white border border-gray-200 px-4 py-4 rounded-xl shadow-footer z-50 animate-slideup
                 md:static md:w-full md:translate-x-0 md:rounded-none md:shadow-none">
-        <div className="flex items-center justify-between gap-3">
-          {/* Total amount badge */}
-          {plans.find((p) => p.id === selectedPackage) && (
-            <span className="inline-block px-3 py-2 rounded-lg bg-teal-100 text-teal-700 font-semibold text-sm">
-              {plans.find((p) => p.id === selectedPackage)?.price}
-            </span>
-          )}
+  <div className="flex items-center justify-between gap-3">
+    {/* Total amount badge */}
+    {plans.find((p) => p.id === selectedPackage) && (
+      <span className="inline-block px-3 py-2 rounded-lg bg-teal-100 text-teal-700 font-semibold text-sm">
+        {plans.find((p) => p.id === selectedPackage)?.price}
+      </span>
+    )}
 
-          {/* Pay button*/}
-          <button
-            ref={payButtonRef}
-            onClick={handleGenerateQR}
-            disabled={loading}
-            className="flex-1 py-3 rounded-lg bg-teal-600 hover:bg-teal-500 text-white font-semibold transition disabled:opacity-50"
-          >
-            {loading ? "Processing..." : "Pay with KHQR"}
-          </button>
-        </div>
+    {/* Pay button */}
+    <button
+      ref={payButtonRef}
+      onClick={handleGenerateQR}
+      disabled={loading}
+      className="flex-1 py-3 rounded-lg bg-teal-600 hover:bg-teal-500 text-white font-semibold transition disabled:opacity-50"
+    >
+      {loading ? "Preparing Payment QR..." : "Pay with KHQR"}
+    </button>
+  </div>
 
-        {/* Reassurance line */}
-        <p className="mt-2 text-xs text-gray-400 text-center">
-          You’ll be redirected to KHQR secure payment
-        </p>
-      </div>
+  {/* Reassurance line */}
+  <p className="mt-2 text-xs text-gray-400 text-center">
+    You’ll be redirected to KHQR secure payment
+  </p>
+</div>
+
+
 
     </AdminLayout>
   )
