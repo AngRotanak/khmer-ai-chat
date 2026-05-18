@@ -347,7 +347,7 @@ function RegisterPage() {
             disabled={loading}
             className="flex-1 py-3 rounded-lg bg-teal-600 hover:bg-teal-500 text-white font-semibold transition disabled:opacity-50"
           >
-            {loading ? "Start Processing..." : "Pay with KHQR"}
+            {loading ? "test Processing..." : "Pay with KHQR"}
           </button>
         </div>
 
