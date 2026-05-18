@@ -15,10 +15,10 @@ import { ref, get, push } from "firebase/database"
 export const Route = createFileRoute("/attendance/report")({
   component: ReportPage,
   validateSearch: z.object({
-    group_id: z.string().optional(),
+    group_id: z.string().optional(),   // ✅ only group_id is allowed
   }),
-
 })
+
 
 function ReportPage() {
   const [reportMode, setReportMode] = useState<"monthly" | "daily">("monthly")
