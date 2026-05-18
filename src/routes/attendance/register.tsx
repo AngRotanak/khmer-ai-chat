@@ -221,6 +221,7 @@ function RegisterPage() {
       : "max-h-0 opacity-0"} 
     max-w-md mx-auto rounded-xl shadow-lg p-6 flex flex-col items-center relative bg-dark-800 border border-gray-700`}
 >
+  {/* Inner content only shows when active */}
   {qrImage && !paymentComplete && (
     <>
       <button
@@ -246,7 +247,7 @@ function RegisterPage() {
       {!timeoutReached && (
         <div className="w-full bg-gray-700 rounded-full h-2 mt-3">
           <div
-            className={`h-2 rounded-full transition-all duration-1000 ease-linear ${
+            className={`h-2 rounded-full text-center transition-all duration-1000 ease-linear ${
               countdown > 40 ? "bg-green-500" : countdown > 20 ? "bg-yellow-500" : "bg-red-500"
             }`}
             style={{ width: `${(countdown / 60) * 100}%` }}
