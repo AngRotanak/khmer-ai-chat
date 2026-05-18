@@ -27,6 +27,7 @@ function RegisterPage() {
     download_url: string
   } | null>(null)
 
+  const qrRef = useRef<HTMLDivElement | null>(null)
   const thankYouRef = useRef<HTMLDivElement | null>(null)
   const payButtonRef = useRef<HTMLButtonElement | null>(null)
 
@@ -143,7 +144,7 @@ function RegisterPage() {
         }
 
         // Poll payment status every minute
-        ;(async () => {
+        ; (async () => {
           try {
             const res = await fetch(
               "https://b0df-136-228-130-3.ngrok-free.app",
@@ -187,13 +188,26 @@ function RegisterPage() {
   }, [md5, paymentComplete, timeoutReached, selectedPackage])
 
   useEffect(() => {
-    if (paymentComplete && thankYouRef.current) {
-      thankYouRef.current.scrollIntoView({
-        behavior: "smooth",
-        block: "center",
-      })
+    if (showThankYou && thankYouRef.current) {
+      setTimeout(() => {
+        thankYouRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        })
+      }, 400) // wait QR hide animation first
     }
-  }, [paymentComplete])
+  }, [showThankYou])
+
+  useEffect(() => {
+    if (showQRPanel && qrRef.current) {
+      setTimeout(() => {
+        qrRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        })
+      }, 300) // wait for animation render
+    }
+  }, [showQRPanel])
 
   return (
     <AdminLayout title="📝 Register / Lease License">
@@ -208,11 +222,10 @@ function RegisterPage() {
           {plans.map((plan) => (
             <label
               key={plan.id}
-              className={`block rounded-lg border-2 p-4 cursor-pointer transition-all duration-300 hover:shadow-lg hover:border-teal-400 ${
-                selectedPackage === plan.id
+              className={`block rounded-lg border-2 p-4 cursor-pointer transition-all duration-300 hover:shadow-lg hover:border-teal-400 ${selectedPackage === plan.id
                   ? "border-teal-600 bg-teal-50 shadow-md scale-[1.02]"
                   : "border-gray-300 bg-white"
-              }`}
+                }`}
               onClick={() => {
                 setSelectedPackage(plan.id)
 
@@ -271,15 +284,15 @@ function RegisterPage() {
 
         {/* QR PANEL */}
         <div
-          className={`transition-all duration-700 ease-out overflow-hidden ${
-            showQRPanel && qrImage && !paymentComplete
+          ref={qrRef}
+          className={`transition-all duration-700 ease-out overflow-hidden ${showQRPanel && qrImage && !paymentComplete
               ? "max-h-[700px] opacity-100 translate-y-0 scale-100 mt-6"
               : "max-h-0 opacity-0 translate-y-10 scale-95"
-          }`}
+            }`}
         >
           {qrImage && !paymentComplete && (
             <div className="rounded-xl shadow-lg bg-white p-6 relative flex flex-col items-center">
-              
+
               <button
                 onClick={() => {
                   setShowQRPanel(false)
@@ -313,13 +326,12 @@ function RegisterPage() {
               {!timeoutReached && (
                 <div className="w-full bg-gray-200 rounded-full h-2 mt-4">
                   <div
-                    className={`h-2 rounded-full transition-all duration-1000 ${
-                      countdown > 40
+                    className={`h-2 rounded-full transition-all duration-1000 ${countdown > 40
                         ? "bg-green-500"
                         : countdown > 20
-                        ? "bg-yellow-500"
-                        : "bg-red-500"
-                    }`}
+                          ? "bg-yellow-500"
+                          : "bg-red-500"
+                      }`}
                     style={{
                       width: `${(countdown / 60) * 100}%`,
                     }}
@@ -359,11 +371,10 @@ function RegisterPage() {
         {/* THANK YOU SCREEN */}
         <div
           ref={thankYouRef}
-          className={`transition-all duration-700 ease-out overflow-hidden ${
-            showThankYou && paymentComplete && licenseInfo
+          className={`transition-all duration-700 ease-out overflow-hidden ${showThankYou && paymentComplete && licenseInfo
               ? "max-h-[700px] opacity-100 translate-y-0 scale-100 mt-6"
               : "max-h-0 opacity-0 translate-y-10 scale-95"
-          }`}
+            }`}
         >
           {paymentComplete && licenseInfo && (
             <div className="bg-green-50 rounded-xl shadow-lg p-8 text-center">
