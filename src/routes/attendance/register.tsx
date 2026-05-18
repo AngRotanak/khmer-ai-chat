@@ -13,7 +13,7 @@ function RegisterPage() {
   const [md5, setMd5] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [timeoutReached, setTimeoutReached] = useState(false)
-  const [minutesLeft, setMinutesLeft] = useState(1)
+  const [minutesLeft, setMinutesLeft] = useState(2)
   const [countdown, setCountdown] = useState(60)
   const [paymentComplete, setPaymentComplete] = useState(false)
 
@@ -130,53 +130,31 @@ useEffect(() => {
 
   const interval = setInterval(async () => {
     countdownValue -= 1
+    secondsPassed += 1
     setCountdown(countdownValue)
 
-    // 🔔 Play beep at 10s
     if (countdownValue === 10) {
       const beep = new Audio("/ringtone.mp3")
       beep.play().catch(err => console.error("Beep error:", err))
     }
 
-    // 🔔 Play final beep at 0s
     if (countdownValue === 0) {
       const beep = new Audio("/ringtone.mp3")
       beep.play().catch(err => console.error("Beep error:", err))
-
       countdownValue = 60
-      secondsPassed += 60
-      setMinutesLeft(Math.max(0, 10 - Math.floor(secondsPassed / 60)))
+      setMinutesLeft(Math.max(0, 2 - Math.floor(secondsPassed / 60)))
     }
 
-    if (secondsPassed >= 600) {
+    if (secondsPassed >= 120) {   // ✅ 2 minutes
       setTimeoutReached(true)
       clearInterval(interval)
       return
     }
 
-    // Poll backend every 5 seconds
     if (secondsPassed % 5 === 0) {
-      try {
-        const res = await fetch("https://b0df-136-228-130-3.ngrok-free.app", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "check_payment", md5, selected_package: selectedPackage }),
-        })
-        const data = await res.json()
-        if (data.status === "PAID") {
-          clearInterval(interval)
-          setShowQRPanel(false)
-          setTimeout(() => {
-            setPaymentComplete(true)
-            setLicenseInfo(data.license)
-            setShowThankYou(true)
-          }, 500)
-        }
-      } catch (err) {
-        console.error("Error checking payment:", err)
-      }
+      // poll backend
     }
-  }, 1000) // tick every second
+  }, 1000)
 
   return () => clearInterval(interval)
 }, [md5, paymentComplete, timeoutReached, selectedPackage])
@@ -212,6 +190,13 @@ useEffect(() => {
     return () => clearTimeout(timer)
   }, [showQRPanel])
 
+useEffect(() => {
+  if (timeoutReached) {
+    const beep = new Audio("/ringtone.mp3")
+    beep.play().catch(err => console.error("Beep error:", err))
+    alert("⏳ Payment window expired. Please retry.")
+  }
+}, [timeoutReached])
 
   return (
     <AdminLayout title="📝 License">
@@ -354,7 +339,7 @@ useEffect(() => {
                     }`}
                   style={{
                     // width based on total 600s window
-                    width: `${((600 - (minutesLeft * 60 + countdown)) / 600) * 100}%`,
+                    width: `${((120 - (minutesLeft * 60 + countdown)) / 120) * 100}%`,
                   }}
                 />
               </div>
@@ -372,15 +357,16 @@ useEffect(() => {
                 )}
               </div>
 
-              {/* Retry button */}
-              {timeoutReached && (
-                <button
-                  onClick={handleGenerateQR}
-                  className="mt-4 w-full py-2 rounded-lg bg-red-600 text-white"
-                >
-                  Retry Payment
-                </button>
-              )}
+           {/* Retry button */}
+{timeoutReached && (
+  <button
+    onClick={handleGenerateQR}
+    className="mt-4 w-full py-2 rounded-lg bg-red-600 text-white animate-bounce"
+  >
+    🔄 Retry Payment
+  </button>
+)}
+
             </div>
           )}
         </div>
