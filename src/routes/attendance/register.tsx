@@ -223,8 +223,8 @@ function RegisterPage() {
             <label
               key={plan.id}
               className={`block rounded-lg border-2 p-4 cursor-pointer transition-all duration-300 hover:shadow-lg hover:border-teal-400 ${selectedPackage === plan.id
-                  ? "border-teal-600 bg-teal-50 shadow-md scale-[1.02]"
-                  : "border-gray-300 bg-white"
+                ? "border-teal-600 bg-teal-50 shadow-md scale-[1.02]"
+                : "border-gray-300 bg-white"
                 }`}
               onClick={() => {
                 setSelectedPackage(plan.id)
@@ -286,12 +286,12 @@ function RegisterPage() {
         <div
           ref={qrRef}
           className={`transition-all duration-700 ease-out overflow-hidden ${showQRPanel && qrImage && !paymentComplete
-              ? "max-h-[700px] opacity-100 translate-y-0 scale-100 mt-6"
-              : "max-h-0 opacity-0 translate-y-10 scale-95"
+            ? "max-h-[700px] opacity-100 translate-y-0 scale-100 mt-6"
+            : "max-h-0 opacity-0 translate-y-10 scale-95"
             }`}
         >
           {qrImage && !paymentComplete && (
-            <div className="rounded-xl shadow-lg bg-white p-6 relative flex flex-col items-center">
+            <div className="rounded-xl shadow-lg bg-gradient-to-br from-slate-900 to-slate-800 border border-slate-700 p-6 relative flex flex-col items-center text-white">
 
               <button
                 onClick={() => {
@@ -307,17 +307,16 @@ function RegisterPage() {
                 ✕
               </button>
 
-              <div className="relative">
+              <div className="flex flex-col items-center">
                 <img
                   src={qrImage}
                   alt="Bakong QR"
                   className="rounded-lg shadow-md"
                 />
-
                 {!timeoutReached && (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="bg-black/70 text-white px-4 py-2 rounded-lg font-bold">
-                      {minutesLeft}m : {countdown}s
+                  <div className="mt-3">
+                    <div className="bg-black/70 text-white px-4 py-2 rounded-lg font-bold text-center">
+                      ⏳ {minutesLeft}m : {countdown}s
                     </div>
                   </div>
                 )}
@@ -327,10 +326,10 @@ function RegisterPage() {
                 <div className="w-full bg-gray-200 rounded-full h-2 mt-4">
                   <div
                     className={`h-2 rounded-full transition-all duration-1000 ${countdown > 40
-                        ? "bg-green-500"
-                        : countdown > 20
-                          ? "bg-yellow-500"
-                          : "bg-red-500"
+                      ? "bg-green-500"
+                      : countdown > 20
+                        ? "bg-yellow-500"
+                        : "bg-red-500"
                       }`}
                     style={{
                       width: `${(countdown / 60) * 100}%`,
@@ -372,8 +371,8 @@ function RegisterPage() {
         <div
           ref={thankYouRef}
           className={`transition-all duration-700 ease-out overflow-hidden ${showThankYou && paymentComplete && licenseInfo
-              ? "max-h-[700px] opacity-100 translate-y-0 scale-100 mt-6"
-              : "max-h-0 opacity-0 translate-y-10 scale-95"
+            ? "max-h-[700px] opacity-100 translate-y-0 scale-100 mt-6"
+            : "max-h-0 opacity-0 translate-y-10 scale-95"
             }`}
         >
           {paymentComplete && licenseInfo && (
