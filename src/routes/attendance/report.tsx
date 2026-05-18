@@ -28,7 +28,16 @@ function ReportPage() {
   const [selectedKey, setSelectedKey] = useState<string>()
   const [viewMode, setViewMode] = useState<"report" | "calendar" | "summary">("report")
 
-  const groupId = getGroupId()
+   const params = new URLSearchParams(location.search)
+  let groupId = params.get("group_id")
+
+  if (!groupId || groupId === "unknown") {
+    const tg = (window as any).Telegram?.WebApp
+    const rawParam = tg?.initDataUnsafe?.start_param
+    if (rawParam) {
+      groupId = rawParam
+    }
+  }
 
   // ✅ Fetch staff list
   useEffect(() => {
@@ -56,6 +65,7 @@ function ReportPage() {
     fetchStaff()
   }, [groupId])
 
+  if (!groupId) return
   
   // ✅ Attendance records
   const { records, groupedRecords, summary } = useAttendanceRecords(

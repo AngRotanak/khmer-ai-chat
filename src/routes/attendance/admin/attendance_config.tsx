@@ -3,7 +3,7 @@ import { ref, onValue, update, set, remove, push } from "firebase/database"
 import { db } from "~/lib/firebase"
 import { createFileRoute } from "@tanstack/react-router"
 import { z } from "zod"
-import { getGroupId } from "../components/utils/telegram"
+
 import { OfficeCard } from "../components/OfficeCard"
 import { NewOfficeForm } from "../components/NewOfficeForm"
 import { AdminLayout } from "../components/AdminLayout"
@@ -16,7 +16,16 @@ export const Route = createFileRoute("/attendance/admin/config")({
 })
 
 function AttendanceConfigPage() {
-  const groupId = getGroupId()
+  const params = new URLSearchParams(location.search)
+  let groupId = params.get("group_id")
+
+  if (!groupId || groupId === "unknown") {
+    const tg = (window as any).Telegram?.WebApp
+    const rawParam = tg?.initDataUnsafe?.start_param
+    if (rawParam) {
+      groupId = rawParam
+    }
+  }
 
   const [offices, setOffices] = useState<Record<string, any>>({})
   const [showForm, setShowForm] = useState(false)
