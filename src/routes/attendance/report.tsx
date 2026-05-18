@@ -24,9 +24,11 @@ function ReportPage() {
   const [selectedKey, setSelectedKey] = useState<string>()
   const [viewMode, setViewMode] = useState<"report" | "calendar" | "summary">("report")
 
-  const tg = (window as any).Telegram?.WebApp
-  const rawParam = tg?.initDataUnsafe?.start_param
-  const groupId = new URLSearchParams(rawParam).get("group_id") || "-1002174749045"
+  const groupId = getGroupId()
+  console.log("Active group:", groupId)
+
+
+
 
   // ✅ Fetch staff list
   useEffect(() => {
