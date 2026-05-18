@@ -37,10 +37,9 @@ function RegisterPage() {
   const thankYouRef = useRef<HTMLDivElement | null>(null)
   const payButtonRef = useRef<HTMLButtonElement | null>(null)
 
-   const tg = (window as any).Telegram?.WebApp
-  const rawParam = tg?.initDataUnsafe?.start_param
-  const groupId = new URLSearchParams(rawParam).get("group_id") || "-xxxxxxxxxxxxxx"
-
+  const tg = (window as any).Telegram?.WebApp
+  const rawParam = tg?.initDataUnsafe?.start_param || ""
+  const groupId = new URLSearchParams(rawParam).get("group_id") || "unknown"
 
   const plans = [
     {
