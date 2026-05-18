@@ -14,7 +14,7 @@ export const Route = createFileRoute("/attendance/register")({
 
 
 function RegisterPage() {
-  // At the top of your component ...
+  // At the top of your component 
   const TIMEOUT_MINUTES = 2   // change to 10 for production
   const TIMEOUT_SECONDS = TIMEOUT_MINUTES * 60
   const [remainingSeconds, setRemainingSeconds] = useState(TIMEOUT_SECONDS)
@@ -43,8 +43,6 @@ function RegisterPage() {
   const qrRef = useRef<HTMLDivElement | null>(null)
   const thankYouRef = useRef<HTMLDivElement | null>(null)
   const payButtonRef = useRef<HTMLButtonElement | null>(null)
-
-
 
   const plans = [
     {
