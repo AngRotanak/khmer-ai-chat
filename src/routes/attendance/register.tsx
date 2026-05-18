@@ -216,7 +216,7 @@ function RegisterPage() {
 {/* ✅ QR panel */}
 <div
   className={`transition-all duration-500 ease-in-out mt-6
-    ${qrImage && !paymentComplete && !timeoutReached
+    ${qrImage 
       ? "opacity-100 translate-y-0"
       : "opacity-0 translate-y-4"} 
     max-w-md mx-auto rounded-xl shadow-lg p-6 flex flex-col items-center relative bg-dark-800 border border-gray-700`}
@@ -347,7 +347,7 @@ function RegisterPage() {
             disabled={loading}
             className="flex-1 py-3 rounded-lg bg-teal-600 hover:bg-teal-500 text-white font-semibold transition disabled:opacity-50"
           >
-            {loading ? "Processing..." : "Pay with KHQR"}
+            {loading ? "Start Processing..." : "Pay with KHQR"}
           </button>
         </div>
 
