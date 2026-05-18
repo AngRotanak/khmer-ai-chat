@@ -1,18 +1,34 @@
 import { useState, useEffect, useRef } from "react"
 import { createFileRoute } from "@tanstack/react-router"
 import { AdminLayout } from "./components/AdminLayout"
-import { getGroupId } from "./components/utils/telegram"
+import { z } from "zod"
+
 export const Route = createFileRoute("/attendance/register")({
   component: RegisterPage,
+   validateSearch: z.object({
+    groupId: z.string().optional(),
+  }),
 })
 
+
+
 function RegisterPage() {
-  // At the top of your component
+  // At the top of your component ...
   const TIMEOUT_MINUTES = 2   // change to 10 for production
   const TIMEOUT_SECONDS = TIMEOUT_MINUTES * 60
   const [minutesLeft, setMinutesLeft] = useState(TIMEOUT_MINUTES - 1)
   const [countdown, setCountdown] = useState(60)
 
+  const params = new URLSearchParams(location.search)
+  let groupId = params.get("group_id")
+
+  if (!groupId || groupId === "unknown") {
+    const tg = (window as any).Telegram?.WebApp
+    const rawParam = tg?.initDataUnsafe?.start_param
+    if (rawParam) {
+      groupId = rawParam
+    }
+  }
 
 
   const [selectedPackage, setSelectedPackage] = useState("basic")
@@ -37,8 +53,6 @@ function RegisterPage() {
   const thankYouRef = useRef<HTMLDivElement | null>(null)
   const payButtonRef = useRef<HTMLButtonElement | null>(null)
 
-  const groupId = getGroupId()
-  console.log("Active group:", groupId)
 
 
   const plans = [
