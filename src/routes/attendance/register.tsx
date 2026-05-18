@@ -83,7 +83,7 @@ function RegisterPage() {
     setAmount(null)
     setMd5(null)
     setTimeoutReached(false)
-    setMinutesLeft(TIMEOUT_MINUTES)
+    setMinutesLeft(minutesLeft)
     setCountdown(60)
     setPaymentComplete(false)
     setLicenseInfo(null)
