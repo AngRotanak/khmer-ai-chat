@@ -285,8 +285,8 @@ function RegisterPage() {
 {/* ✅ Thank-you screen */}
 <div
   ref={thankYouRef}
-  className={`overflow-hidden bg-green-50 rounded-xl shadow-lg w-full flex flex-col items-center text-center mx-auto
-    ${paymentComplete && licenseInfo ? "max-h-[600px] opacity-100 mt-6 animate-slideup p-8" : "max-h-0 opacity-0"}`}
+  className={`overflow-hidden bg-green-50 rounded-xl shadow-lg w-full flex flex-col items-center text-center p-8 mx-auto
+    ${paymentComplete && licenseInfo ? "max-h-[600px] animate-slideUpFadeIn mt-6" : "max-h-0 animate-slideDownFadeOut"}`}
 >
   {paymentComplete && licenseInfo && (
     <>
