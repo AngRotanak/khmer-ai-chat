@@ -7,8 +7,6 @@ import AttendanceCalendar from "./components/AttendanceCalendar"
 import StaffCalendar from "./components/StaffCalendar"
 import AdminSummaryCalendar from "./components/AdminSummaryCalendar"
 import ViewModeFAB from "./components/ViewModeFAB"   // ✅ FAB with icons
-import { getGroupId } from "./components/utils/telegram"
-
 
 import { db } from "~/lib/firebase"
 import { ref, get, push } from "firebase/database"
@@ -26,11 +24,16 @@ function ReportPage() {
   const [selectedKey, setSelectedKey] = useState<string>()
   const [viewMode, setViewMode] = useState<"report" | "calendar" | "summary">("report")
 
-  const groupId = getGroupId()
-  console.log("Active group:", groupId)
+  const params = new URLSearchParams(location.search)
+  let groupId = params.get("group_id")
 
-
-
+  if (!groupId || groupId === "unknown") {
+    const tg = (window as any).Telegram?.WebApp
+    const rawParam = tg?.initDataUnsafe?.start_param
+    if (rawParam) {
+      groupId = rawParam
+    }
+  }
 
   // ✅ Fetch staff list
   useEffect(() => {
