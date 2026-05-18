@@ -218,7 +218,7 @@ function RegisterPage() {
     return () => clearTimeout(timer)
   }, [showQRPanel])
   return (
-    <AdminLayout title="📝 Registe License">
+    <AdminLayout title="📝 License">
       <div className="flex-1 px-4 py-6 max-w-md mx-auto space-y-6 pb-44">
 
         <h2 className="text-teal-400 text-lg font-bold text-center">
