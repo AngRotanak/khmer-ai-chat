@@ -215,8 +215,11 @@ function RegisterPage() {
 
 {/* ✅ QR panel */}
 <div
-  className={`overflow-hidden max-w-md mx-auto rounded-xl shadow-lg bg-dark-800 border border-gray-700 relative flex flex-col items-center
-    ${qrImage && !paymentComplete ? "max-h-[600px] opacity-100 mt-6 animate-slideup p-6" : "max-h-0 opacity-0"}`}
+  className={`transition-all duration-500 ease-in-out overflow-hidden ${
+    qrImage && !paymentComplete
+      ? "max-h-[600px] opacity-100 mt-6 transform translate-y-0"
+      : "max-h-0 opacity-0 transform translate-y-full"
+  } max-w-md mx-auto rounded-xl shadow-lg bg-dark-800 border border-gray-700 p-6 relative flex flex-col items-center`}
 >
   {qrImage && !paymentComplete && (
     <>
@@ -282,11 +285,14 @@ function RegisterPage() {
 </div>
 
 
-{/* ✅ Thank-you screen... */}
+ {/* ✅ Thank-you screen */}
 <div
   ref={thankYouRef}
-  className={`overflow-hidden bg-green-50 rounded-xl shadow-lg w-full flex flex-col items-center text-center p-8 mx-auto
-    ${paymentComplete && licenseInfo ? "max-h-[600px] animate-slideUpFadeIn mt-6" : "max-h-0 animate-slideDownFadeOut"}`}
+  className={`transition-all duration-500 ease-in-out overflow-hidden ${
+    paymentComplete && licenseInfo
+      ? "max-h-[600px] opacity-100 mt-6 transform translate-y-0"
+      : "max-h-0 opacity-0 transform translate-y-full"
+  } bg-green-50 rounded-xl shadow-lg w-full flex flex-col items-center text-center p-8 mx-auto`}
 >
   {paymentComplete && licenseInfo && (
     <>
