@@ -33,7 +33,6 @@ export default defineConfig({
       },
     }),
     presetAnimations(),
-    presetUseful(),
   ],
 
   theme: {
@@ -69,10 +68,25 @@ export default defineConfig({
           '0%, 100%': { boxShadow: '0 0 0 0 rgba(20, 184, 166, 0.6)' },
           '50%': { boxShadow: '0 0 10px 4px rgba(20, 184, 166, 0.8)' },
         },
+        fade: {
+          '0%': { opacity: '0' },
+          '100%': { opacity: '1' },
+        },
+        slideUpFadeIn: {
+          '0%': { transform: 'translateY(20px)', opacity: '0' },
+          '100%': { transform: 'translateY(0)', opacity: '1' },
+        },
+        slideDownFadeOut: {
+          '0%': { transform: 'translateY(0)', opacity: '1' },
+          '100%': { transform: 'translateY(20px)', opacity: '0' },
+        },
       },
       animation: {
         wiggle: 'wiggle 0.5s ease-in-out',
         tealPulse: 'tealPulse 2s infinite',
+        fade: 'fade 0.5s ease-in-out forwards',
+        slideUpFadeIn: 'slideUpFadeIn 0.5s ease-out forwards',
+        slideDownFadeOut: 'slideDownFadeOut 0.4s ease-in forwards',
       },
     },
   },
@@ -137,12 +151,24 @@ export default defineConfig({
     }],
     ['animate-slide-up', { animation: 'slide-up 0.3s ease-out forwards' }],
     ['animate-slide-down', { animation: 'slide-down 0.3s ease-in forwards' }],
+    ['animate-fade', { animation: 'fade 0.5s ease-in-out forwards' }],
+    ['animate-slideUpFadeIn', { animation: 'slideUpFadeIn 0.5s ease-out forwards' }],
+    ['animate-slideDownFadeOut', { animation: 'slideDownFadeOut 0.4s ease-in forwards' }],
   ],
 
   transformers: [transformerDirectives(), transformerVariantGroup()],
   extractors: [extractorSplit],
 
-  safelist: ['animate-slide-up', 'animate-slide-down', 'animate-wiggle', 'animate-tealPulse'],
+  safelist: [
+    'animate-slide-up',
+    'animate-slide-down',
+    'animate-fade',
+    'animate-slideUpFadeIn',
+    'animate-slideDownFadeOut',
+    'animate-wiggle',
+    'animate-tealPulse',
+  ],
+
   preflights: [
     {
       getCSS: () => `
@@ -179,6 +205,18 @@ export default defineConfig({
         @keyframes slide-down {
           from { transform: translateY(0); opacity: 1; }
           to { transform: translateY(100%); opacity: 0; }
+        }
+        @keyframes fade {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes slideUpFadeIn {
+          from { transform: translateY(20px); opacity: 0; }
+          to { transform: translateY(0); opacity: 1; }
+        }
+        @keyframes slideDownFadeOut {
+          from { transform: translateY(0); opacity: 1; }
+          to { transform: translateY(20px); opacity: 0; }
         }
       `,
     },
