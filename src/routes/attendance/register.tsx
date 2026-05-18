@@ -284,7 +284,7 @@ function RegisterPage() {
 </div>
 
 
-{/* ✅ Thank-you screen */}
+{/* ✅ Thank-you screen ...*/}
 <div
   ref={thankYouRef}
   className={`transition-all duration-500 ease-in-out overflow-hidden mt-6
