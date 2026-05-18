@@ -215,10 +215,10 @@ function RegisterPage() {
 
 {/* ✅ QR panel */}
 <div
-  className={`transition-all duration-500 ease-in-out mt-6
-    ${qrImage 
-      ? "opacity-100 translate-y-0"
-      : "opacity-0 translate-y-4"} 
+  className={`transition-all duration-500 ease-in-out overflow-hidden mt-6
+    ${qrImage && !paymentComplete
+      ? "max-h-[600px] opacity-100"
+      : "max-h-0 opacity-0"} 
     max-w-md mx-auto rounded-xl shadow-lg p-6 flex flex-col items-center relative bg-dark-800 border border-gray-700`}
 >
   {qrImage && !paymentComplete && (
@@ -283,13 +283,14 @@ function RegisterPage() {
   )}
 </div>
 
+
 {/* ✅ Thank-you screen */}
 <div
   ref={thankYouRef}
-  className={`transition-all duration-500 ease-in-out mt-6
+  className={`transition-all duration-500 ease-in-out overflow-hidden mt-6
     ${paymentComplete && licenseInfo
-      ? "opacity-100 translate-y-0"
-      : "opacity-0 translate-y-4"} 
+      ? "max-h-[600px] opacity-100"
+      : "max-h-0 opacity-0"} 
     bg-green-50 rounded-xl shadow-lg p-8 w-full flex flex-col items-center text-center`}
 >
   {paymentComplete && licenseInfo && (
@@ -347,7 +348,7 @@ function RegisterPage() {
             disabled={loading}
             className="flex-1 py-3 rounded-lg bg-teal-600 hover:bg-teal-500 text-white font-semibold transition disabled:opacity-50"
           >
-            {loading ? "test Processing..." : "Pay with KHQR"}
+            {loading ? "Processing..." : "Pay with KHQR"}
           </button>
         </div>
 
