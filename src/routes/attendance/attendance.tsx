@@ -566,6 +566,7 @@ function AttendancePage() {
             {/* Settings always visible...... */}
             <Link
               to="/attendance/register"
+               search={{ groupId }}   // ✅ pass groupId here
               className="flex items-center gap-3 px-4 py-3 rounded-lg bg-gray-800 hover:bg-gray-700 text-teal-300 transition"
             >
               <span>📝</span><span>Register / Lease License</span>
