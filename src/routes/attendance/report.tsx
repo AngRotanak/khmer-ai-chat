@@ -8,7 +8,7 @@ import StaffCalendar from "./components/StaffCalendar"
 import AdminSummaryCalendar from "./components/AdminSummaryCalendar"
 import ViewModeFAB from "./components/ViewModeFAB"   // ✅ FAB with icons
 import { z } from "zod"
-import { getGroupId } from "./components/utils/telegram"
+// import { getGroupId } from "./components/utils/telegram"
 import { db } from "~/lib/firebase"
 import { ref, get, push } from "firebase/database"
 
@@ -29,17 +29,16 @@ function ReportPage() {
   const [selectedKey, setSelectedKey] = useState<string>()
   const [viewMode, setViewMode] = useState<"report" | "calendar" | "summary">("report")
 
-  
-const params = new URLSearchParams(location.search)
-let groupId = params.get("group_id") || ""
+  const params = new URLSearchParams(location.search)
+  let groupId = params.get("group_id") || ""
 
-if (!groupId || groupId === "unknown") {
-  const tg = (window as any).Telegram?.WebApp
-  const rawParam = tg?.initDataUnsafe?.start_param
-  if (rawParam) {
-    groupId = rawParam
+  if (!groupId || groupId === "unknown") {
+    const tg = (window as any).Telegram?.WebApp
+    const rawParam = tg?.initDataUnsafe?.start_param
+    if (rawParam) {
+      groupId = rawParam
+    }
   }
-}
 
   // ✅ Fetch staff list...
   useEffect(() => {
@@ -68,14 +67,14 @@ if (!groupId || groupId === "unknown") {
   }, [groupId])
 
 
-// ✅ groupId is guaranteed string
-const { records, groupedRecords, summary } = useAttendanceRecords(
-  groupId,
-  selectedUserId || undefined,
-  reportMode,
-  selectedMonth,
-  selectedDate
-)
+  // ✅ groupId is guaranteed string
+  const { records, groupedRecords, summary } = useAttendanceRecords(
+    groupId,
+    selectedUserId || undefined,
+    reportMode,
+    selectedMonth,
+    selectedDate
+  )
 
   return (
     <AdminLayout title="📊 Report">

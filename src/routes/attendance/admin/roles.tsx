@@ -34,6 +34,7 @@ if (!groupId || groupId === "unknown") {
   if (rawParam) {
     groupId = rawParam
   }
+}
 
   // =========================
   // SAFE LOGGER
