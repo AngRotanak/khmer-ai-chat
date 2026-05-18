@@ -7,7 +7,7 @@ import { getGroupId } from "./components/utils/telegram"
 export const Route = createFileRoute("/attendance/register")({
   component: RegisterPage,
   validateSearch: z.object({
-    groupId: z.string().optional(),
+   group_id: z.string().optional(),
   }),
 })
 

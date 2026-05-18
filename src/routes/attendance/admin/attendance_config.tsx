@@ -11,21 +11,12 @@ import { AdminLayout } from "../components/AdminLayout"
 export const Route = createFileRoute("/attendance/admin/config")({
   component: AttendanceConfigPage,
   validateSearch: z.object({
-    groupId: z.string().optional(),
+    group_id: z.string().optional(),
   }),
 })
 
 function AttendanceConfigPage() {
-  const params = new URLSearchParams(location.search)
-  let groupId = params.get("group_id")
-
-  if (!groupId || groupId === "unknown") {
-    const tg = (window as any).Telegram?.WebApp
-    const rawParam = tg?.initDataUnsafe?.start_param
-    if (rawParam) {
-      groupId = rawParam
-    }
-  }
+  const groupId = getGroupId()
 
   const [offices, setOffices] = useState<Record<string, any>>({})
   const [showForm, setShowForm] = useState(false)
@@ -104,8 +95,8 @@ function AttendanceConfigPage() {
     }
   }
 
- 
-return (
+
+  return (
     <AdminLayout title="🏢 Office Config">
       {/* Create Office Button */}
       {!showForm && (

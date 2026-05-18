@@ -14,9 +14,10 @@ import { ref, get, push } from "firebase/database"
 
 export const Route = createFileRoute("/attendance/report")({
   component: ReportPage,
-   validateSearch: z.object({
-      groupId: z.string().optional(),
-    }),
+  validateSearch: z.object({
+    group_id: z.string().optional(),
+  }),
+
 })
 
 function ReportPage() {
@@ -56,7 +57,7 @@ function ReportPage() {
     fetchStaff()
   }, [groupId])
 
-  
+
   // ✅ Attendance records
   const { records, groupedRecords, summary } = useAttendanceRecords(
     groupId,
