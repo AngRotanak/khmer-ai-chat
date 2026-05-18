@@ -290,96 +290,97 @@ function RegisterPage() {
           </p>
         </div>
 
-        {/* QR PANEL */}
-        <div
-          ref={qrRef}
-          className={`transition-all duration-700 ease-out overflow-hidden ${showQRPanel && qrImage && !paymentComplete
-            ? "max-h-[700px] opacity-100 translate-y-0 scale-100 mt-6"
-            : "max-h-0 opacity-0 translate-y-10 scale-95"
+{/* QR PANEL */}
+<div
+  ref={qrRef}
+  className={`transition-all duration-700 ease-out overflow-hidden ${
+    showQRPanel && qrImage && !paymentComplete
+      ? "max-h-[700px] opacity-100 translate-y-0 scale-100 mt-6"
+      : "max-h-0 opacity-0 translate-y-10 scale-95"
+  }`}
+>
+  {qrImage && !paymentComplete && (
+    <div className="rounded-xl shadow-lg bg-gradient-to-br from-slate-900 to-slate-800 border border-slate-700 p-6 relative flex flex-col items-center text-white">
+
+      {/* Close button */}
+      <button
+        onClick={() => {
+          setShowQRPanel(false)
+          setTimeout(() => {
+            setQrImage(null)
+            setMd5(null)
+          }, 500)
+        }}
+        className="absolute top-2 right-2 text-gray-500 hover:text-red-500"
+      >
+        ✕
+      </button>
+
+    <div className="relative">
+  <img
+    src={qrImage}
+    alt="Bakong QR"
+    className="rounded-lg shadow-md"
+  />
+
+  {/* Centered countdown */}
+  {!timeoutReached && (
+    <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 
+                    bg-black/70 text-white px-4 py-2 rounded-lg font-bold text-lg">
+      ⏳ {minutesLeft}m : {countdown}s
+    </div>
+  )}
+
+  {/* Branded footer bar */}
+  <div className="absolute bottom-0 left-0 right-0 bg-black/70 py-2 rounded-b-lg flex items-center justify-center gap-2">
+    {/* Logo icon */}
+    <span className="i-mynaui:chat size-5 text-teal-400"></span>
+    {/* Brand text */}
+    <p className="text-teal-400 font-bold text-sm tracking-wide">
+      KHMER AUTOSOFT • Secure KHQR Payment
+    </p>
+  </div>
+</div>
+
+
+      {/* Progress bar */}
+      {!timeoutReached && (
+        <div className="w-full bg-gray-200 rounded-full h-2 mt-4">
+          <div
+            className={`h-2 rounded-full transition-all duration-1000 ${
+              countdown > 40 ? "bg-green-500" : countdown > 20 ? "bg-yellow-500" : "bg-red-500"
             }`}
-        >
-          {qrImage && !paymentComplete && (
-            <div className="rounded-xl shadow-lg bg-gradient-to-br from-slate-900 to-slate-800 border border-slate-700 p-6 relative flex flex-col items-center text-white">
-
-              <button
-                onClick={() => {
-                  setShowQRPanel(false)
-
-                  setTimeout(() => {
-                    setQrImage(null)
-                    setMd5(null)
-                  }, 500)
-                }}
-                className="absolute top-2 right-2 text-gray-500 hover:text-red-500"
-              >
-                ✕
-              </button>
-
-              <div className="flex flex-col items-center">
-                <img
-                  src={qrImage}
-                  alt="Bakong QR"
-                  className="rounded-lg shadow-md"
-                />
-
-                 {/* Bottom overlay */}
-              <div className="absolute bottom-5 left-0 right-0 text-center text-white">
-                <p className="text-black font-semibold text-base">KHMER AUTOSOFT</p>
-              </div>
-              
-                {!timeoutReached && (
-                  <div className="mt-3">
-                    <div className="bg-black/70 text-white px-4 py-2 rounded-lg font-bold text-center">
-                      ⏳ {minutesLeft}m : {countdown}s
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {!timeoutReached && (
-                <div className="w-full bg-gray-200 rounded-full h-2 mt-4">
-                  <div
-                    className={`h-2 rounded-full transition-all duration-1000 ${countdown > 40
-                      ? "bg-green-500"
-                      : countdown > 20
-                        ? "bg-yellow-500"
-                        : "bg-red-500"
-                      }`}
-                    style={{
-                      width: `${(countdown / 60) * 100}%`,
-                    }}
-                  />
-                </div>
-              )}
-
-              <div className="mt-4 text-center">
-                <h3 className="font-bold text-teal-600">
-                  Scan to Pay
-                </h3>
-
-                {timeoutReached ? (
-                  <p className="text-red-500 font-semibold">
-                    Payment Timeout
-                  </p>
-                ) : (
-                  <>
-                    <p>Plan: {selectedPackage}</p>
-                    <p>Amount: {amount} KHR</p>
-                  </>
-                )}
-              </div>
-
-              {timeoutReached && (
-                <button
-                  onClick={handleGenerateQR}
-                  className="mt-4 w-full py-2 rounded-lg bg-red-600 text-white"
-                >
-                  Retry Payment
-                </button>
-              )}
-            </div>
-          )}
+            style={{ width: `${(countdown / 60) * 100}%` }}
+          />
         </div>
+      )}
+
+      {/* Payment info */}
+      <div className="mt-4 text-center">
+        <h3 className="font-bold text-teal-400">Scan to Pay</h3>
+        {timeoutReached ? (
+          <p className="text-red-500 font-semibold">Payment Timeout</p>
+        ) : (
+          <>
+            <p>Plan: {selectedPackage}</p>
+            <p>Amount: {amount} KHR</p>
+          </>
+        )}
+      </div>
+
+      {/* Retry button */}
+      {timeoutReached && (
+        <button
+          onClick={handleGenerateQR}
+          className="mt-4 w-full py-2 rounded-lg bg-red-600 text-white"
+        >
+          Retry Payment
+        </button>
+      )}
+    </div>
+  )}
+</div>
+
 
       {/* THANK YOU SCREEN */}
 <div
