@@ -301,7 +301,7 @@ function RegisterPage() {
           ))}
         </div>
 
-        {/* QR PANEL */}
+        {/* QR PANEL ,,,,*/}
         <div
           ref={qrRef}
           className={`transition-all duration-700 ease-out overflow-hidden ${showQRPanel && qrImage && !paymentComplete
