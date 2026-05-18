@@ -25,17 +25,14 @@ function RolesPage() {
   const [confirmUserId, setConfirmUserId] = useState<string | null>(null)
 
 
+const params = new URLSearchParams(location.search)
+let groupId = params.get("group_id") || ""
 
-  const params = new URLSearchParams(location.search)
-  let groupId = params.get("group_id")
-
-  if (!groupId || groupId === "unknown") {
-    // fallback: use Telegram WebApp context
-    const tg = (window as any).Telegram?.WebApp
-    const rawParam = tg?.initDataUnsafe?.start_param
-    if (rawParam) {
-      groupId = rawParam
-    }
+if (!groupId || groupId === "unknown") {
+  const tg = (window as any).Telegram?.WebApp
+  const rawParam = tg?.initDataUnsafe?.start_param
+  if (rawParam) {
+    groupId = rawParam
   }
 
   // =========================

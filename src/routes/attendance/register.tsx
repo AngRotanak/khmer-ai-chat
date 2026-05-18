@@ -14,13 +14,21 @@ export const Route = createFileRoute("/attendance/register")({
 
 
 function RegisterPage() {
-  // At the top of your component....
+  // At the top of your component..
   const TIMEOUT_MINUTES = 2   // change to 10 for production
   const TIMEOUT_SECONDS = TIMEOUT_MINUTES * 60
   const [remainingSeconds, setRemainingSeconds] = useState(TIMEOUT_SECONDS)
 
-  const groupId = getGroupId()
+  
+const params = new URLSearchParams(location.search)
+let groupId = params.get("group_id") || ""
 
+if (!groupId || groupId === "unknown") {
+  const tg = (window as any).Telegram?.WebApp
+  const rawParam = tg?.initDataUnsafe?.start_param
+  if (rawParam) {
+    groupId = rawParam
+  }
 
   const [selectedPackage, setSelectedPackage] = useState("basic")
   const [qrImage, setQrImage] = useState<string | null>(null)
