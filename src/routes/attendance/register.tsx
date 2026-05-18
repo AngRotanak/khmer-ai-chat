@@ -332,7 +332,7 @@ function RegisterPage() {
 
                 {/* Countdown overlay just below brand */}
                 {!timeoutReached && (
-                  <div className="absolute bottom-2 left-0 right-0 flex justify-center">
+                  <div className="absolute bottom-12 left-0 right-0 flex justify-center">
                     <div className="text-red px-4 py-2 rounded-lg font-bold text-lg">
                       ⏳ {minutesLeft}m : {countdown}s
                     </div>
