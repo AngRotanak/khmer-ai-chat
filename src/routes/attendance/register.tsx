@@ -22,6 +22,7 @@ function RegisterPage() {
     license_id: string
     download_url: string
   } | null>(null)
+  const thankYouRef = useRef<HTMLDivElement | null>(null)
 
   const groupId = "-1002174749045"
   const payButtonRef = useRef<HTMLButtonElement | null>(null)
@@ -84,52 +85,52 @@ function RegisterPage() {
   }
 
   // Unified countdown + polling
-useEffect(() => {
-  if (!md5 || paymentComplete || timeoutReached) return
+  useEffect(() => {
+    if (!md5 || paymentComplete || timeoutReached) return
 
-  let minutesPassed = 0
+    let minutesPassed = 0
 
-  const interval = setInterval(async () => {
-    setCountdown(prev => {
-      if (prev > 1) {
-        return prev - 1
-      } else {
-        // reset countdown to 60 and decrement minutes
-        minutesPassed += 1
-        setMinutesLeft(10 - minutesPassed)
+    const interval = setInterval(async () => {
+      setCountdown(prev => {
+        if (prev > 1) {
+          return prev - 1
+        } else {
+          // reset countdown to 60 and decrement minutes
+          minutesPassed += 1
+          setMinutesLeft(10 - minutesPassed)
 
-        if (minutesPassed >= 10) {
-          setTimeoutReached(true)
-          clearInterval(interval)
-          return 0
-        }
-
-        // 🔹 Poll backend once per minute
-        ;(async () => {
-          try {
-            const res = await fetch("https://b0df-136-228-130-3.ngrok-free.app", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ action: "check_payment", md5, selected_package: selectedPackage }),
-            })
-            const data = await res.json()
-            if (data.status === "PAID") {
-              setPaymentComplete(true)
-              setLicenseInfo(data.license)
-              clearInterval(interval)
-            }
-          } catch (err) {
-            console.error("Error checking payment:", err)
+          if (minutesPassed >= 10) {
+            setTimeoutReached(true)
+            clearInterval(interval)
+            return 0
           }
-        })()
 
-        return 60
-      }
-    })
-  }, 1000)
+          // 🔹 Poll backend once per minute
+          ; (async () => {
+            try {
+              const res = await fetch("https://b0df-136-228-130-3.ngrok-free.app", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ action: "check_payment", md5, selected_package: selectedPackage }),
+              })
+              const data = await res.json()
+              if (data.status === "PAID") {
+                setPaymentComplete(true)
+                setLicenseInfo(data.license)
+                clearInterval(interval)
+              }
+            } catch (err) {
+              console.error("Error checking payment:", err)
+            }
+          })()
 
-  return () => clearInterval(interval)
-}, [md5, paymentComplete, timeoutReached])
+          return 60
+        }
+      })
+    }, 1000)
+
+    return () => clearInterval(interval)
+  }, [md5, paymentComplete, timeoutReached])
 
   // Countdown display
   useEffect(() => {
@@ -139,6 +140,13 @@ useEffect(() => {
     }, 1000)
     return () => clearInterval(timer)
   }, [md5, paymentComplete, timeoutReached])
+
+  useEffect(() => {
+    if (paymentComplete && thankYouRef.current) {
+      thankYouRef.current.scrollIntoView({ behavior: "smooth", block: "center" })
+    }
+  }, [paymentComplete])
+
 
   return (
     <AdminLayout title="📝 Register / Lease License">
@@ -195,12 +203,12 @@ useEffect(() => {
           ))}
         </div>
 
-         {/* Countdown badge overlay */}
-                {!timeoutReached && !paymentComplete && (
-                  <div className="absolute bottom-2 right-2 bg-black/70 text-red-400 px-3 py-1 rounded-lg text-sm font-semibold">
-                    {minutesLeft}m : {countdown}s
-                  </div>
-                )}
+        {/* Countdown badge overlay */}
+        {!timeoutReached && !paymentComplete && (
+          <div className="absolute bottom-2 right-2 bg-black/70 text-red-400 px-3 py-1 rounded-lg text-sm font-semibold">
+            {minutesLeft}m : {countdown}s
+          </div>
+        )}
 
         {/* Selected plan summary */}
         <div className="text-center mt-4 transition-opacity duration-500 ease-in-out">
@@ -231,44 +239,47 @@ useEffect(() => {
               </button>
 
               {/* QR image with overlay */}
-              <div className="relative">
-                <img
-                  src={qrImage}
-                  alt="Bakong QR"
-                  className="rounded-lg border border-gray-200 shadow-md"
-                />
-                {/* Countdown badge overlay */}
-                {!timeoutReached && !paymentComplete && (
-                  <div className="absolute bottom-2 right-2 bg-black/70 text-red-400 px-3 py-1 rounded-lg text-sm font-semibold">
-                    {minutesLeft}m : {countdown}s
-                  </div>
-                )}
-              </div>
+              {qrImage && (
+                <div className="relative">
+                  <img
+                    src={qrImage}
+                    alt="Bakong QR"
+                    className="rounded-lg border border-gray-200 shadow-md"
+                  />
+                  {!timeoutReached && !paymentComplete && (
+                    <div className="absolute bottom-2 right-2 bg-black/70 text-red-400 px-3 py-1 rounded-lg text-sm font-semibold">
+                      {minutesLeft}m : {countdown}s
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Progress bar */}
-              {!timeoutReached && !paymentComplete && (
+              {qrImage && !timeoutReached && !paymentComplete && (
                 <div className="w-full bg-gray-700 rounded-full h-2 mt-3">
                   <div
-                    className={`h-2 rounded-full transition-all duration-1000 ease-linear ${
-                      countdown > 40 ? "bg-green-500" : countdown > 20 ? "bg-yellow-500" : "bg-red-500"
-                    }`}
+                    className={`h-2 rounded-full transition-all duration-1000 ease-linear ${countdown > 40 ? "bg-green-500" : countdown > 20 ? "bg-yellow-500" : "bg-red-500"
+                      }`}
                     style={{ width: `${(countdown / 60) * 100}%` }}
                   />
                 </div>
               )}
 
               {/* Payment info */}
-              <div className="mt-3 text-center">
-                <h3 className="text-teal-400 font-bold">Scan to Pay</h3>
-                {timeoutReached ? (
-                  <p className="text-red-600 font-semibold text-base">❌ Payment Timeout</p>
-                ) : (
-                  <>
-                    <p className="text-light-300 text-sm">Plan: {selectedPackage}</p>
-                    {amount && <p className="text-light-300 text-sm">Amount: {amount} KHR</p>}
-                  </>
-                )}
-              </div>
+              {qrImage && (
+                <div className="mt-3 text-center">
+                  <h3 className="text-teal-400 font-bold">Scan to Pay</h3>
+                  {timeoutReached ? (
+                    <p className="text-red-600 font-semibold text-base">❌ Payment Timeout</p>
+                  ) : (
+                    <>
+                      <p className="text-light-300 text-sm">Plan: {selectedPackage}</p>
+                      {amount && <p className="text-light-300 text-sm">Amount: {amount} KHR</p>}
+                    </>
+                  )}
+                </div>
+              )}
+
 
               {/* Retry button if timeout */}
               {timeoutReached && (
@@ -283,9 +294,11 @@ useEffect(() => {
           )}
         </div>
 
-        {/* Thank-you screen */}
         {paymentComplete && licenseInfo && (
-          <div className="bg-green-50 rounded-xl shadow-lg p-8 w-full flex flex-col items-center text-center">
+          <div
+            ref={thankYouRef}
+            className="bg-green-50 rounded-xl shadow-lg p-8 w-full flex flex-col items-center text-center"
+          >
             <h3 className="text-green-600 font-bold text-lg mb-2">✅ Payment Complete</h3>
             <p className="text-black font-semibold text-base">Thank you for your payment!</p>
             <p className="text-black text-sm mt-2">Your license has been activated.</p>
@@ -316,6 +329,7 @@ useEffect(() => {
             </div>
           </div>
         )}
+
       </div>
 
       {/* Sticky footer bar */}
