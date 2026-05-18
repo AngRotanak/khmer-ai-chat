@@ -213,104 +213,105 @@ function RegisterPage() {
           )}
         </div>
 
-        {/* ✅ Animated QR panel */}
-      {qrImage && !paymentComplete && (
-        <div className="max-w-md mx-auto rounded-xl shadow-lg p-6 flex flex-col items-center relative bg-dark-800 border border-gray-700">
-          {/* Close button */}
-          <button
-            onClick={() => setQrImage(null)}
-            className="absolute top-2 right-2 text-light-400 hover:text-red-400"
-          >
-            ✕
-          </button>
+     {/* ✅ QR panel */}
+{qrImage && !paymentComplete && (
+  <div className="max-w-md mx-auto rounded-xl shadow-lg p-6 flex flex-col items-center relative bg-dark-800 border border-gray-700 mt-6">
+    {/* Close button */}
+    <button
+      onClick={() => setQrImage(null)}
+      className="absolute top-2 right-2 text-light-400 hover:text-red-400"
+    >
+      ✕
+    </button>
 
-          {/* QR image with overlay */}
-          <div className="relative">
-            <img
-              src={qrImage}
-              alt="Bakong QR"
-              className="rounded-lg border border-gray-200 shadow-md"
-            />
-            {!timeoutReached && (
-              <div className="absolute bottom-2 right-2 bg-black/70 text-red-400 px-3 py-1 rounded-lg text-sm font-semibold">
-                {minutesLeft}m : {countdown}s
-              </div>
-            )}
-          </div>
-
-          {/* Progress bar */}
-          {!timeoutReached && (
-            <div className="w-full bg-gray-700 rounded-full h-2 mt-3">
-              <div
-                className={`h-2 rounded-full transition-all duration-1000 ease-linear ${
-                  countdown > 40 ? "bg-green-500" : countdown > 20 ? "bg-yellow-500" : "bg-red-500"
-                }`}
-                style={{ width: `${(countdown / 60) * 100}%` }}
-              />
-            </div>
-          )}
-
-          {/* Payment info */}
-          <div className="mt-3 text-center">
-            <h3 className="text-teal-400 font-bold">Scan to Pay</h3>
-            {timeoutReached ? (
-              <p className="text-red-600 font-semibold text-base">❌ Payment Timeout</p>
-            ) : (
-              <>
-                <p className="text-light-300 text-sm">Plan: {selectedPackage}</p>
-                {amount && <p className="text-light-300 text-sm">Amount: {amount} KHR</p>}
-              </>
-            )}
-          </div>
-
-          {/* Retry button */}
-          {timeoutReached && (
-            <button
-              onClick={handleGenerateQR}
-              className="mt-4 w-full py-2 rounded-lg bg-red-600 hover:bg-red-500 text-white font-semibold transition"
-            >
-              Retry Payment
-            </button>
-          )}
+    {/* QR image with overlay */}
+    <div className="relative">
+      <img
+        src={qrImage}
+        alt="Bakong QR"
+        className="rounded-lg border border-gray-200 shadow-md"
+      />
+      {!timeoutReached && (
+        <div className="absolute bottom-2 right-2 bg-black/70 text-red-400 px-3 py-1 rounded-lg text-sm font-semibold">
+          {minutesLeft}m : {countdown}s
         </div>
       )}
+    </div>
 
-      {/* ✅ Thank-you screen */}
-      {paymentComplete && licenseInfo && (
+    {/* Progress bar */}
+    {!timeoutReached && (
+      <div className="w-full bg-gray-700 rounded-full h-2 mt-3">
         <div
-          ref={thankYouRef}
-          className="bg-green-50 rounded-xl shadow-lg p-8 w-full flex flex-col items-center text-center mt-6"
-        >
-          <h3 className="text-green-600 font-bold text-lg mb-2">✅ Payment Complete</h3>
-          <p className="text-black font-semibold text-base">Thank you for your payment!</p>
-          <p className="text-black text-sm mt-2">Your license has been activated.</p>
-          <p className="text-black text-sm">Plan: {licenseInfo.package}</p>
-          <p className="text-black text-sm">License ID: {licenseInfo.license_id}</p>
-          <p className="text-black text-sm">Expires: {licenseInfo.expires}</p>
+          className={`h-2 rounded-full transition-all duration-1000 ease-linear ${
+            countdown > 40 ? "bg-green-500" : countdown > 20 ? "bg-yellow-500" : "bg-red-500"
+          }`}
+          style={{ width: `${(countdown / 60) * 100}%` }}
+        />
+      </div>
+    )}
 
-          {/* Download button */}
-          <a
-            href={licenseInfo.download_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-4 w-full py-2 rounded-lg bg-teal-600 hover:bg-teal-500 text-white font-semibold transition"
-          >
-            Download License PDF
-          </a>
-
-          {/* Copy License ID button */}
-          <button
-            onClick={() => navigator.clipboard.writeText(licenseInfo.license_id)}
-            className="mt-2 w-full py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-white font-semibold transition"
-          >
-            Copy License ID
-          </button>
-
-          <div className="mt-4 text-xs text-gray-500">
-            <p>KHMER AUTOSOFT • Licensed</p>
-          </div>
-        </div>
+    {/* Payment info */}
+    <div className="mt-3 text-center">
+      <h3 className="text-teal-400 font-bold">Scan to Pay</h3>
+      {timeoutReached ? (
+        <p className="text-red-600 font-semibold text-base">❌ Payment Timeout</p>
+      ) : (
+        <>
+          <p className="text-light-300 text-sm">Plan: {selectedPackage}</p>
+          {amount && <p className="text-light-300 text-sm">Amount: {amount} KHR</p>}
+        </>
       )}
+    </div>
+
+    {/* Retry button */}
+    {timeoutReached && (
+      <button
+        onClick={handleGenerateQR}
+        className="mt-4 w-full py-2 rounded-lg bg-red-600 hover:bg-red-500 text-white font-semibold transition"
+      >
+        Retry Payment
+      </button>
+    )}
+  </div>
+)}
+
+{/* ✅ Thank-you screen */}
+{paymentComplete && licenseInfo && (
+  <div
+    ref={thankYouRef}
+    className="bg-green-50 rounded-xl shadow-lg p-8 w-full flex flex-col items-center text-center mt-6"
+  >
+    <h3 className="text-green-600 font-bold text-lg mb-2">✅ Payment Complete</h3>
+    <p className="text-black font-semibold text-base">Thank you for your payment!</p>
+    <p className="text-black text-sm mt-2">Your license has been activated.</p>
+    <p className="text-black text-sm">Plan: {licenseInfo.package}</p>
+    <p className="text-black text-sm">License ID: {licenseInfo.license_id}</p>
+    <p className="text-black text-sm">Expires: {licenseInfo.expires}</p>
+
+    {/* Download button */}
+    <a
+      href={licenseInfo.download_url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="mt-4 w-full py-2 rounded-lg bg-teal-600 hover:bg-teal-500 text-white font-semibold transition"
+    >
+      Download License PDF
+    </a>
+
+    {/* Copy License ID button */}
+    <button
+      onClick={() => navigator.clipboard.writeText(licenseInfo.license_id)}
+      className="mt-2 w-full py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-white font-semibold transition"
+    >
+      Copy License ID
+    </button>
+
+    <div className="mt-4 text-xs text-gray-500">
+      <p>KHMER AUTOSOFT • Licensed</p>
+    </div>
+  </div>
+)}
+
 
       </div>
 
