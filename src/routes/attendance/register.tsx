@@ -139,8 +139,8 @@ function RegisterPage() {
       setCountdown(countdownValue)
 
       if (countdownValue === 10) {
-        const beep = new Audio("/ringtone.mp3")
-        beep.play().catch(err => console.error("Beep error:", err))
+        const warningBeep = new Audio("/warning.mp3")
+        warningBeep.play().catch(err => console.error("Warning beep error:", err))
       }
 
       if (secondsPassed >= TIMEOUT_SECONDS) {
@@ -150,8 +150,9 @@ function RegisterPage() {
       }
 
       if (countdownValue === 0) {
-        const beep = new Audio("/ringtone.mp3")
-        beep.play().catch(err => console.error("Beep error:", err))
+        const timeoutBeep = new Audio("/timeout.mp3")
+        timeoutBeep.play().catch(err => console.error("Timeout beep error:", err))
+
         countdownValue = 60
         setMinutesLeft(Math.max(0, TIMEOUT_MINUTES - Math.floor(secondsPassed / 60)))
       }
@@ -338,10 +339,10 @@ function RegisterPage() {
               >
                 <div
                   className={`h-2 rounded-full transition-all duration-1000 ${minutesLeft > TIMEOUT_MINUTES * 0.6
-                      ? "bg-green-500"
-                      : minutesLeft > TIMEOUT_MINUTES * 0.3
-                        ? "bg-yellow-500"
-                        : "bg-red-500 animate-pulse"
+                    ? "bg-green-500"
+                    : minutesLeft > TIMEOUT_MINUTES * 0.3
+                      ? "bg-yellow-500"
+                      : "bg-red-500 animate-pulse"
                     }`}
 
                   style={{
