@@ -329,7 +329,7 @@ useEffect(() => {
             disabled={loading}
             className="flex-1 py-3 rounded-lg bg-teal-600 hover:bg-teal-500 text-white font-semibold transition disabled:opacity-50"
           >
-            {loading ? "Processing..." : "Pay with KHQR"}
+            {loading ? "Start processing..." : "Pay with KHQR"}
           </button>
         </div>
 
