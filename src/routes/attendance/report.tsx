@@ -24,16 +24,9 @@ function ReportPage() {
   const [selectedKey, setSelectedKey] = useState<string>()
   const [viewMode, setViewMode] = useState<"report" | "calendar" | "summary">("report")
 
-  const params = new URLSearchParams(location.search)
-  let groupId = params.get("group_id")
-
-  if (!groupId || groupId === "unknown") {
-    const tg = (window as any).Telegram?.WebApp
-    const rawParam = tg?.initDataUnsafe?.start_param
-    if (rawParam) {
-      groupId = rawParam
-    }
-  }
+  const tg = (window as any).Telegram?.WebApp
+  const rawParam = tg?.initDataUnsafe?.start_param
+  const groupId = new URLSearchParams(rawParam).get("group_id") || "-1002174749045"
 
   // ✅ Fetch staff list
   useEffect(() => {
