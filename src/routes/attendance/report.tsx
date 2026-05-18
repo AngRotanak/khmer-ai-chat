@@ -7,6 +7,8 @@ import AttendanceCalendar from "./components/AttendanceCalendar"
 import StaffCalendar from "./components/StaffCalendar"
 import AdminSummaryCalendar from "./components/AdminSummaryCalendar"
 import ViewModeFAB from "./components/ViewModeFAB"   // ✅ FAB with icons
+import { getGroupId } from "./components/utils/telegram"
+
 
 import { db } from "~/lib/firebase"
 import { ref, get, push } from "firebase/database"

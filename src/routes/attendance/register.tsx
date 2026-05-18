@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react"
 import { createFileRoute } from "@tanstack/react-router"
 import { AdminLayout } from "./components/AdminLayout"
-
+import { getGroupId } from "./components/utils/telegram"
 export const Route = createFileRoute("/attendance/register")({
   component: RegisterPage,
 })
