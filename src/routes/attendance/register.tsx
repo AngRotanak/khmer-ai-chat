@@ -83,41 +83,53 @@ function RegisterPage() {
     }
   }
 
-  // Poll backend every minute
-  useEffect(() => {
-    if (!md5 || paymentComplete || timeoutReached) return
+  // Unified countdown + polling
+useEffect(() => {
+  if (!md5 || paymentComplete || timeoutReached) return
 
-    let minutesPassed = 0
-    const interval = setInterval(async () => {
-      minutesPassed += 1
-      setMinutesLeft(10 - minutesPassed)
-      setCountdown(60)
+  let minutesPassed = 0
 
-      if (minutesPassed >= 10) {
-        setTimeoutReached(true)
-        clearInterval(interval)
-        return
-      }
+  const interval = setInterval(async () => {
+    setCountdown(prev => {
+      if (prev > 1) {
+        return prev - 1
+      } else {
+        // reset countdown to 60 and decrement minutes
+        minutesPassed += 1
+        setMinutesLeft(10 - minutesPassed)
 
-      try {
-        const res = await fetch("https://b0df-136-228-130-3.ngrok-free.app", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "check_payment", md5, selected_package: selectedPackage }),
-        })
-        const data = await res.json()
-        if (data.status === "PAID") {
-          setPaymentComplete(true)
-          setLicenseInfo(data.license)
+        if (minutesPassed >= 10) {
+          setTimeoutReached(true)
           clearInterval(interval)
+          return 0
         }
-      } catch (err) {
-        console.error("Error checking payment:", err)
-      }
-    }, 60000)
 
-    return () => clearInterval(interval)
-  }, [md5, paymentComplete, timeoutReached])
+        // 🔹 Poll backend once per minute
+        ;(async () => {
+          try {
+            const res = await fetch("https://b0df-136-228-130-3.ngrok-free.app", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ action: "check_payment", md5, selected_package: selectedPackage }),
+            })
+            const data = await res.json()
+            if (data.status === "PAID") {
+              setPaymentComplete(true)
+              setLicenseInfo(data.license)
+              clearInterval(interval)
+            }
+          } catch (err) {
+            console.error("Error checking payment:", err)
+          }
+        })()
+
+        return 60
+      }
+    })
+  }, 1000)
+
+  return () => clearInterval(interval)
+}, [md5, paymentComplete, timeoutReached])
 
   // Countdown display
   useEffect(() => {
@@ -193,59 +205,76 @@ function RegisterPage() {
           )}
         </div>
 
-        {/* Show QR */}
-        {qrImage && !paymentComplete && !timeoutReached && (
-          <div className="rounded-xl shadow-lg p-4 w-full flex flex-col items-center">
-            <div className="relative inline-block">
-              <div className="flex justify-center w-full">
+        {/* ✅ Animated QR bottom sheet */}
+        <div
+          className={`fixed bottom-0 left-0 right-0 transition-all duration-500 ease-in-out 
+            ${qrImage && !paymentComplete && !timeoutReached
+              ? "max-h-[500px] opacity-100 translate-y-0"
+              : "max-h-0 opacity-0 translate-y-4"} 
+            bg-dark-800 border-t border-gray-700 p-4`}
+        >
+          {qrImage && !paymentComplete && !timeoutReached && (
+            <div className="max-w-md mx-auto rounded-xl shadow-lg p-6 flex flex-col items-center relative">
+              {/* Close button */}
+              <button
+                onClick={() => setQrImage(null)}
+                className="absolute top-2 right-2 text-light-400 hover:text-red-400"
+              >
+                ✕
+              </button>
+
+              {/* QR image with overlay */}
+              <div className="relative">
                 <img
                   src={qrImage}
                   alt="Bakong QR"
                   className="rounded-lg border border-gray-200 shadow-md"
                 />
+                {/* Countdown badge overlay */}
+                {!timeoutReached && !paymentComplete && (
+                  <div className="absolute bottom-2 right-2 bg-black/70 text-red-400 px-3 py-1 rounded-lg text-sm font-semibold">
+                    {minutesLeft}m : {countdown}s
+                  </div>
+                )}
               </div>
 
-              {/* Top overlay */}
-              <div className="absolute top-2 left-0 right-0 text-center">
-                <h3 className="text-black font-bold text-sm">Scan to Pay</h3>
+              {/* Progress bar */}
+              {!timeoutReached && !paymentComplete && (
+                <div className="w-full bg-gray-700 rounded-full h-2 mt-3">
+                  <div
+                    className={`h-2 rounded-full transition-all duration-1000 ease-linear ${
+                      countdown > 40 ? "bg-green-500" : countdown > 20 ? "bg-yellow-500" : "bg-red-500"
+                    }`}
+                    style={{ width: `${(countdown / 60) * 100}%` }}
+                  />
+                </div>
+              )}
+
+              {/* Payment info */}
+              <div className="mt-3 text-center">
+                <h3 className="text-teal-400 font-bold">Scan to Pay</h3>
                 {timeoutReached ? (
                   <p className="text-red-600 font-semibold text-base">❌ Payment Timeout</p>
                 ) : (
                   <>
-                    <p className="text-red-500 font-semibold text-base">
-                      Payment window: {minutesLeft} min left
-                    </p>
-                    <p className="text-red-500 text-sm">
-                      Next check in {countdown}s
-                    </p>
+                    <p className="text-light-300 text-sm">Plan: {selectedPackage}</p>
+                    {amount && <p className="text-light-300 text-sm">Amount: {amount} KHR</p>}
                   </>
                 )}
               </div>
 
-              {/* Bottom overlay */}
-              <div className="absolute bottom-5 left-0 right-0 text-center">
-                <p className="text-black font-semibold text-base">KHMER AUTOSOFT</p>
-                <p className="text-black text-sm">Plan: {selectedPackage}</p>
-                {amount && <p className="text-black text-sm">Amount: {amount} KHR</p>}
-              </div>
+              {/* Retry button if timeout */}
+              {timeoutReached && (
+                <button
+                  onClick={handleGenerateQR}
+                  className="mt-4 w-full py-2 rounded-lg bg-red-600 hover:bg-red-500 text-white font-semibold transition"
+                >
+                  Retry Payment
+                </button>
+              )}
             </div>
-
-            {/* Footer below QR */}
-            <div className="mt-4 text-xs text-gray-400">
-              <p>Secure KHQR Payment • Licensed by Bakong</p>
-            </div>
-
-            {/* Retry button if timeout */}
-            {timeoutReached && (
-              <button
-                onClick={handleGenerateQR}
-                className="mt-4 w-full py-2 rounded-lg bg-red-600 hover:bg-red-500 text-white font-semibold transition"
-              >
-                Retry Payment
-              </button>
-            )}
-          </div>
-        )}
+          )}
+        </div>
 
         {/* Thank-you screen */}
         {paymentComplete && licenseInfo && (
@@ -282,33 +311,33 @@ function RegisterPage() {
         )}
       </div>
 
-{/* Sticky footer bar */}
-<div className="fixed bottom-15 left-1/2 -translate-x-1/2 w-[92%] max-w-md bg-white border border-gray-200 px-4 py-4 rounded-xl shadow-footer z-50 animate-slideup
+      {/* Sticky footer bar */}
+      <div className="fixed bottom-15 left-1/2 -translate-x-1/2 w-[92%] max-w-md bg-white border border-gray-200 px-4 py-4 rounded-xl shadow-footer z-50 animate-slideup
                 md:static md:w-full md:translate-x-0 md:rounded-none md:shadow-none">
-  <div className="flex items-center justify-between gap-3">
-    {/* Total amount badge */}
-    {plans.find((p) => p.id === selectedPackage) && (
-      <span className="inline-block px-3 py-2 rounded-lg bg-teal-100 text-teal-700 font-semibold text-sm">
-        {plans.find((p) => p.id === selectedPackage)?.price}
-      </span>
-    )}
+        <div className="flex items-center justify-between gap-3">
+          {/* Total amount badge */}
+          {plans.find((p) => p.id === selectedPackage) && (
+            <span className="inline-block px-3 py-2 rounded-lg bg-teal-100 text-teal-700 font-semibold text-sm">
+              {plans.find((p) => p.id === selectedPackage)?.price}
+            </span>
+          )}
 
-    {/* Pay button */}
-    <button
-      ref={payButtonRef}
-      onClick={handleGenerateQR}
-      disabled={loading}
-      className="flex-1 py-3 rounded-lg bg-teal-600 hover:bg-teal-500 text-white font-semibold transition disabled:opacity-50"
-    >
-      {loading ? "Preparing Payment QR..." : "Pay with KHQR"}
-    </button>
-  </div>
+          {/* Pay button*/}
+          <button
+            ref={payButtonRef}
+            onClick={handleGenerateQR}
+            disabled={loading}
+            className="flex-1 py-3 rounded-lg bg-teal-600 hover:bg-teal-500 text-white font-semibold transition disabled:opacity-50"
+          >
+            {loading ? "Start processing..." : "Pay with KHQR"}
+          </button>
+        </div>
 
-  {/* Reassurance line */}
-  <p className="mt-2 text-xs text-gray-400 text-center">
-    You’ll be redirected to KHQR secure payment
-  </p>
-</div>
+        {/* Reassurance line */}
+        <p className="mt-2 text-xs text-gray-400 text-center">
+          You’ll be redirected to KHQR secure payment
+        </p>
+      </div>
 
 
 
