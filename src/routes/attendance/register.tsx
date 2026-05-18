@@ -282,7 +282,7 @@ function RegisterPage() {
 </div>
 
 
-{/* ✅ Thank-you screen */}
+{/* ✅ Thank-you screen... */}
 <div
   ref={thankYouRef}
   className={`overflow-hidden bg-green-50 rounded-xl shadow-lg w-full flex flex-col items-center text-center p-8 mx-auto
