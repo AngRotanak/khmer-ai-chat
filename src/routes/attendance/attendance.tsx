@@ -160,66 +160,99 @@ function AttendancePage() {
     initAttendance()
   }, [sessionLoaded, groupId, userId])
 
-  // =========================
-  // Detect office (GPS fallback)
-  // =========================
-  const detectOffice = async () => {
-    if (groupId === "unknown") return
-    if (!nextAction) {
-      // ✅ Log skipped detection
-      await push(ref(db, `logs/webapp/${groupId}`), {
-        type: "detectOffice_skipped",
-        reason: "nextAction not ready",
-        group_id: groupId,
-        user_id: userId,
-        timestamp: new Date().toISOString(),
-      })
-      return
-    }
+// =========================
+// Detect office (GPS fallback)
+// =========================
+const detectOffice = async () => {
+  if (groupId === "unknown") return
+  if (!nextAction) {
+    // ✅ Log skipped detection
+    await push(ref(db, `logs/webapp/${groupId}`), {
+      type: "detectOffice_skipped",
+      reason: "nextAction not ready",
+      group_id: groupId,
+      user_id: userId,
+      timestamp: new Date().toISOString(),
+    })
+    return
+  }
 
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        try {
-          const payload = {
-            action: "office",   // ✅ send checkin/checkout
-            nextAction: nextAction,   // ✅ pass "checkin" or "checkout"
-            group_id: groupId,
-            lat: pos.coords.latitude,
-            lon: pos.coords.longitude,
-            bot_username: "autobot",
-            user: tg?.initDataUnsafe?.user || {},
-            timestamp: new Date().toISOString(),
-          }
-
-          const res = await fetch("https://1c17-136-228-130-1.ngrok-free.app", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
-          })
-
-          const data = await res.json()
-          setOfficeId(data.office_id || "unknown")
-          setOfficeName(data.officeName || "Unknown Office")
-          setStatus(data.status || "")
-          setDetail(data.detail || "")
-          setDistance(data.distance || null)
-        } catch (err) {
-          console.error("GPS error:", err)
-          setOfficeId("unknown")
-          setOfficeName("Unknown Office")
-          setStatus("error")
-          setDetail(String(err))
+  navigator.geolocation.getCurrentPosition(
+    async (pos) => {
+      try {
+        const payload = {
+          action: "office",          // ✅ preview mode
+          nextAction: nextAction,    // ✅ pass "checkin" or "checkout"
+          group_id: groupId,
+          lat: pos.coords.latitude,
+          lon: pos.coords.longitude,
+          bot_username: "autobot",
+          user: tg?.initDataUnsafe?.user || {},
+          timestamp: new Date().toISOString(),
         }
-      },
-      (err) => {
-        console.error("Geolocation denied:", err)
+
+        const res = await fetch("https://1c17-136-228-130-1.ngrok-free.app", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        })
+
+        const data = await res.json()
+
+        // ✅ Update state with preview results
+        setOfficeId(data.office_id || "unknown")
+        setOfficeName(data.officeName || "Unknown Office")
+        setStatus(data.status || "")
+        setDetail(data.detail || "")
+        setDistance(data.distance || null)
+
+        // ✅ Log preview result
+        await push(ref(db, `logs/webapp/${groupId}`), {
+          type: "detectOffice_preview",
+          group_id: groupId,
+          user_id: userId,
+          nextAction,
+          office_id: data.office_id || "unknown",
+          status: data.status || "",
+          detail: data.detail || "",
+          preview: true,   // 🔹 mark as preview
+          timestamp: new Date().toISOString(),
+        })
+      } catch (err) {
+        console.error("GPS error:", err)
         setOfficeId("unknown")
         setOfficeName("Unknown Office")
-        setStatus("GPS denied")
-        setDetail(err.message)
+        setStatus("error")
+        setDetail(String(err))
+
+        // ✅ Log error
+        await push(ref(db, `logs/webapp/${groupId}`), {
+          type: "detectOffice_error",
+          group_id: groupId,
+          user_id: userId,
+          error: String(err),
+          timestamp: new Date().toISOString(),
+        })
       }
-    )
-  }
+    },
+    async (err) => {
+      console.error("Geolocation denied:", err)
+      setOfficeId("unknown")
+      setOfficeName("Unknown Office")
+      setStatus("GPS denied")
+      setDetail(err.message)
+
+      // ✅ Log denied
+      await push(ref(db, `logs/webapp/${groupId}`), {
+        type: "detectOffice_denied",
+        group_id: groupId,
+        user_id: userId,
+        error: err.message,
+        timestamp: new Date().toISOString(),
+      })
+    }
+  )
+}
 
 
   // =========================
