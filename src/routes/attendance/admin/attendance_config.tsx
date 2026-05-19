@@ -16,9 +16,8 @@ export const Route = createFileRoute("/attendance/admin/config")({
 })
 
 function AttendanceConfigPage() {
-
   const params = new URLSearchParams(location.search)
-  let groupId = params.get("group_id") || ""
+  let groupId = params.get("group_id")
 
   if (!groupId || groupId === "unknown") {
     const tg = (window as any).Telegram?.WebApp
@@ -39,7 +38,7 @@ function AttendanceConfigPage() {
     officeLocation: { lat: 13.3633, lng: 103.8564 },
   })
 
-  // ✅ Load offices..
+  // ✅ Load offices
   useEffect(() => {
     if (!groupId) return
     const officesPath = `khmer-autobot/attendance_config/${groupId}/offices`
@@ -105,8 +104,8 @@ function AttendanceConfigPage() {
     }
   }
 
-
-  return (
+ 
+return (
     <AdminLayout title="🏢 Office Config">
       {/* Create Office Button */}
       {!showForm && (
