@@ -140,7 +140,11 @@ function AttendancePage() {
       setLastCheckInTime(null)
     }
 
+    // ✅ Flip nextAction
     setNextAction(decidedAction)
+
+    // ✅ Trigger detectOffice with fresh decidedAction
+    await detectOffice(decidedAction)
 
     // Check missed checkout from yesterday
     const missed = await checkMissedCheckout(groupId, userId)
@@ -218,9 +222,6 @@ function AttendancePage() {
 
           // ✅ Re-sync with Firebase
           await initAttendance()
-
-          // ✅ Trigger detectOffice with fresh value
-          await detectOffice(newAction)
 
           setLoading("success")
           tg?.HapticFeedback?.notificationOccurred("success")
@@ -377,10 +378,11 @@ function AttendancePage() {
         } else {
           setNextAction("checkin")
         }
-      } else if (!status) {
-        // ❌ Only run detectOffice if we have no status yet
+      } else {
+        // ❌ No record yet → fallback to GPS detection
         detectOffice()
       }
+
 
       setSessionLoaded(true)
     })
@@ -887,23 +889,31 @@ function AttendancePage() {
               )}
 
 
-
               {/* Info messages */}
+              {status === "" && loading === "working" && (
+                <p className="text-sm text-gray-400 mt-2 animate-pulse">
+                  ⏳ Detecting office via GPS…
+                </p>
+              )}
+
               {distance !== null && (
                 <p className="text-sm text-gray-400 mt-2">
                   📍 You are {distance} meters from {officeName || "office"}.
                 </p>
               )}
+
               {nextAction === "checkout" && lastCheckInTime && (
                 <p className="text-sm text-gray-400 mt-1">
                   Last Check-In: {new Date(lastCheckInTime).toLocaleTimeString()}
                 </p>
               )}
+
               {missedCheckout && (
                 <p className="text-red-400 text-sm mt-2">
                   ⚠️ You missed Check-Out yesterday. Attendance cancelled.
                 </p>
               )}
+
             </>
           )}
         </div>
