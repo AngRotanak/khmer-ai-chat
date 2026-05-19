@@ -177,6 +177,16 @@ const detectOffice = async () => {
     return
   }
 
+  // ✅ Log the nextAction being sent BEFORE GPS call
+  await push(ref(db, `logs/webapp/${groupId}`), {
+    type: "detectOffice_start",
+    group_id: groupId,
+    user_id: userId,
+    nextAction,   // 🔹 track what frontend is sending
+    timestamp: new Date().toISOString(),
+    confirm: `Preparing detectOffice with nextAction=${nextAction}`
+  })
+
   navigator.geolocation.getCurrentPosition(
     async (pos) => {
       try {
@@ -190,6 +200,15 @@ const detectOffice = async () => {
           user: tg?.initDataUnsafe?.user || {},
           timestamp: new Date().toISOString(),
         }
+
+        // ✅ Log payload being sent
+        await push(ref(db, `logs/webapp/${groupId}`), {
+          type: "detectOffice_payload",
+          group_id: groupId,
+          user_id: userId,
+          payload,
+          timestamp: new Date().toISOString(),
+        })
 
         const res = await fetch("https://1c17-136-228-130-1.ngrok-free.app", {
           method: "POST",
@@ -215,7 +234,7 @@ const detectOffice = async () => {
           office_id: data.office_id || "unknown",
           status: data.status || "",
           detail: data.detail || "",
-          preview: true,   // 🔹 mark as preview
+          preview: true,
           timestamp: new Date().toISOString(),
         })
       } catch (err) {
@@ -230,6 +249,7 @@ const detectOffice = async () => {
           type: "detectOffice_error",
           group_id: groupId,
           user_id: userId,
+          nextAction,
           error: String(err),
           timestamp: new Date().toISOString(),
         })
@@ -247,6 +267,7 @@ const detectOffice = async () => {
         type: "detectOffice_denied",
         group_id: groupId,
         user_id: userId,
+        nextAction,
         error: err.message,
         timestamp: new Date().toISOString(),
       })
