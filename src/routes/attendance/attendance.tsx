@@ -114,166 +114,238 @@ function AttendancePage() {
   }, [groupId])
 
 
+  // =========================
+  // INIT ATTENDANCE (reusable)
+  // =========================
+  async function initAttendance() {
+    if (!sessionLoaded) return
+    if (!groupId || groupId === "unknown") return
+    if (!userId) return
 
-  useEffect(() => {
-    async function initAttendance() {
-      if (!sessionLoaded) return
-      if (!groupId || groupId === "unknown") return
-      if (!userId) return
+    // Fetch today's last action
+    const today = await fetchTodayLastAction(groupId, userId)
+    const { lastAction = null, lastTimestamp = null } = today || {}
+    const normalizedAction = (lastAction || "").toLowerCase()
 
-      // Fetch today's last action
-      const today = await fetchTodayLastAction(groupId, userId)
+    let decidedAction: "checkin" | "checkout" = "checkin"
 
-      // Destructure safely with defaults
-      const { lastAction = null, lastTimestamp = null } = today || {}
-      const normalizedAction = (lastAction || "").toLowerCase()
-
-      if (normalizedAction === "checkin") {
-        setNextAction("checkout")
-        setLastCheckInTime(lastTimestamp)
-      } else if (normalizedAction === "checkout") {
-        setNextAction("checkin")
-        setLastCheckInTime(null)
-      } else {
-        setNextAction("checkin")
-        setLastCheckInTime(null)
-      }
-
-      // Check missed checkout from yesterday
-      const missed = await checkMissedCheckout(groupId, userId)
-      setMissedCheckout(missed)
-
-      // ✅ Log init state to Firebase with explicit confirmation
-      await push(ref(db, `logs/webapp/${groupId}`), {
-        type: "attendance_init",
-        group_id: groupId,
-        user_id: userId,
-        lastAction: normalizedAction,
-        lastTimestamp,
-        nextAction,
-        missed,
-        timestamp: new Date().toISOString(),
-        confirm: `Fetched lastAction=${normalizedAction}, decided nextAction=${nextAction}`
-      })
+    if (normalizedAction === "checkin") {
+      decidedAction = "checkout"
+      setLastCheckInTime(lastTimestamp)
+    } else if (normalizedAction === "checkout") {
+      decidedAction = "checkin"
+      setLastCheckInTime(null)
+    } else {
+      decidedAction = "checkin"
+      setLastCheckInTime(null)
     }
 
+    setNextAction(decidedAction)
+
+    // Check missed checkout from yesterday
+    const missed = await checkMissedCheckout(groupId, userId)
+    setMissedCheckout(missed)
+
+    // ✅ Log init state with correct decidedAction
+    await push(ref(db, `logs/webapp/${groupId}`), {
+      type: "attendance_init",
+      group_id: groupId,
+      user_id: userId,
+      lastAction: normalizedAction,
+      lastTimestamp,
+      nextAction: decidedAction,
+      missed,
+      timestamp: new Date().toISOString(),
+      confirm: `Fetched lastAction=${normalizedAction}, decided nextAction=${decidedAction}`
+    })
+  }
+
+  // Run initAttendance on load
+  useEffect(() => {
     initAttendance()
   }, [sessionLoaded, groupId, userId])
 
-// =========================
-// Detect office (GPS fallback)
-// =========================
-const detectOffice = async () => {
-  if (groupId === "unknown") return
-  if (!nextAction) {
-    // ✅ Log skipped detection
-    await push(ref(db, `logs/webapp/${groupId}`), {
-      type: "detectOffice_skipped",
-      reason: "nextAction not ready",
-      group_id: groupId,
-      user_id: userId,
-      timestamp: new Date().toISOString(),
-    })
-    return
-  }
 
-  // ✅ Log the nextAction being sent BEFORE GPS call
-  await push(ref(db, `logs/webapp/${groupId}`), {
-    type: "detectOffice_start",
-    group_id: groupId,
-    user_id: userId,
-    nextAction,   // 🔹 track what frontend is sending
-    timestamp: new Date().toISOString(),
-    confirm: `Preparing detectOffice with nextAction=${nextAction}`
-  })
+  // =========================
+  // ATTENDANCE HANDLER
+  // =========================
+  const handleAttendance = async (extra?: { reason?: string }) => {
+    if (!sessionLoaded) return
+    if (!navigator.geolocation) return
 
-  navigator.geolocation.getCurrentPosition(
-    async (pos) => {
-      try {
+    setLoading("working")
+
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const currentAction = nextAction  // ✅ checkin or checkout
+
         const payload = {
-          action: "office",          // ✅ preview mode
-          nextAction: nextAction,    // ✅ pass "checkin" or "checkout"
-          group_id: groupId,
+          action: currentAction,
           lat: pos.coords.latitude,
           lon: pos.coords.longitude,
-          bot_username: "autobot",
-          user: tg?.initDataUnsafe?.user || {},
+          group_id: groupId,
+          user: tg?.initDataUnsafe?.user || null,
+          chat: tg?.initDataUnsafe?.chat || null,
           timestamp: new Date().toISOString(),
+          bot_username: "autobot",
+          photo: photo || null,
+          office_id: officeId || "unknown",
+          officeName: officeName || "Unknown Office",
+          reason: extra?.reason || null,
         }
 
-        // ✅ Log payload being sent
-        await push(ref(db, `logs/webapp/${groupId}`), {
-          type: "detectOffice_payload",
-          group_id: groupId,
-          user_id: userId,
-          payload,
-          timestamp: new Date().toISOString(),
-        })
+        console.log("Submitting attendance payload:", payload)
 
-        const res = await fetch("https://1c17-136-228-130-1.ngrok-free.app", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        })
+        await log(
+          { type: "attendance_payload", actionSent: currentAction, payload: { ...payload, photo: "[PHOTO_PRESENT]" } },
+          `logs/webapp/${groupId}`
+        )
 
-        const data = await res.json()
+        try {
+          const result = await submitAttendance(payload)
+          console.log("Attendance response:", result)
 
-        // ✅ Update state with preview results
-        setOfficeId(data.office_id || "unknown")
-        setOfficeName(data.officeName || "Unknown Office")
-        setStatus(data.status || "")
-        setDetail(data.detail || "")
-        setDistance(data.distance || null)
+          await log(
+            { type: "attendance_response", actionSent: currentAction, result },
+            `logs/webapp/${groupId}`
+          )
 
-        // ✅ Log preview result
-        await push(ref(db, `logs/webapp/${groupId}`), {
-          type: "detectOffice_preview",
-          group_id: groupId,
-          user_id: userId,
-          nextAction,
-          office_id: data.office_id || "unknown",
-          status: data.status || "",
-          detail: data.detail || "",
-          preview: true,
-          timestamp: new Date().toISOString(),
-        })
-      } catch (err) {
-        console.error("GPS error:", err)
+          // ✅ Flip locally
+          setNextAction(currentAction === "checkin" ? "checkout" : "checkin")
+
+          // ✅ Re-sync with Firebase
+          await initAttendance()
+
+          setLoading("success")
+          tg?.HapticFeedback?.notificationOccurred("success")
+          setTimeout(() => tg?.close(), 1200)
+        } catch (err) {
+          setLoading("idle")
+          await log({ type: "attendance_error", error: String(err) }, `logs/webapp/${groupId}`)
+          alert("❌ Failed attendance: " + String(err))
+        }
+      },
+      (err) => {
+        setLoading("idle")
+        log({ type: "location_error", error: err.message }, `logs/webapp/${groupId}`)
+      }
+    )
+  }
+
+  // =========================
+  // Detect office (GPS fallback)
+  // =========================
+  const detectOffice = async () => {
+    if (groupId === "unknown") return
+    if (!nextAction) {
+      // ✅ Log skipped detection
+      await push(ref(db, `logs/webapp/${groupId}`), {
+        type: "detectOffice_skipped",
+        reason: "nextAction not ready",
+        group_id: groupId,
+        user_id: userId,
+        timestamp: new Date().toISOString(),
+      })
+      return
+    }
+
+    // ✅ Log the nextAction being sent BEFORE GPS call
+    await push(ref(db, `logs/webapp/${groupId}`), {
+      type: "detectOffice_start",
+      group_id: groupId,
+      user_id: userId,
+      nextAction,   // 🔹 track what frontend is sending
+      timestamp: new Date().toISOString(),
+      confirm: `Preparing detectOffice with nextAction=${nextAction}`
+    })
+
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        try {
+          const payload = {
+            action: "office",          // ✅ preview mode
+            nextAction: nextAction,    // ✅ pass "checkin" or "checkout"
+            group_id: groupId,
+            lat: pos.coords.latitude,
+            lon: pos.coords.longitude,
+            bot_username: "autobot",
+            user: tg?.initDataUnsafe?.user || {},
+            timestamp: new Date().toISOString(),
+          }
+
+          // ✅ Log payload being sent
+          await push(ref(db, `logs/webapp/${groupId}`), {
+            type: "detectOffice_payload",
+            group_id: groupId,
+            user_id: userId,
+            payload,
+            timestamp: new Date().toISOString(),
+          })
+
+          const res = await fetch("https://1c17-136-228-130-1.ngrok-free.app", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          })
+
+          const data = await res.json()
+
+          // ✅ Update state with preview results
+          setOfficeId(data.office_id || "unknown")
+          setOfficeName(data.officeName || "Unknown Office")
+          setStatus(data.status || "")
+          setDetail(data.detail || "")
+          setDistance(data.distance || null)
+
+          // ✅ Log preview result
+          await push(ref(db, `logs/webapp/${groupId}`), {
+            type: "detectOffice_preview",
+            group_id: groupId,
+            user_id: userId,
+            nextAction,
+            office_id: data.office_id || "unknown",
+            status: data.status || "",
+            detail: data.detail || "",
+            preview: true,
+            timestamp: new Date().toISOString(),
+          })
+        } catch (err) {
+          console.error("GPS error:", err)
+          setOfficeId("unknown")
+          setOfficeName("Unknown Office")
+          setStatus("error")
+          setDetail(String(err))
+
+          // ✅ Log error
+          await push(ref(db, `logs/webapp/${groupId}`), {
+            type: "detectOffice_error",
+            group_id: groupId,
+            user_id: userId,
+            nextAction,
+            error: String(err),
+            timestamp: new Date().toISOString(),
+          })
+        }
+      },
+      async (err) => {
+        console.error("Geolocation denied:", err)
         setOfficeId("unknown")
         setOfficeName("Unknown Office")
-        setStatus("error")
-        setDetail(String(err))
+        setStatus("GPS denied")
+        setDetail(err.message)
 
-        // ✅ Log error
+        // ✅ Log denied
         await push(ref(db, `logs/webapp/${groupId}`), {
-          type: "detectOffice_error",
+          type: "detectOffice_denied",
           group_id: groupId,
           user_id: userId,
           nextAction,
-          error: String(err),
+          error: err.message,
           timestamp: new Date().toISOString(),
         })
       }
-    },
-    async (err) => {
-      console.error("Geolocation denied:", err)
-      setOfficeId("unknown")
-      setOfficeName("Unknown Office")
-      setStatus("GPS denied")
-      setDetail(err.message)
-
-      // ✅ Log denied
-      await push(ref(db, `logs/webapp/${groupId}`), {
-        type: "detectOffice_denied",
-        group_id: groupId,
-        user_id: userId,
-        nextAction,
-        error: err.message,
-        timestamp: new Date().toISOString(),
-      })
-    }
-  )
-}
+    )
+  }
 
 
   // =========================
@@ -360,166 +432,6 @@ const detectOffice = async () => {
       console.error("Firebase log error:", err)
     }
   }
-
-
-  // =========================
-  // OFFICE DETECTION (GPS)
-  // =========================
-  // useEffect(() => {
-  //   const detectOffice = () => {
-  //     navigator.geolocation.getCurrentPosition(
-  //       async (pos) => {
-  //         try {
-  //           const lat = pos.coords.latitude
-  //           const lon = pos.coords.longitude
-
-  //           const API_URL = "https://1c17-136-228-130-1.ngrok-free.app";
-
-  //           const payload = {
-  //             action: "office",
-  //             group_id: groupId,
-  //             lat,
-  //             lon,
-  //             bot_username: "autobot",
-  //             user: tg?.initDataUnsafe?.user || {},
-  //             timestamp: new Date().toISOString(),
-  //           }
-
-  //           const res = await fetch(API_URL, {
-  //             method: "POST",
-  //             headers: { "Content-Type": "application/json" },
-  //             body: JSON.stringify(payload),
-  //           })
-
-  //           const data = await res.json()
-  //           setOfficeId(data.office_id || "unknown")
-  //           setOfficeName(data.officeName || "Unknown Office")
-  //           setStatus(data.status || "")
-  //           setDetail(data.detail || "")
-  //           setDistance(data.distance || null)
-  //         } catch (err) {
-  //           console.error("GPS error or fetch failed:", err)
-  //           setOfficeId("unknown")
-  //           setOfficeName("Unknown Office")
-  //           setStatus("error")
-  //           setDetail(String(err))
-  //         }
-  //       },
-  //       (err) => {
-  //         console.error("Geolocation denied:", err)
-  //         setOfficeId("unknown")
-  //         setOfficeName("Unknown Office")
-  //         setStatus("GPS denied")
-  //         setDetail(String(err.message))
-  //       }
-  //     )
-  //   }
-
-  //   if (sessionLoaded) detectOffice()
-  // }, [sessionLoaded, groupId])
-
-  // useEffect(() => {
-  //   const detectOffice = () => {
-  //     navigator.geolocation.getCurrentPosition(
-  //       async (pos) => {
-  //         try {
-  //           const lat = pos.coords.latitude;
-  //           const lon = pos.coords.longitude;
-
-  //           // ✅ Match webhook registration
-  //           const API_URL = "https://1c17-136-228-130-1.ngrok-free.app";
-
-  //           const payload = {
-  //             action: "office",
-  //             group_id: groupId,
-  //             lat,
-  //             lon,
-  //             bot_username: "autobot",
-  //             user: tg?.initDataUnsafe?.user || {},
-  //             timestamp: new Date().toISOString(),
-  //           };
-
-
-  //           const res = await fetch(API_URL, {
-  //             method: "POST",
-  //             headers: { "Content-Type": "application/json" },
-  //             body: JSON.stringify(payload),
-  //           });
-
-  //           let data;
-  //           try {
-  //             data = await res.json();
-  //             console.log("Parsed JSON response:", data);
-  //           } catch (parseErr) {
-  //             const text = await res.text();
-  //             console.error("Failed to parse JSON, raw response:", text);
-  //             throw parseErr;
-  //           }
-
-  //           setOfficeId(data.office_id || "unknown");
-  //           setOfficeName(data.officeName || "Unknown Office");
-  //           setStatus(data.status || "");
-  //           setDetail(data.detail || "");
-  //           setDistance(data.distance || null);
-
-  //           log(
-  //             {
-  //               type: "office_detected",
-  //               group_id: groupId,
-  //               office_id: data.office_id || "unknown",
-  //               officeName: data.officeName || "Unknown Office",
-  //               status: data.status || "",
-  //               detail: data.detail || "",
-  //               distance: data.distance || null,
-  //             },
-  //             "logs/webapp/init"
-  //           );
-  //         } catch (err) {
-  //           console.error("GPS error or fetch failed:", err);
-  //           setOfficeId("unknown");
-  //           setOfficeName("Unknown Office");
-  //           setStatus("error");
-  //           setDetail(String(err));
-
-  //           log(
-  //             {
-  //               type: "office_detected",
-  //               group_id: groupId,
-  //               office_id: "unknown",
-  //               officeName: "Unknown Office",
-  //               status: "error",
-  //               detail: String(err),
-  //               distance: null,
-  //             },
-  //             "logs/webapp/init"
-  //           );
-  //         }
-  //       },
-  //       (err) => {
-  //         console.error("Geolocation denied:", err);
-  //         log(
-  //           {
-  //             type: "office_detected",
-  //             group_id: groupId,
-  //             office_id: "unknown",
-  //             officeName: "Unknown Office",
-  //             status: "GPS denied",
-  //             detail: String(err.message),
-  //             distance: null,
-  //           },
-  //           "logs/webapp/init"
-  //         );
-  //       }
-  //     );
-  //   };
-
-  //   if (sessionLoaded) detectOffice();
-  // }, [sessionLoaded, groupId]);
-
-
-  // =========================
-  // Attendance state initializer
-  // =========================
 
 
   // =========================
@@ -652,68 +564,6 @@ const detectOffice = async () => {
   };
 
 
-  // =========================
-  // ATTENDANCE HANDLER
-  // =========================
-  const handleAttendance = async (extra?: { reason?: string }) => {
-    if (!sessionLoaded) return
-    if (!navigator.geolocation) return
-
-    setLoading("working")
-
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        const currentAction = nextAction  // ✅ checkin or checkout
-
-        const payload = {
-          action: currentAction,   // ✅ send real action
-          lat: pos.coords.latitude,
-          lon: pos.coords.longitude,
-          group_id: groupId,
-          user: tg?.initDataUnsafe?.user || null,
-          chat: tg?.initDataUnsafe?.chat || null,
-          timestamp: new Date().toISOString(),
-          bot_username: "autobot",
-          photo: photo || null,   // base64 string
-          office_id: officeId || "unknown",
-          officeName: officeName || "Unknown Office",
-          reason: extra?.reason || null,
-        }
-
-        console.log("Submitting attendance payload:", payload)
-
-        // ✅ Log safe copy (mask photo)
-        await log(
-          { type: "attendance_payload", actionSent: currentAction, payload: { ...payload, photo: "[PHOTO_PRESENT]" } },
-          `logs/webapp/${groupId}`
-        )
-
-        try {
-          const result = await submitAttendance(payload)
-          console.log("Attendance response:", result)
-
-          await log(
-            { type: "attendance_response", actionSent: currentAction, result },
-            `logs/webapp/${groupId}`
-          )
-
-          // ✅ Flip nextAction after success
-          setNextAction(currentAction === "checkin" ? "checkout" : "checkin")
-          setLoading("success")
-          tg?.HapticFeedback?.notificationOccurred("success")
-          setTimeout(() => tg?.close(), 1200)
-        } catch (err) {
-          setLoading("idle")
-          await log({ type: "attendance_error", error: String(err) }, `logs/webapp/${groupId}`)
-          alert("❌ Failed attendance: " + String(err))
-        }
-      },
-      (err) => {
-        setLoading("idle")
-        log({ type: "location_error", error: err.message }, `logs/webapp/${groupId}`)
-      }
-    )
-  }
 
   function BottomSheetMenu({
     currentRole,
