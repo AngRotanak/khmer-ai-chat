@@ -189,61 +189,136 @@ function AttendancePage() {
     })
   }, [groupId])
 
+
   // =========================
-  // OFFICE DETECTION (GPS)
+  // Detect office (GPS fallback)
   // =========================
-  useEffect(() => {
-    const detectOffice = () => {
-      navigator.geolocation.getCurrentPosition(
-        async (pos) => {
-          try {
-            const lat = pos.coords.latitude
-            const lon = pos.coords.longitude
-
-            const API_URL = "https://1c17-136-228-130-1.ngrok-free.app";
-
-            const payload = {
-              action: "office",
-              group_id: groupId,
-              lat,
-              lon,
-              bot_username: "autobot",
-              user: tg?.initDataUnsafe?.user || {},
-              timestamp: new Date().toISOString(),
-            }
-
-            const res = await fetch(API_URL, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(payload),
-            })
-
-            const data = await res.json()
-            setOfficeId(data.office_id || "unknown")
-            setOfficeName(data.officeName || "Unknown Office")
-            setStatus(data.status || "")
-            setDetail(data.detail || "")
-            setDistance(data.distance || null)
-          } catch (err) {
-            console.error("GPS error or fetch failed:", err)
-            setOfficeId("unknown")
-            setOfficeName("Unknown Office")
-            setStatus("error")
-            setDetail(String(err))
+  const detectOffice = () => {
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        try {
+          const payload = {
+            action: nextAction,   // ✅ send checkin/checkout
+            group_id: groupId,
+            lat: pos.coords.latitude,
+            lon: pos.coords.longitude,
+            bot_username: "autobot",
+            user: tg?.initDataUnsafe?.user || {},
+            timestamp: new Date().toISOString(),
           }
-        },
-        (err) => {
-          console.error("Geolocation denied:", err)
+
+          const res = await fetch("https://1c17-136-228-130-1.ngrok-free.app", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          })
+
+          const data = await res.json()
+          setOfficeId(data.office_id || "unknown")
+          setOfficeName(data.officeName || "Unknown Office")
+          setStatus(data.status || "")
+          setDetail(data.detail || "")
+          setDistance(data.distance || null)
+        } catch (err) {
+          console.error("GPS error:", err)
           setOfficeId("unknown")
           setOfficeName("Unknown Office")
-          setStatus("GPS denied")
-          setDetail(String(err.message))
+          setStatus("error")
+          setDetail(String(err))
         }
-      )
-    }
+      },
+      (err) => {
+        console.error("Geolocation denied:", err)
+        setOfficeId("unknown")
+        setOfficeName("Unknown Office")
+        setStatus("GPS denied")
+        setDetail(err.message)
+      }
+    )
+  }
 
-    if (sessionLoaded) detectOffice()
-  }, [sessionLoaded, groupId])
+  // =========================
+  // Record listener (primary source)
+  // =========================
+  useEffect(() => {
+    if (!groupId || !userId) return
+    const today = new Date().toISOString().slice(0, 10)
+    const recordsRef = ref(db, `khmer-autobot/attendance_records/${groupId}/${userId}/${today}`)
+
+    onValue(recordsRef, (snapshot) => {
+      const data = snapshot.val() || {}
+      const lastRecord = Object.values(data).pop() as any
+
+      if (lastRecord) {
+        // ✅ Use record values
+        setStatus(lastRecord.status || "")
+        setDetail(lastRecord.detail || "")
+        setOfficeId(lastRecord.office_id || "unknown")
+        setOfficeName(lastRecord.officeName || "Unknown Office")
+      } else {
+        // ❌ No record yet → fallback to GPS detection
+        detectOffice()
+      }
+
+      setSessionLoaded(true)
+    })
+  }, [groupId, userId])
+
+  // // =========================
+  // // OFFICE DETECTION (GPS)
+  // // =========================
+  // useEffect(() => {
+  //   const detectOffice = () => {
+  //     navigator.geolocation.getCurrentPosition(
+  //       async (pos) => {
+  //         try {
+  //           const lat = pos.coords.latitude
+  //           const lon = pos.coords.longitude
+
+  //           const API_URL = "https://1c17-136-228-130-1.ngrok-free.app";
+
+  //           const payload = {
+  //             action: "office",
+  //             group_id: groupId,
+  //             lat,
+  //             lon,
+  //             bot_username: "autobot",
+  //             user: tg?.initDataUnsafe?.user || {},
+  //             timestamp: new Date().toISOString(),
+  //           }
+
+  //           const res = await fetch(API_URL, {
+  //             method: "POST",
+  //             headers: { "Content-Type": "application/json" },
+  //             body: JSON.stringify(payload),
+  //           })
+
+  //           const data = await res.json()
+  //           setOfficeId(data.office_id || "unknown")
+  //           setOfficeName(data.officeName || "Unknown Office")
+  //           setStatus(data.status || "")
+  //           setDetail(data.detail || "")
+  //           setDistance(data.distance || null)
+  //         } catch (err) {
+  //           console.error("GPS error or fetch failed:", err)
+  //           setOfficeId("unknown")
+  //           setOfficeName("Unknown Office")
+  //           setStatus("error")
+  //           setDetail(String(err))
+  //         }
+  //       },
+  //       (err) => {
+  //         console.error("Geolocation denied:", err)
+  //         setOfficeId("unknown")
+  //         setOfficeName("Unknown Office")
+  //         setStatus("GPS denied")
+  //         setDetail(String(err.message))
+  //       }
+  //     )
+  //   }
+
+  //   if (sessionLoaded) detectOffice()
+  // }, [sessionLoaded, groupId])
 
   // useEffect(() => {
   //   const detectOffice = () => {
@@ -531,17 +606,17 @@ function AttendancePage() {
   // ATTENDANCE HANDLER
   // =========================
   const handleAttendance = async (extra?: { reason?: string }) => {
-    if (!sessionLoaded) return;
-    if (!navigator.geolocation) return;
+    if (!sessionLoaded) return
+    if (!navigator.geolocation) return
 
-    setLoading("working");
+    setLoading("working")
 
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
-        const currentAction = nextAction;
+        const currentAction = nextAction  // ✅ checkin or checkout
 
         const payload = {
-          action: currentAction,
+          action: currentAction,   // ✅ send real action
           lat: pos.coords.latitude,
           lon: pos.coords.longitude,
           group_id: groupId,
@@ -549,45 +624,46 @@ function AttendancePage() {
           chat: tg?.initDataUnsafe?.chat || null,
           timestamp: new Date().toISOString(),
           bot_username: "autobot",
-          photo: photo || null,   // ✅ real base64 string
+          photo: photo || null,   // base64 string
           office_id: officeId || "unknown",
           officeName: officeName || "Unknown Office",
           reason: extra?.reason || null,
-        };
+        }
 
-        console.log("Submitting attendance payload:", payload);
+        console.log("Submitting attendance payload:", payload)
 
-        // ✅ Log safe copy (with marker), not the real payload
+        // ✅ Log safe copy (mask photo)
         await log(
           { type: "attendance_payload", actionSent: currentAction, payload: { ...payload, photo: "[PHOTO_PRESENT]" } },
           `logs/webapp/${groupId}`
-        );
+        )
 
         try {
-          const result = await submitAttendance(payload); // ✅ sends real photo
-          console.log("Attendance response:", result);
+          const result = await submitAttendance(payload)
+          console.log("Attendance response:", result)
 
           await log(
             { type: "attendance_response", actionSent: currentAction, result },
             `logs/webapp/${groupId}`
-          );
+          )
 
-          setNextAction(currentAction === "checkin" ? "checkout" : "checkin");
-          setLoading("success");
-          tg?.HapticFeedback?.notificationOccurred("success");
-          setTimeout(() => tg?.close(), 1200);
+          // ✅ Flip nextAction after success
+          setNextAction(currentAction === "checkin" ? "checkout" : "checkin")
+          setLoading("success")
+          tg?.HapticFeedback?.notificationOccurred("success")
+          setTimeout(() => tg?.close(), 1200)
         } catch (err) {
-          setLoading("idle");
-          await log({ type: "attendance_error", error: String(err) }, `logs/webapp/${groupId}`);
-          alert("❌ Failed attendance: " + String(err));
+          setLoading("idle")
+          await log({ type: "attendance_error", error: String(err) }, `logs/webapp/${groupId}`)
+          alert("❌ Failed attendance: " + String(err))
         }
       },
       (err) => {
-        setLoading("idle");
-        log({ type: "location_error", error: err.message }, `logs/webapp/${groupId}`);
+        setLoading("idle")
+        log({ type: "location_error", error: err.message }, `logs/webapp/${groupId}`)
       }
-    );
-  };
+    )
+  }
 
   function BottomSheetMenu({
     currentRole,
@@ -665,7 +741,7 @@ function AttendancePage() {
 
             {/* ✅ Admin-only links */}
             {currentRole === "admin" && (
-              <>              
+              <>
                 <Link
                   to="/attendance/register"
                   search={{ group_id: groupId }}   // ✅ pass groupId here
@@ -676,7 +752,7 @@ function AttendancePage() {
 
                 <Link
                   to="/attendance/admin/roles"
-                  search={{group_id: groupId }}
+                  search={{ group_id: groupId }}
                   className="flex items-center gap-3 px-4 py-3 rounded-lg bg-gray-800 hover:bg-gray-700 text-teal-300 transition"
                 >
                   <span>👑</span><span>Manage Roles</span>
@@ -684,7 +760,7 @@ function AttendancePage() {
 
                 <Link
                   to="/attendance/admin/config"
-                  search={{group_id: groupId }}
+                  search={{ group_id: groupId }}
                   className="flex items-center gap-3 px-4 py-3 rounded-lg bg-gray-800 hover:bg-gray-700 text-teal-300 transition"
                 >
                   <span>🏢</span><span>Attendance Config</span>
@@ -730,7 +806,6 @@ function AttendancePage() {
           🕒 Attendance
         </h1>
 
-
         {sessionLoaded && officeName && (
           <p className="text-teal-400 text-sm mt-1 font-medium">🏢 {officeName}</p>
         )}
@@ -738,14 +813,14 @@ function AttendancePage() {
         {sessionLoaded && status && (
           <div
             className={`mt-2 px-3 py-2 rounded-lg inline-block font-medium ${status.includes("✅")
-              ? "bg-green-600 text-white"
-              : status.includes("⚠️ យឺត")
-                ? "bg-yellow-500 text-black"
-                : status.includes("⚠️ ចេញមុន")
-                  ? "bg-red-500 text-white"
-                  : status.includes("⏱")
-                    ? "bg-purple-500 text-white"
-                    : "bg-gray-600 text-white"
+                ? "bg-green-600 text-white"
+                : status.includes("⚠️ យឺត")
+                  ? "bg-yellow-500 text-black"
+                  : status.includes("⚠️ ចេញមុន")
+                    ? "bg-red-500 text-white"
+                    : status.includes("⏱")
+                      ? "bg-purple-500 text-white"
+                      : "bg-gray-600 text-white"
               }`}
           >
             {status} {detail}
@@ -755,6 +830,7 @@ function AttendancePage() {
           </div>
         )}
       </header>
+
 
 
       {/* Main */}
