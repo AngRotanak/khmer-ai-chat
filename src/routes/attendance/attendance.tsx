@@ -648,8 +648,7 @@ function AttendancePage() {
           🕒 Attendance
         </h1>
 
-        {/* ✅ Theme toggle removed — handled in Settings/BottomSheetMenu */}
-
+       
         {sessionLoaded && officeName && (
           <p className="text-teal-400 text-sm mt-1 font-medium">🏢 {officeName}</p>
         )}

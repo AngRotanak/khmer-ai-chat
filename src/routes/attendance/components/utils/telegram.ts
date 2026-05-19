@@ -43,3 +43,8 @@ export function getGroupId(): string {
 
   return resolved
 }
+
+export function getUserId(): string | null {
+  const tg = (window as any).Telegram?.WebApp
+  return tg?.initDataUnsafe?.user?.id || null
+}
