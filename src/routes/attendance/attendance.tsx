@@ -642,18 +642,10 @@ function AttendancePage() {
           <div className="flex flex-col space-y-2">
             <Link
               to="/attendance/viewhistory"
+              search={{ group_id: groupId }}
               className="flex items-center gap-3 px-4 py-3 rounded-lg bg-gray-800 hover:bg-gray-700 text-teal-300 transition"
             >
               <span>📜</span><span>View History</span>
-            </Link>
-
-            {/* Settings always visible...... */}
-            <Link
-              to="/attendance/register"
-              search={{ group_id: groupId }}   // ✅ pass groupId here
-              className="flex items-center gap-3 px-4 py-3 rounded-lg bg-gray-800 hover:bg-gray-700 text-teal-300 transition"
-            >
-              <span>📝</span><span>Register / Lease License</span>
             </Link>
 
             <button
@@ -663,7 +655,6 @@ function AttendancePage() {
               <span>👤</span><span>Profile</span>
             </button>
 
-            {/* Settings always visible */}
             <Link
               to="/attendance/settings"
               search={{ group_id: groupId }}
@@ -674,10 +665,18 @@ function AttendancePage() {
 
             {/* ✅ Admin-only links */}
             {currentRole === "admin" && (
-              <>
+              <>              
+                <Link
+                  to="/attendance/register"
+                  search={{ group_id: groupId }}   // ✅ pass groupId here
+                  className="flex items-center gap-3 px-4 py-3 rounded-lg bg-gray-800 hover:bg-gray-700 text-teal-300 transition"
+                >
+                  <span>📝</span><span>Register / Lease License</span>
+                </Link>
+
                 <Link
                   to="/attendance/admin/roles"
-                  search={{ group_id: groupId }}
+                  search={{group_id: groupId }}
                   className="flex items-center gap-3 px-4 py-3 rounded-lg bg-gray-800 hover:bg-gray-700 text-teal-300 transition"
                 >
                   <span>👑</span><span>Manage Roles</span>
@@ -685,7 +684,7 @@ function AttendancePage() {
 
                 <Link
                   to="/attendance/admin/config"
-                  search={{ group_id: groupId }}
+                  search={{group_id: groupId }}
                   className="flex items-center gap-3 px-4 py-3 rounded-lg bg-gray-800 hover:bg-gray-700 text-teal-300 transition"
                 >
                   <span>🏢</span><span>Attendance Config</span>
@@ -847,8 +846,8 @@ function AttendancePage() {
                     }}
                     defaultValue=""
                     className={`p-2 rounded w-full focus:ring-2 focus:ring-yellow-500 text-center appearance-none ${settings.theme === "dark"
-                        ? "bg-gray-800 text-white"
-                        : "bg-gray-100 text-gray-900"
+                      ? "bg-gray-800 text-white"
+                      : "bg-gray-100 text-gray-900"
                       }`}
                   >
                     <option value="" disabled>
