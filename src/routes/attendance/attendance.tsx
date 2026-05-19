@@ -237,58 +237,6 @@ function AttendancePage() {
   //   )
   // }
 
-useEffect(() => {
-    const detectOffice = () => {
-      navigator.geolocation.getCurrentPosition(
-        async (pos) => {
-          try {
-            const lat = pos.coords.latitude
-            const lon = pos.coords.longitude
-
-            const API_URL = "https://1c17-136-228-130-1.ngrok-free.app";
-
-            const payload = {
-              action: "office",
-              group_id: groupId,
-              lat,
-              lon,
-              bot_username: "autobot",
-              user: tg?.initDataUnsafe?.user || {},
-              timestamp: new Date().toISOString(),
-            }
-
-            const res = await fetch(API_URL, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(payload),
-            })
-
-            const data = await res.json()
-            setOfficeId(data.office_id || "unknown")
-            setOfficeName(data.officeName || "Unknown Office")
-            setStatus(data.status || "")
-            setDetail(data.detail || "")
-            setDistance(data.distance || null)
-          } catch (err) {
-            console.error("GPS error or fetch failed:", err)
-            setOfficeId("unknown")
-            setOfficeName("Unknown Office")
-            setStatus("error")
-            setDetail(String(err))
-          }
-        },
-        (err) => {
-          console.error("Geolocation denied:", err)
-          setOfficeId("unknown")
-          setOfficeName("Unknown Office")
-          setStatus("GPS denied")
-          setDetail(String(err.message))
-        }
-      )
-    }
-
-    if (sessionLoaded) detectOffice()
-  }, [sessionLoaded, groupId])
 
   // =========================
   // Record listener (primary source)
@@ -317,9 +265,9 @@ useEffect(() => {
   //   })
   // }, [groupId, userId])
 
-  // // =========================
-  // // OFFICE DETECTION (GPS)
-  // // =========================
+  // =========================
+  // OFFICE DETECTION (GPS)
+  // =========================
   // useEffect(() => {
   //   const detectOffice = () => {
   //     navigator.geolocation.getCurrentPosition(
@@ -373,107 +321,107 @@ useEffect(() => {
   //   if (sessionLoaded) detectOffice()
   // }, [sessionLoaded, groupId])
 
-  // useEffect(() => {
-  //   const detectOffice = () => {
-  //     navigator.geolocation.getCurrentPosition(
-  //       async (pos) => {
-  //         try {
-  //           const lat = pos.coords.latitude;
-  //           const lon = pos.coords.longitude;
+  useEffect(() => {
+    const detectOffice = () => {
+      navigator.geolocation.getCurrentPosition(
+        async (pos) => {
+          try {
+            const lat = pos.coords.latitude;
+            const lon = pos.coords.longitude;
 
-  //           // ✅ Match webhook registration
-  //           const API_URL = "https://1c17-136-228-130-1.ngrok-free.app";
+            // ✅ Match webhook registration
+            const API_URL = "https://1c17-136-228-130-1.ngrok-free.app";
 
-  //           const payload = {
-  //             action: "office",
-  //             group_id: groupId,
-  //             lat,
-  //             lon,
-  //             bot_username: "autobot",
-  //             user: tg?.initDataUnsafe?.user || {},
-  //             timestamp: new Date().toISOString(),
-  //           };
+            const payload = {
+              action: "office",
+              group_id: groupId,
+              lat,
+              lon,
+              bot_username: "autobot",
+              user: tg?.initDataUnsafe?.user || {},
+              timestamp: new Date().toISOString(),
+            };
 
-  //           // 🔹 Log what we’re sending
-  //           console.log("Sending payload to backend:", payload);
+            // 🔹 Log what we’re sending
+            console.log("Sending payload to backend:", payload);
 
-  //           const res = await fetch(API_URL, {
-  //             method: "POST",
-  //             headers: { "Content-Type": "application/json" },
-  //             body: JSON.stringify(payload),
-  //           });
+            const res = await fetch(API_URL, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(payload),
+            });
 
-  //           console.log("Response status:", res.status);
+            console.log("Response status:", res.status);
 
-  //           let data;
-  //           try {
-  //             data = await res.json();
-  //             console.log("Parsed JSON response:", data);
-  //           } catch (parseErr) {
-  //             const text = await res.text();
-  //             console.error("Failed to parse JSON, raw response:", text);
-  //             throw parseErr;
-  //           }
+            let data;
+            try {
+              data = await res.json();
+              console.log("Parsed JSON response:", data);
+            } catch (parseErr) {
+              const text = await res.text();
+              console.error("Failed to parse JSON, raw response:", text);
+              throw parseErr;
+            }
 
-  //           setOfficeId(data.office_id || "unknown");
-  //           setOfficeName(data.officeName || "Unknown Office");
-  //           setStatus(data.status || "");
-  //           setDetail(data.detail || "");
-  //           setDistance(data.distance || null);
+            setOfficeId(data.office_id || "unknown");
+            setOfficeName(data.officeName || "Unknown Office");
+            setStatus(data.status || "");
+            setDetail(data.detail || "");
+            setDistance(data.distance || null);
 
-  //           log(
-  //             {
-  //               type: "office_detected",
-  //               group_id: groupId,
-  //               office_id: data.office_id || "unknown",
-  //               officeName: data.officeName || "Unknown Office",
-  //               status: data.status || "",
-  //               detail: data.detail || "",
-  //               distance: data.distance || null,
-  //             },
-  //             "logs/webapp/init"
-  //           );
-  //         } catch (err) {
-  //           console.error("GPS error or fetch failed:", err);
-  //           setOfficeId("unknown");
-  //           setOfficeName("Unknown Office");
-  //           setStatus("error");
-  //           setDetail(String(err));
+            log(
+              {
+                type: "office_detected",
+                group_id: groupId,
+                office_id: data.office_id || "unknown",
+                officeName: data.officeName || "Unknown Office",
+                status: data.status || "",
+                detail: data.detail || "",
+                distance: data.distance || null,
+              },
+              "logs/webapp/init"
+            );
+          } catch (err) {
+            console.error("GPS error or fetch failed:", err);
+            setOfficeId("unknown");
+            setOfficeName("Unknown Office");
+            setStatus("error");
+            setDetail(String(err));
 
-  //           log(
-  //             {
-  //               type: "office_detected",
-  //               group_id: groupId,
-  //               office_id: "unknown",
-  //               officeName: "Unknown Office",
-  //               status: "error",
-  //               detail: String(err),
-  //               distance: null,
-  //             },
-  //             "logs/webapp/init"
-  //           );
-  //         }
-  //       },
-  //       (err) => {
-  //         console.error("Geolocation denied:", err);
-  //         log(
-  //           {
-  //             type: "office_detected",
-  //             group_id: groupId,
-  //             office_id: "unknown",
-  //             officeName: "Unknown Office",
-  //             status: "GPS denied",
-  //             detail: String(err.message),
-  //             distance: null,
-  //           },
-  //           "logs/webapp/init"
-  //         );
-  //       }
-  //     );
-  //   };
+            log(
+              {
+                type: "office_detected",
+                group_id: groupId,
+                office_id: "unknown",
+                officeName: "Unknown Office",
+                status: "error",
+                detail: String(err),
+                distance: null,
+              },
+              "logs/webapp/init"
+            );
+          }
+        },
+        (err) => {
+          console.error("Geolocation denied:", err);
+          log(
+            {
+              type: "office_detected",
+              group_id: groupId,
+              office_id: "unknown",
+              officeName: "Unknown Office",
+              status: "GPS denied",
+              detail: String(err.message),
+              distance: null,
+            },
+            "logs/webapp/init"
+          );
+        }
+      );
+    };
 
-  //   if (sessionLoaded) detectOffice();
-  // }, [sessionLoaded, groupId]);
+    if (sessionLoaded) detectOffice();
+  }, [sessionLoaded, groupId]);
 
 
   // =========================
