@@ -169,74 +169,74 @@ function AttendancePage() {
   // =========================
   // ATTENDANCE HANDLER
   // =========================
-const handleAttendance = async (extra?: { reason?: string }) => {
-  if (!sessionLoaded) return
-  if (!navigator.geolocation) return
+  const handleAttendance = async (extra?: { reason?: string }) => {
+    if (!sessionLoaded) return
+    if (!navigator.geolocation) return
 
-  setLoading("working")
+    setLoading("working")
 
-  navigator.geolocation.getCurrentPosition(
-    async (pos) => {
-      const currentAction = nextAction  // ✅ current action at time of submit
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const currentAction = nextAction  // ✅ current action at time of submit
 
-      const payload = {
-        action: currentAction,
-        lat: pos.coords.latitude,
-        lon: pos.coords.longitude,
-        group_id: groupId,
-        user: tg?.initDataUnsafe?.user || null,
-        chat: tg?.initDataUnsafe?.chat || null,
-        timestamp: new Date().toISOString(),
-        bot_username: "autobot",
-        photo: photo || null,
-        office_id: officeId || "unknown",
-        officeName: officeName || "Unknown Office",
-        reason: extra?.reason || null,
-      }
+        const payload = {
+          action: currentAction,
+          lat: pos.coords.latitude,
+          lon: pos.coords.longitude,
+          group_id: groupId,
+          user: tg?.initDataUnsafe?.user || null,
+          chat: tg?.initDataUnsafe?.chat || null,
+          timestamp: new Date().toISOString(),
+          bot_username: "autobot",
+          photo: photo || null,
+          office_id: officeId || "unknown",
+          officeName: officeName || "Unknown Office",
+          reason: extra?.reason || null,
+        }
 
-      console.log("Submitting attendance payload:", payload)
-
-      await log(
-        { type: "attendance_payload", actionSent: currentAction, payload: { ...payload, photo: "[PHOTO_PRESENT]" } },
-        `logs/webapp/${groupId}`
-      )
-
-      try {
-        const result = await submitAttendance(payload)
-        console.log("Attendance response:", result)
+        console.log("Submitting attendance payload:", payload)
 
         await log(
-          { type: "attendance_response", actionSent: currentAction, result },
+          { type: "attendance_payload", actionSent: currentAction, payload: { ...payload, photo: "[PHOTO_PRESENT]" } },
           `logs/webapp/${groupId}`
         )
 
-        // ✅ Compute fresh nextAction
-        const newAction = currentAction === "checkin" ? "checkout" : "checkin"
+        try {
+          const result = await submitAttendance(payload)
+          console.log("Attendance response:", result)
 
-        // ✅ Flip locally
-        setNextAction(newAction)
+          await log(
+            { type: "attendance_response", actionSent: currentAction, result },
+            `logs/webapp/${groupId}`
+          )
 
-        // ✅ Re-sync with Firebase
-        await initAttendance()
+          // ✅ Compute fresh nextAction
+          const newAction = currentAction === "checkin" ? "checkout" : "checkin"
 
-        // ✅ Trigger detectOffice with fresh value
-        await detectOffice(newAction)
+          // ✅ Flip locally
+          setNextAction(newAction)
 
-        setLoading("success")
-        tg?.HapticFeedback?.notificationOccurred("success")
-        setTimeout(() => tg?.close(), 1200)
-      } catch (err) {
+          // ✅ Re-sync with Firebase
+          await initAttendance()
+
+          // ✅ Trigger detectOffice with fresh value
+          await detectOffice(newAction)
+
+          setLoading("success")
+          tg?.HapticFeedback?.notificationOccurred("success")
+          setTimeout(() => tg?.close(), 1200)
+        } catch (err) {
+          setLoading("idle")
+          await log({ type: "attendance_error", error: String(err) }, `logs/webapp/${groupId}`)
+          alert("❌ Failed attendance: " + String(err))
+        }
+      },
+      (err) => {
         setLoading("idle")
-        await log({ type: "attendance_error", error: String(err) }, `logs/webapp/${groupId}`)
-        alert("❌ Failed attendance: " + String(err))
+        log({ type: "location_error", error: err.message }, `logs/webapp/${groupId}`)
       }
-    },
-    (err) => {
-      setLoading("idle")
-      log({ type: "location_error", error: err.message }, `logs/webapp/${groupId}`)
-    }
-  )
-}
+    )
+  }
 
 
   // =========================
@@ -349,42 +349,42 @@ const handleAttendance = async (extra?: { reason?: string }) => {
     )
   }
 
-// =========================
-// Record listener (primary source)
-// =========================
-useEffect(() => {
-  if (!groupId || !userId) return
-  const today = new Date().toISOString().slice(0, 10)
-  const recordsRef = ref(db, `khmer-autobot/attendance_records/${groupId}/${userId}/${today}`)
+  // =========================
+  // Record listener (primary source)
+  // =========================
+  useEffect(() => {
+    if (!groupId || !userId) return
+    const today = new Date().toISOString().slice(0, 10)
+    const recordsRef = ref(db, `khmer-autobot/attendance_records/${groupId}/${userId}/${today}`)
 
-  onValue(recordsRef, (snapshot) => {
-    const data = snapshot.val() || {}
-    const lastRecord = Object.values(data).pop() as any
+    onValue(recordsRef, (snapshot) => {
+      const data = snapshot.val() || {}
+      const lastRecord = Object.values(data).pop() as any
 
-    if (lastRecord) {
-      // ✅ Use record values
-      setStatus(lastRecord.status || "")
-      setDetail(lastRecord.detail || "")
-      setOfficeId(lastRecord.office_id || "unknown")
-      setOfficeName(lastRecord.officeName || "Unknown Office")
+      if (lastRecord) {
+        // ✅ Use record values
+        setStatus(lastRecord.status || "")
+        setDetail(lastRecord.detail || "")
+        setOfficeId(lastRecord.office_id || "unknown")
+        setOfficeName(lastRecord.officeName || "Unknown Office")
 
-      // ✅ Flip nextAction based on last record
-      const normalizedAction = (lastRecord.action || "").toLowerCase()
-      if (normalizedAction === "checkin") {
-        setNextAction("checkout")
-      } else if (normalizedAction === "checkout") {
-        setNextAction("checkin")
-      } else {
-        setNextAction("checkin")
+        // ✅ Flip nextAction based on last record
+        const normalizedAction = (lastRecord.action || "").toLowerCase()
+        if (normalizedAction === "checkin") {
+          setNextAction("checkout")
+        } else if (normalizedAction === "checkout") {
+          setNextAction("checkin")
+        } else {
+          setNextAction("checkin")
+        }
+      } else if (!status) {
+        // ❌ Only run detectOffice if we have no status yet
+        detectOffice()
       }
-    } else {
-      // ❌ No record yet → fallback to GPS detection
-      // detectOffice()
-    }
 
-    setSessionLoaded(true)
-  })
-}, [groupId, userId])
+      setSessionLoaded(true)
+    })
+  }, [groupId, userId])
 
 
 
@@ -750,8 +750,8 @@ useEffect(() => {
         {/* Camera capture card */}
         <div
           className={`w-full max-w-md rounded-2xl shadow-xl p-6 border space-y-6 ${settings.theme === "dark"
-              ? "bg-gray-900 border-teal-600"
-              : "bg-white border-teal-400"
+            ? "bg-gray-900 border-teal-600"
+            : "bg-white border-teal-400"
             }`}
         >
           {status === "" ? (
