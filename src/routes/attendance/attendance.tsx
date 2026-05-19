@@ -193,49 +193,102 @@ function AttendancePage() {
   // =========================
   // Detect office (GPS fallback)
   // =========================
-  const detectOffice = () => {
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        try {
-          const payload = {
-            action: nextAction,   // ✅ send checkin/checkout
-            group_id: groupId,
-            lat: pos.coords.latitude,
-            lon: pos.coords.longitude,
-            bot_username: "autobot",
-            user: tg?.initDataUnsafe?.user || {},
-            timestamp: new Date().toISOString(),
+  // const detectOffice = () => {
+  //   navigator.geolocation.getCurrentPosition(
+  //     async (pos) => {
+  //       try {
+  //         const payload = {
+  //           action: nextAction,   // ✅ send checkin/checkout
+  //           group_id: groupId,
+  //           lat: pos.coords.latitude,
+  //           lon: pos.coords.longitude,
+  //           bot_username: "autobot",
+  //           user: tg?.initDataUnsafe?.user || {},
+  //           timestamp: new Date().toISOString(),
+  //         }
+
+  //         const res = await fetch("https://1c17-136-228-130-1.ngrok-free.app", {
+  //           method: "POST",
+  //           headers: { "Content-Type": "application/json" },
+  //           body: JSON.stringify(payload),
+  //         })
+
+  //         const data = await res.json()
+  //         setOfficeId(data.office_id || "unknown")
+  //         setOfficeName(data.officeName || "Unknown Office")
+  //         setStatus(data.status || "")
+  //         setDetail(data.detail || "")
+  //         setDistance(data.distance || null)
+  //       } catch (err) {
+  //         console.error("GPS error:", err)
+  //         setOfficeId("unknown")
+  //         setOfficeName("Unknown Office")
+  //         setStatus("error")
+  //         setDetail(String(err))
+  //       }
+  //     },
+  //     (err) => {
+  //       console.error("Geolocation denied:", err)
+  //       setOfficeId("unknown")
+  //       setOfficeName("Unknown Office")
+  //       setStatus("GPS denied")
+  //       setDetail(err.message)
+  //     }
+  //   )
+  // }
+
+useEffect(() => {
+    const detectOffice = () => {
+      navigator.geolocation.getCurrentPosition(
+        async (pos) => {
+          try {
+            const lat = pos.coords.latitude
+            const lon = pos.coords.longitude
+
+            const API_URL = "https://1c17-136-228-130-1.ngrok-free.app";
+
+            const payload = {
+              action: "office",
+              group_id: groupId,
+              lat,
+              lon,
+              bot_username: "autobot",
+              user: tg?.initDataUnsafe?.user || {},
+              timestamp: new Date().toISOString(),
+            }
+
+            const res = await fetch(API_URL, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(payload),
+            })
+
+            const data = await res.json()
+            setOfficeId(data.office_id || "unknown")
+            setOfficeName(data.officeName || "Unknown Office")
+            setStatus(data.status || "")
+            setDetail(data.detail || "")
+            setDistance(data.distance || null)
+          } catch (err) {
+            console.error("GPS error or fetch failed:", err)
+            setOfficeId("unknown")
+            setOfficeName("Unknown Office")
+            setStatus("error")
+            setDetail(String(err))
           }
-
-          const res = await fetch("https://1c17-136-228-130-1.ngrok-free.app", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
-          })
-
-          const data = await res.json()
-          setOfficeId(data.office_id || "unknown")
-          setOfficeName(data.officeName || "Unknown Office")
-          setStatus(data.status || "")
-          setDetail(data.detail || "")
-          setDistance(data.distance || null)
-        } catch (err) {
-          console.error("GPS error:", err)
+        },
+        (err) => {
+          console.error("Geolocation denied:", err)
           setOfficeId("unknown")
           setOfficeName("Unknown Office")
-          setStatus("error")
-          setDetail(String(err))
+          setStatus("GPS denied")
+          setDetail(String(err.message))
         }
-      },
-      (err) => {
-        console.error("Geolocation denied:", err)
-        setOfficeId("unknown")
-        setOfficeName("Unknown Office")
-        setStatus("GPS denied")
-        setDetail(err.message)
-      }
-    )
-  }
+      )
+    }
+
+    if (sessionLoaded) detectOffice()
+  }, [sessionLoaded, groupId])
 
   // =========================
   // Record listener (primary source)
