@@ -379,7 +379,7 @@ useEffect(() => {
       }
     } else {
       // ❌ No record yet → fallback to GPS detection
-      detectOffice()
+      // detectOffice()
     }
 
     setSessionLoaded(true)
