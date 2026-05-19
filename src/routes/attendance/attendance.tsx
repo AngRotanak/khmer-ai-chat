@@ -198,7 +198,7 @@ function AttendancePage() {
       async (pos) => {
         try {
           const payload = {
-            action: nextAction,   // ✅ send checkin/checkout
+            action: "office",   // ✅ send checkin/checkout
             group_id: groupId,
             lat: pos.coords.latitude,
             lon: pos.coords.longitude,
