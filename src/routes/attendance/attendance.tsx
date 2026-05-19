@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 import { db } from '~/lib/firebase'
-import { ref, push, getDatabase, get, onValue} from 'firebase/database'
+import { ref, push, getDatabase, get, onValue } from 'firebase/database'
 import CameraModal from './components/CameraModal'
 import { useTelegramWebApp } from '~/hooks/useTelegramWebApp'
 import AttendanceFooter from './components/AttendanceFooter'
@@ -29,6 +29,8 @@ function AttendancePage() {
   const [distance, setDistance] = useState<number | null>(null)
   const [currentRole, setCurrentRole] = useState("member")
   const [showMore, setShowMore] = useState(false)
+
+
 
   const [officeId, setOfficeId] = useState<string>("unknown")
   const [officeName, setOfficeName] = useState<string>("")
@@ -153,6 +155,31 @@ function AttendancePage() {
     init()
   }, [tg])
 
+
+
+  // =========================
+  // ATTENDANCE RECORD LISTENER
+  // =========================
+  useEffect(() => {
+    if (!groupId || !userId) return
+    const today = new Date().toISOString().slice(0, 10) // YYYY-MM-DD
+    const recordsRef = ref(db, `khmer-autobot/attendance_records/${groupId}/${userId}/${today}`)
+    onValue(recordsRef, (snapshot) => {
+      const data = snapshot.val() || {}
+      const lastRecord = Object.values(data).pop() as any
+      if (lastRecord) {
+        setStatus(lastRecord.status || "")
+        setDetail(lastRecord.detail || "")
+        setOfficeId(lastRecord.office_id || "unknown")
+        setOfficeName(lastRecord.officeName || "Unknown Office")  // ✅ always use field
+      }
+      setSessionLoaded(true)
+    })
+  }, [groupId, userId])
+
+  // =========================
+  // REASONS LISTENER
+  // =========================
   useEffect(() => {
     if (!groupId) return
     const reasonsRef = ref(db, `khmer-autobot/attendance_config/${groupId}/reasons`)
@@ -162,17 +189,17 @@ function AttendancePage() {
     })
   }, [groupId])
 
-
-
+  // =========================
+  // OFFICE DETECTION (GPS)
+  // =========================
   useEffect(() => {
     const detectOffice = () => {
       navigator.geolocation.getCurrentPosition(
         async (pos) => {
           try {
-            const lat = pos.coords.latitude;
-            const lon = pos.coords.longitude;
+            const lat = pos.coords.latitude
+            const lon = pos.coords.longitude
 
-            // ✅ Match webhook registration
             const API_URL = "https://1c17-136-228-130-1.ngrok-free.app";
 
             const payload = {
@@ -183,93 +210,148 @@ function AttendancePage() {
               bot_username: "autobot",
               user: tg?.initDataUnsafe?.user || {},
               timestamp: new Date().toISOString(),
-            };
-
-            // 🔹 Log what we’re sending
-            console.log("Sending payload to backend:", payload);
+            }
 
             const res = await fetch(API_URL, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify(payload),
-            });
+            })
 
-            console.log("Response status:", res.status);
-
-            let data;
-            try {
-              data = await res.json();
-              console.log("Parsed JSON response:", data);
-            } catch (parseErr) {
-              const text = await res.text();
-              console.error("Failed to parse JSON, raw response:", text);
-              throw parseErr;
-            }
-
-            setOfficeId(data.office_id || "unknown");
-            setOfficeName(data.officeName || "Unknown Office");
-            setStatus(data.status || "");
-            setDetail(data.detail || "");
-            setDistance(data.distance || null);
-
-            log(
-              {
-                type: "office_detected",
-                group_id: groupId,
-                office_id: data.office_id || "unknown",
-                officeName: data.officeName || "Unknown Office",
-                status: data.status || "",
-                detail: data.detail || "",
-                distance: data.distance || null,
-              },
-              "logs/webapp/init"
-            );
+            const data = await res.json()
+            setOfficeId(data.office_id || "unknown")
+            setOfficeName(data.officeName || "Unknown Office")
+            setStatus(data.status || "")
+            setDetail(data.detail || "")
+            setDistance(data.distance || null)
           } catch (err) {
-            console.error("GPS error or fetch failed:", err);
-            setOfficeId("unknown");
-            setOfficeName("Unknown Office");
-            setStatus("error");
-            setDetail(String(err));
-
-            log(
-              {
-                type: "office_detected",
-                group_id: groupId,
-                office_id: "unknown",
-                officeName: "Unknown Office",
-                status: "error",
-                detail: String(err),
-                distance: null,
-              },
-              "logs/webapp/init"
-            );
+            console.error("GPS error or fetch failed:", err)
+            setOfficeId("unknown")
+            setOfficeName("Unknown Office")
+            setStatus("error")
+            setDetail(String(err))
           }
         },
         (err) => {
-          console.error("Geolocation denied:", err);
-          log(
-            {
-              type: "office_detected",
-              group_id: groupId,
-              office_id: "unknown",
-              officeName: "Unknown Office",
-              status: "GPS denied",
-              detail: String(err.message),
-              distance: null,
-            },
-            "logs/webapp/init"
-          );
+          console.error("Geolocation denied:", err)
+          setOfficeId("unknown")
+          setOfficeName("Unknown Office")
+          setStatus("GPS denied")
+          setDetail(String(err.message))
         }
-      );
-    };
+      )
+    }
 
-    if (sessionLoaded) detectOffice();
-  }, [sessionLoaded, groupId]);
+    if (sessionLoaded) detectOffice()
+  }, [sessionLoaded, groupId])
+
+  // useEffect(() => {
+  //   const detectOffice = () => {
+  //     navigator.geolocation.getCurrentPosition(
+  //       async (pos) => {
+  //         try {
+  //           const lat = pos.coords.latitude;
+  //           const lon = pos.coords.longitude;
+
+  //           // ✅ Match webhook registration
+  //           const API_URL = "https://1c17-136-228-130-1.ngrok-free.app";
+
+  //           const payload = {
+  //             action: "office",
+  //             group_id: groupId,
+  //             lat,
+  //             lon,
+  //             bot_username: "autobot",
+  //             user: tg?.initDataUnsafe?.user || {},
+  //             timestamp: new Date().toISOString(),
+  //           };
+
+  //           // 🔹 Log what we’re sending
+  //           console.log("Sending payload to backend:", payload);
+
+  //           const res = await fetch(API_URL, {
+  //             method: "POST",
+  //             headers: { "Content-Type": "application/json" },
+  //             body: JSON.stringify(payload),
+  //           });
+
+  //           console.log("Response status:", res.status);
+
+  //           let data;
+  //           try {
+  //             data = await res.json();
+  //             console.log("Parsed JSON response:", data);
+  //           } catch (parseErr) {
+  //             const text = await res.text();
+  //             console.error("Failed to parse JSON, raw response:", text);
+  //             throw parseErr;
+  //           }
+
+  //           setOfficeId(data.office_id || "unknown");
+  //           setOfficeName(data.officeName || "Unknown Office");
+  //           setStatus(data.status || "");
+  //           setDetail(data.detail || "");
+  //           setDistance(data.distance || null);
+
+  //           log(
+  //             {
+  //               type: "office_detected",
+  //               group_id: groupId,
+  //               office_id: data.office_id || "unknown",
+  //               officeName: data.officeName || "Unknown Office",
+  //               status: data.status || "",
+  //               detail: data.detail || "",
+  //               distance: data.distance || null,
+  //             },
+  //             "logs/webapp/init"
+  //           );
+  //         } catch (err) {
+  //           console.error("GPS error or fetch failed:", err);
+  //           setOfficeId("unknown");
+  //           setOfficeName("Unknown Office");
+  //           setStatus("error");
+  //           setDetail(String(err));
+
+  //           log(
+  //             {
+  //               type: "office_detected",
+  //               group_id: groupId,
+  //               office_id: "unknown",
+  //               officeName: "Unknown Office",
+  //               status: "error",
+  //               detail: String(err),
+  //               distance: null,
+  //             },
+  //             "logs/webapp/init"
+  //           );
+  //         }
+  //       },
+  //       (err) => {
+  //         console.error("Geolocation denied:", err);
+  //         log(
+  //           {
+  //             type: "office_detected",
+  //             group_id: groupId,
+  //             office_id: "unknown",
+  //             officeName: "Unknown Office",
+  //             status: "GPS denied",
+  //             detail: String(err.message),
+  //             distance: null,
+  //           },
+  //           "logs/webapp/init"
+  //         );
+  //       }
+  //     );
+  //   };
+
+  //   if (sessionLoaded) detectOffice();
+  // }, [sessionLoaded, groupId]);
 
 
   // =========================
   // Attendance state initializer
   // =========================
+
   useEffect(() => {
     async function initAttendance() {
       if (!sessionLoaded) return
@@ -639,16 +721,17 @@ function AttendancePage() {
   return (
     <div
       className={`flex flex-col min-h-screen font-sans transition-colors duration-500 ${settings.theme === "dark"
-          ? "bg-gradient-to-b from-gray-950 via-gray-900 to-gray-800 text-white"
-          : "bg-gradient-to-b from-white via-gray-100 to-gray-200 text-gray-900"
+        ? "bg-gradient-to-b from-gray-950 via-gray-900 to-gray-800 text-white"
+        : "bg-gradient-to-b from-white via-gray-100 to-gray-200 text-gray-900"
         }`}
     >
+
       <header className="sticky top-0 w-full px-4 py-5 text-center backdrop-blur-md shadow-lg z-50 flex flex-col items-center">
         <h1 className="text-2xl font-bold tracking-wide flex items-center gap-2">
           🕒 Attendance
         </h1>
 
-       
+
         {sessionLoaded && officeName && (
           <p className="text-teal-400 text-sm mt-1 font-medium">🏢 {officeName}</p>
         )}
@@ -656,14 +739,14 @@ function AttendancePage() {
         {sessionLoaded && status && (
           <div
             className={`mt-2 px-3 py-2 rounded-lg inline-block font-medium ${status.includes("✅")
-                ? "bg-green-600 text-white"
-                : status.includes("⚠️ យឺត")
-                  ? "bg-yellow-500 text-black"
-                  : status.includes("⚠️ ចេញមុន")
-                    ? "bg-red-500 text-white"
-                    : status.includes("⏱")
-                      ? "bg-purple-500 text-white"
-                      : "bg-gray-600 text-white"
+              ? "bg-green-600 text-white"
+              : status.includes("⚠️ យឺត")
+                ? "bg-yellow-500 text-black"
+                : status.includes("⚠️ ចេញមុន")
+                  ? "bg-red-500 text-white"
+                  : status.includes("⏱")
+                    ? "bg-purple-500 text-white"
+                    : "bg-gray-600 text-white"
               }`}
           >
             {status} {detail}
@@ -764,8 +847,8 @@ function AttendancePage() {
                     }}
                     defaultValue=""
                     className={`p-2 rounded w-full focus:ring-2 focus:ring-yellow-500 text-center appearance-none ${settings.theme === "dark"
-                      ? "bg-gray-800 text-white"
-                      : "bg-gray-100 text-gray-900"
+                        ? "bg-gray-800 text-white"
+                        : "bg-gray-100 text-gray-900"
                       }`}
                   >
                     <option value="" disabled>
@@ -779,6 +862,7 @@ function AttendancePage() {
                   </select>
                 </div>
               )}
+
 
 
               {/* Info messages */}
