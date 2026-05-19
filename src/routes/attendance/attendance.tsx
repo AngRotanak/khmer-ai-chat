@@ -53,62 +53,6 @@ function AttendancePage() {
 
 
   // =========================
-  // SAFE LOGGER
-  // =========================
-  const log = async (entry: any, customPath?: string) => {
-    try {
-      const safeEntry = { ...entry }
-
-      // 🚫 Remove heavy photo data before saving
-      if (safeEntry.payload?.photo) {
-        safeEntry.payload.photo = "[PHOTO_PRESENT]" // marker only
-      }
-
-      // ✅ Use customPath if provided, otherwise fallback to groupId
-      const path = customPath || `logs/webapp/${entry.groupId || "unknown"}`
-      await push(ref(db, path), {
-        ...safeEntry,
-        timestamp: new Date().toISOString(),
-      })
-    } catch (err) {
-      console.error("Firebase log error:", err)
-    }
-  }
-
-  // =========================
-  // ROLE LISTENER
-  // =========================
-  function listenUserRole(
-    groupId: string,
-    userId: string,
-    setRole: (role: string) => void
-  ) {
-    const roleRef = ref(
-      db,
-      `khmer-autobot/attendance_config/${groupId}/attendance_roles/${userId}`
-    )
-
-    onValue(roleRef, async (snapshot) => {
-      const data = snapshot.val()
-      const role = data?.role || data || "member"
-      setRole(role)
-
-      // Log role fetch event
-      await log(
-        {
-          type: "role_fetch",
-          groupId,
-          userId,
-          role,
-          raw: data,
-          confirm: `Fetched role=${role} for user=${userId}`,
-        },
-        `webapp/${groupId}` // consistent with your attendance logs
-      )
-    })
-  }
-
-  // =========================
   // INIT TELEGRAM
   // =========================
   useEffect(() => {
@@ -157,7 +101,6 @@ function AttendancePage() {
 
 
 
-
   // =========================
   // REASONS LISTENER
   // =========================
@@ -171,16 +114,75 @@ function AttendancePage() {
   }, [groupId])
 
 
+
+  useEffect(() => {
+    async function initAttendance() {
+      if (!sessionLoaded) return
+      if (!groupId || groupId === "unknown") return
+      if (!userId) return
+
+      // Fetch today's last action
+      const today = await fetchTodayLastAction(groupId, userId)
+
+      // Destructure safely with defaults
+      const { lastAction = null, lastTimestamp = null } = today || {}
+      const normalizedAction = (lastAction || "").toLowerCase()
+
+      if (normalizedAction === "checkin") {
+        setNextAction("checkout")
+        setLastCheckInTime(lastTimestamp)
+      } else if (normalizedAction === "checkout") {
+        setNextAction("checkin")
+        setLastCheckInTime(null)
+      } else {
+        setNextAction("checkin")
+        setLastCheckInTime(null)
+      }
+
+      // Check missed checkout from yesterday
+      const missed = await checkMissedCheckout(groupId, userId)
+      setMissedCheckout(missed)
+
+      // ✅ Log init state to Firebase with explicit confirmation
+      await push(ref(db, `logs/webapp/${groupId}`), {
+        type: "attendance_init",
+        group_id: groupId,
+        user_id: userId,
+        lastAction: normalizedAction,
+        lastTimestamp,
+        nextAction,
+        missed,
+        timestamp: new Date().toISOString(),
+        confirm: `Fetched lastAction=${normalizedAction}, decided nextAction=${nextAction}`
+      })
+    }
+
+    initAttendance()
+  }, [sessionLoaded, groupId, userId])
+
   // =========================
   // Detect office (GPS fallback)
   // =========================
-  const detectOffice = () => {
+  const detectOffice = async () => {
     if (groupId === "unknown") return
+    if (!nextAction) {
+      // ✅ Log skipped detection
+      await push(ref(db, `logs/webapp/${groupId}`), {
+        type: "detectOffice_skipped",
+        reason: "nextAction not ready",
+        group_id: groupId,
+        user_id: userId,
+        timestamp: new Date().toISOString(),
+      })
+      return
+    }
+
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
         try {
           const payload = {
             action: "office",   // ✅ send checkin/checkout
+            nextAction: nextAction,   // ✅ pass "checkin" or "checkout"
             group_id: groupId,
             lat: pos.coords.latitude,
             lon: pos.coords.longitude,
@@ -246,6 +248,65 @@ function AttendancePage() {
       setSessionLoaded(true)
     })
   }, [groupId, userId])
+
+
+  // =========================
+  // ROLE LISTENER
+  // =========================
+  function listenUserRole(
+    groupId: string,
+    userId: string,
+    setRole: (role: string) => void
+  ) {
+    const roleRef = ref(
+      db,
+      `khmer-autobot/attendance_config/${groupId}/attendance_roles/${userId}`
+    )
+
+    onValue(roleRef, async (snapshot) => {
+      const data = snapshot.val()
+      const role = data?.role || data || "member"
+      setRole(role)
+
+      // Log role fetch event
+      await log(
+        {
+          type: "role_fetch",
+          groupId,
+          userId,
+          role,
+          raw: data,
+          confirm: `Fetched role=${role} for user=${userId}`,
+        },
+        `webapp/${groupId}` // consistent with your attendance logs
+      )
+    })
+  }
+
+
+  // =========================
+  // SAFE LOGGER
+  // =========================
+  const log = async (entry: any, customPath?: string) => {
+    try {
+      const safeEntry = { ...entry }
+
+      // 🚫 Remove heavy photo data before saving
+      if (safeEntry.payload?.photo) {
+        safeEntry.payload.photo = "[PHOTO_PRESENT]" // marker only
+      }
+
+      // ✅ Use customPath if provided, otherwise fallback to groupId
+      const path = customPath || `logs/webapp/${entry.groupId || "unknown"}`
+      await push(ref(db, path), {
+        ...safeEntry,
+        timestamp: new Date().toISOString(),
+      })
+    } catch (err) {
+      console.error("Firebase log error:", err)
+    }
+  }
+
 
   // =========================
   // OFFICE DETECTION (GPS)
@@ -406,50 +467,6 @@ function AttendancePage() {
   // Attendance state initializer
   // =========================
 
-  useEffect(() => {
-    async function initAttendance() {
-      if (!sessionLoaded) return
-      if (!groupId || groupId === "unknown") return
-      if (!userId) return
-
-      // Fetch today's last action
-      const today = await fetchTodayLastAction(groupId, userId)
-
-      // Destructure safely with defaults
-      const { lastAction = null, lastTimestamp = null } = today || {}
-      const normalizedAction = (lastAction || "").toLowerCase()
-
-      if (normalizedAction === "checkin") {
-        setNextAction("checkout")
-        setLastCheckInTime(lastTimestamp)
-      } else if (normalizedAction === "checkout") {
-        setNextAction("checkin")
-        setLastCheckInTime(null)
-      } else {
-        setNextAction("checkin")
-        setLastCheckInTime(null)
-      }
-
-      // Check missed checkout from yesterday
-      const missed = await checkMissedCheckout(groupId, userId)
-      setMissedCheckout(missed)
-
-      // ✅ Log init state to Firebase with explicit confirmation
-      await push(ref(db, `logs/webapp/${groupId}`), {
-        type: "attendance_init",
-        group_id: groupId,
-        user_id: userId,
-        lastAction: normalizedAction,
-        lastTimestamp,
-        nextAction,
-        missed,
-        timestamp: new Date().toISOString(),
-        confirm: `Fetched lastAction=${normalizedAction}, decided nextAction=${nextAction}`
-      })
-    }
-
-    initAttendance()
-  }, [sessionLoaded, groupId, userId])
 
   // =========================
   // Fetch today's last action
@@ -792,14 +809,14 @@ function AttendancePage() {
         {sessionLoaded && status && (
           <div
             className={`mt-2 px-3 py-2 rounded-lg inline-block font-medium ${status.includes("✅")
-                ? "bg-green-600 text-white"
-                : status.includes("⚠️ យឺត")
-                  ? "bg-yellow-500 text-black"
-                  : status.includes("⚠️ ចេញមុន")
-                    ? "bg-red-500 text-white"
-                    : status.includes("⏱")
-                      ? "bg-purple-500 text-white"
-                      : "bg-gray-600 text-white"
+              ? "bg-green-600 text-white"
+              : status.includes("⚠️ យឺត")
+                ? "bg-yellow-500 text-black"
+                : status.includes("⚠️ ចេញមុន")
+                  ? "bg-red-500 text-white"
+                  : status.includes("⏱")
+                    ? "bg-purple-500 text-white"
+                    : "bg-gray-600 text-white"
               }`}
           >
             {status} {detail}
