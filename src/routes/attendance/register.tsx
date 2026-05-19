@@ -2,33 +2,26 @@ import { useState, useEffect, useRef } from "react"
 import { createFileRoute } from "@tanstack/react-router"
 import { AdminLayout } from "./components/AdminLayout"
 import { z } from "zod"
-// import { getGroupId } from "./components/utils/telegram"
+import { getGroupId } from "./components/utils/telegram"
 
 export const Route = createFileRoute("/attendance/register")({
   component: RegisterPage,
   validateSearch: z.object({
-    group_id: z.string().optional(),
+   group_id: z.string().optional(),
   }),
 })
 
 
 
 function RegisterPage() {
-  // At the top of your component..
+  // At the top of your component....
   const TIMEOUT_MINUTES = 2   // change to 10 for production
   const TIMEOUT_SECONDS = TIMEOUT_MINUTES * 60
   const [remainingSeconds, setRemainingSeconds] = useState(TIMEOUT_SECONDS)
 
-  const params = new URLSearchParams(location.search)
-  let groupId = params.get("group_id") || ""
+  const groupId = getGroupId()
 
-  if (!groupId || groupId === "unknown") {
-    const tg = (window as any).Telegram?.WebApp
-    const rawParam = tg?.initDataUnsafe?.start_param
-    if (rawParam) {
-      groupId = rawParam
-    }
-  }
+
   const [selectedPackage, setSelectedPackage] = useState("basic")
   const [qrImage, setQrImage] = useState<string | null>(null)
   const [amount, setAmount] = useState<number | null>(null)
@@ -165,7 +158,7 @@ function RegisterPage() {
         timeoutBeep.play().catch(err => console.error("Timeout beep error:", err))
 
         countdownValue = 60
-
+       
       }
 
 
@@ -366,10 +359,10 @@ function RegisterPage() {
               >
                 <div
                   className={`h-2 rounded-full transition-all duration-1000 ${remainingSeconds > TIMEOUT_SECONDS * 0.6
-                    ? "bg-green-500"
-                    : remainingSeconds > TIMEOUT_SECONDS * 0.3
-                      ? "bg-yellow-500"
-                      : "bg-red-500 animate-pulse"
+                      ? "bg-green-500"
+                      : remainingSeconds > TIMEOUT_SECONDS * 0.3
+                        ? "bg-yellow-500"
+                        : "bg-red-500 animate-pulse"
                     }`}
                   style={{
                     width: `${((TIMEOUT_SECONDS - remainingSeconds) / TIMEOUT_SECONDS) * 100}%`,

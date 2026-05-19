@@ -7,6 +7,7 @@ import { z } from "zod"
 import { OfficeCard } from "../components/OfficeCard"
 import { NewOfficeForm } from "../components/NewOfficeForm"
 import { AdminLayout } from "../components/AdminLayout"
+import { getGroupId } from "../components/utils/telegram"
 
 export const Route = createFileRoute("/attendance/admin/config")({
   component: AttendanceConfigPage,
@@ -16,17 +17,7 @@ export const Route = createFileRoute("/attendance/admin/config")({
 })
 
 function AttendanceConfigPage() {
-  const params = new URLSearchParams(location.search)
-  let groupId = params.get("group_id")
-
-  if (!groupId || groupId === "unknown") {
-    const tg = (window as any).Telegram?.WebApp
-    const rawParam = tg?.initDataUnsafe?.start_param
-    if (rawParam) {
-      groupId = rawParam
-    }
-  }
-
+  const groupId = getGroupId()
   const [offices, setOffices] = useState<Record<string, any>>({})
   const [showForm, setShowForm] = useState(false)
   const [newOffice, setNewOffice] = useState({
@@ -104,8 +95,8 @@ function AttendanceConfigPage() {
     }
   }
 
- 
-return (
+
+  return (
     <AdminLayout title="🏢 Office Config">
       {/* Create Office Button */}
       {!showForm && (

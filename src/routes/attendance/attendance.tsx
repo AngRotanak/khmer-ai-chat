@@ -582,6 +582,7 @@ function AttendancePage() {
             {/* Settings always visible */}
             <Link
               to="/attendance/settings"
+              search={{ group_id: groupId }}
               className="flex items-center gap-3 px-4 py-3 rounded-lg bg-gray-800 hover:bg-gray-700 text-teal-300 transition"
             >
               <span>⚙️</span><span>Settings</span>
@@ -592,6 +593,7 @@ function AttendancePage() {
               <>
                 <Link
                   to="/attendance/admin/roles"
+                  search={{ group_id: groupId }}
                   className="flex items-center gap-3 px-4 py-3 rounded-lg bg-gray-800 hover:bg-gray-700 text-teal-300 transition"
                 >
                   <span>👑</span><span>Manage Roles</span>
@@ -599,7 +601,7 @@ function AttendancePage() {
 
                 <Link
                   to="/attendance/admin/config"
-                search={{ group_id: groupId }}
+                  search={{ group_id: groupId }}
                   className="flex items-center gap-3 px-4 py-3 rounded-lg bg-gray-800 hover:bg-gray-700 text-teal-300 transition"
                 >
                   <span>🏢</span><span>Attendance Config</span>

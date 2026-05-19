@@ -3,9 +3,13 @@ import { useState, useEffect } from "react"
 import { ref, set, onValue, push, remove } from "firebase/database"
 import { db } from "~/lib/firebase"   // ✅ use shared db instance
 import { AdminLayout } from "../components/AdminLayout"
+import { z } from "zod"
 
 export const Route = createFileRoute("/attendance/admin/roles")({
   component: RolesPage,
+    validateSearch: z.object({
+     group_id: z.string().optional(),
+    }),
 })
 
 type RoleInfo = {
@@ -24,17 +28,17 @@ function RolesPage() {
   const [newUsername, setNewUsername] = useState("")
   const [confirmUserId, setConfirmUserId] = useState<string | null>(null)
 
+  const groupId = getGroupId()
+// const params = new URLSearchParams(location.search)
+// let groupId = params.get("group_id") || ""
 
-const params = new URLSearchParams(location.search)
-let groupId = params.get("group_id") || ""
-
-if (!groupId || groupId === "unknown") {
-  const tg = (window as any).Telegram?.WebApp
-  const rawParam = tg?.initDataUnsafe?.start_param
-  if (rawParam) {
-    groupId = rawParam
-  }
-}
+// if (!groupId || groupId === "unknown") {
+//   const tg = (window as any).Telegram?.WebApp
+//   const rawParam = tg?.initDataUnsafe?.start_param
+//   if (rawParam) {
+//     groupId = rawParam
+//   }
+// }
 
   // =========================
   // SAFE LOGGER
