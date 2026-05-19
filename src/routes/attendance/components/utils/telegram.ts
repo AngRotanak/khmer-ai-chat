@@ -4,24 +4,16 @@ import { ref, push } from "firebase/database"
 
 export function getGroupId(): string {
   const params = new URLSearchParams(location.search)
-  const urlParam = params.get("group_id")
+  let resolved = params.get("group_id") || params.get("startapp") // support both query keys
+  let source = "url"
 
-  let resolved: string | null = null
-  let source = "unknown"
-
-  if (urlParam) {
-    resolved = urlParam
-    source = "url"
-  } else {
+  if (!resolved) {
     const tg = (window as any).Telegram?.WebApp
     const rawParam = tg?.initDataUnsafe?.start_param || ""
 
     if (rawParam.includes("=")) {
-      const parsed = new URLSearchParams(rawParam).get("group_id")
-      if (parsed) {
-        resolved = parsed
-        source = "telegram_query"
-      }
+      resolved = new URLSearchParams(rawParam).get("group_id") || ""
+      source = "telegram_query"
     } else if (rawParam) {
       resolved = rawParam
       source = "telegram_raw"
@@ -32,6 +24,9 @@ export function getGroupId(): string {
     resolved = "-1002174749045xxx"
     source = "fallback"
   }
+
+  // ✅ Normalize: strip quotes if present
+  resolved = resolved.replace(/^"+|"+$/g, "")
 
   // ✅ Save log to Firebase
   try {
