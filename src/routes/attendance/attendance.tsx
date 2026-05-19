@@ -157,25 +157,6 @@ function AttendancePage() {
 
 
 
-  // =========================
-  // ATTENDANCE RECORD LISTENER
-  // =========================
-  useEffect(() => {
-    if (!groupId || !userId) return
-    const today = new Date().toISOString().slice(0, 10) // YYYY-MM-DD
-    const recordsRef = ref(db, `khmer-autobot/attendance_records/${groupId}/${userId}/${today}`)
-    onValue(recordsRef, (snapshot) => {
-      const data = snapshot.val() || {}
-      const lastRecord = Object.values(data).pop() as any
-      if (lastRecord) {
-        setStatus(lastRecord.status || "")
-        setDetail(lastRecord.detail || "")
-        setOfficeId(lastRecord.office_id || "unknown")
-        setOfficeName(lastRecord.officeName || "Unknown Office")  // ✅ always use field
-      }
-      setSessionLoaded(true)
-    })
-  }, [groupId, userId])
 
   // =========================
   // REASONS LISTENER
@@ -194,6 +175,7 @@ function AttendancePage() {
   // Detect office (GPS fallback)
   // =========================
   const detectOffice = () => {
+    if (groupId === "unknown") return
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
         try {
