@@ -235,10 +235,10 @@ function AttendancePage() {
   // =========================
   // Detect office (GPS fallback)
   // =========================
-  const detectOffice = async () => {
+  const detectOffice = async (actionOverride?: "checkin" | "checkout") => {
+    const actionToSend = actionOverride || nextAction
     if (groupId === "unknown") return
-    if (!nextAction) {
-      // ✅ Log skipped detection
+    if (!actionToSend) {
       await push(ref(db, `logs/webapp/${groupId}`), {
         type: "detectOffice_skipped",
         reason: "nextAction not ready",
@@ -249,22 +249,22 @@ function AttendancePage() {
       return
     }
 
-    // ✅ Log the nextAction being sent BEFORE GPS call
+    // ✅ Log the nextAction being sent
     await push(ref(db, `logs/webapp/${groupId}`), {
       type: "detectOffice_start",
       group_id: groupId,
       user_id: userId,
-      nextAction,   // 🔹 track what frontend is sending
+      nextAction: actionToSend,
       timestamp: new Date().toISOString(),
-      confirm: `Preparing detectOffice with nextAction=${nextAction}`
+      confirm: `Preparing detectOffice with nextAction=${actionToSend}`
     })
 
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
         try {
           const payload = {
-            action: "office",          // ✅ preview mode
-            nextAction: nextAction,    // ✅ pass "checkin" or "checkout"
+            action: "office",
+            nextAction: actionToSend,   // ✅ always fresh value
             group_id: groupId,
             lat: pos.coords.latitude,
             lon: pos.coords.longitude,
@@ -273,7 +273,6 @@ function AttendancePage() {
             timestamp: new Date().toISOString(),
           }
 
-          // ✅ Log payload being sent
           await push(ref(db, `logs/webapp/${groupId}`), {
             type: "detectOffice_payload",
             group_id: groupId,
@@ -290,19 +289,17 @@ function AttendancePage() {
 
           const data = await res.json()
 
-          // ✅ Update state with preview results
           setOfficeId(data.office_id || "unknown")
           setOfficeName(data.officeName || "Unknown Office")
           setStatus(data.status || "")
           setDetail(data.detail || "")
           setDistance(data.distance || null)
 
-          // ✅ Log preview result
           await push(ref(db, `logs/webapp/${groupId}`), {
             type: "detectOffice_preview",
             group_id: groupId,
             user_id: userId,
-            nextAction,
+            nextAction: actionToSend,
             office_id: data.office_id || "unknown",
             status: data.status || "",
             detail: data.detail || "",
@@ -316,12 +313,11 @@ function AttendancePage() {
           setStatus("error")
           setDetail(String(err))
 
-          // ✅ Log error
           await push(ref(db, `logs/webapp/${groupId}`), {
             type: "detectOffice_error",
             group_id: groupId,
             user_id: userId,
-            nextAction,
+            nextAction: actionToSend,
             error: String(err),
             timestamp: new Date().toISOString(),
           })
@@ -334,19 +330,17 @@ function AttendancePage() {
         setStatus("GPS denied")
         setDetail(err.message)
 
-        // ✅ Log denied
         await push(ref(db, `logs/webapp/${groupId}`), {
           type: "detectOffice_denied",
           group_id: groupId,
           user_id: userId,
-          nextAction,
+          nextAction: actionToSend,
           error: err.message,
           timestamp: new Date().toISOString(),
         })
       }
     )
   }
-
 
   // =========================
   // Record listener (primary source)
@@ -738,15 +732,22 @@ function AttendancePage() {
         {/* Camera capture card */}
         <div
           className={`w-full max-w-md rounded-2xl shadow-xl p-6 border space-y-6 ${settings.theme === "dark"
-            ? "bg-gray-900 border-teal-600"
-            : "bg-white border-teal-400"
+              ? "bg-gray-900 border-teal-600"
+              : "bg-white border-teal-400"
             }`}
         >
-          <CameraModal
-            onCapture={(photoData) => setPhoto(photoData)}
-            disabled={status.includes("Outside Office")}
-          />
+          {status && status.includes("Outside Office") ? (
+            <div className="text-red-400 text-center text-sm">
+              ❌ You are {distance}m away from the office. Camera disabled.
+            </div>
+          ) : (
+            <CameraModal
+              onCapture={(photoData) => setPhoto(photoData)}
+              disabled={!status || status === ""} // disable while detecting
+            />
+          )}
         </div>
+
 
         {/* Action area */}
         <div className="w-full max-w-md space-y-4">
@@ -803,6 +804,7 @@ function AttendancePage() {
                       ? "✅ Confirm Check-In"
                       : "✅ Confirm Check-Out"}
               </button>
+
 
               {/* Reason dropdown */}
               {(status.includes("⚠️ យឺត") || status.includes("⚠️ ចេញមុន")) && (
