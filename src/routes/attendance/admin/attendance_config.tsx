@@ -32,74 +32,95 @@ function AttendanceConfigPage() {
   const [reasons, setReasons] = useState<Record<string, string>>({})
   const [newReason, setNewReason] = useState("")
 
-  // ✅ Load reasons
-  useEffect(() => {
-    if (!groupId) return
-    const reasonsPath = `khmer-autobot/attendance_config/${groupId}/reasons`
-    const reasonsRef = ref(db, reasonsPath)
+// ✅ Load reasons
+useEffect(() => {
+  if (!groupId) return
+  const reasonsPath = `khmer-autobot/attendance_config/${groupId}/reasons`
+  const reasonsRef = ref(db, reasonsPath)
 
-    onValue(reasonsRef, async (snapshot) => {
-      const data = snapshot.val() || {}
-      setReasons(data)
+  onValue(reasonsRef, (snapshot) => {
+    const data = snapshot.val() || {}
+    console.log("Loaded reasons:", data)   // ✅ debug
+    setReasons(data)
 
-      try {
-        await push(ref(db, `logs/webapp/${groupId}`), {
-          type: "reasons_snapshot",
-          groupId,
-          path: reasonsPath,
-          exists: snapshot.exists(),
-          keys: Object.keys(data),
-          raw: data,
-          timestamp: new Date().toISOString(),
-        })
-      } catch (err) {
-        console.error("Firebase log error:", err)
-      }
-    })
-  }, [groupId])
+    push(ref(db, `logs/webapp/${groupId}`), {
+      type: "reasons_snapshot",
+      groupId,
+      path: reasonsPath,
+      exists: snapshot.exists(),
+      keys: Object.keys(data),
+      raw: data,
+      timestamp: new Date().toISOString(),
+    }).catch(err => console.error("Firebase log error:", err))
+  })
+}, [groupId])
 
-  // ✅ Add reason
-  const addReason = async () => {
-    if (!newReason.trim()) return
-    const key = newReason.toLowerCase().replace(/\s+/g, "_")
+// ✅ Add reason
+const addReason = async () => {
+  if (!newReason.trim() || !groupId) return
+  const key = newReason.toLowerCase().replace(/\s+/g, "_")
+
+  try {
     await set(ref(db, `khmer-autobot/attendance_config/${groupId}/reasons/${key}`), newReason)
-    setNewReason("")
-  }
 
-  // ✅ Delete reason
-  const deleteReason = async (key: string) => {
-    if (!groupId) return
-    if (confirm(`Delete reason "${reasons[key]}"?`)) {
+    await push(ref(db, `logs/webapp/${groupId}`), {
+      type: "reason_added",
+      groupId,
+      key,
+      value: newReason,
+      timestamp: new Date().toISOString(),
+      updatedBy: "angrotanak",
+    })
+
+    setNewReason("")
+  } catch (err) {
+    console.error("Failed to add reason:", err)
+  }
+}
+
+// ✅ Delete reason
+const deleteReason = async (key: string) => {
+  if (!groupId) return
+  if (confirm(`Delete reason "${reasons[key]}"?`)) {
+    try {
       await remove(ref(db, `khmer-autobot/attendance_config/${groupId}/reasons/${key}`))
+
+      await push(ref(db, `logs/webapp/${groupId}`), {
+        type: "reason_deleted",
+        groupId,
+        key,
+        timestamp: new Date().toISOString(),
+        updatedBy: "angrotanak",
+      })
+    } catch (err) {
+      console.error("Failed to delete reason:", err)
     }
   }
+}
 
+// ✅ Load offices
+useEffect(() => {
+  if (!groupId) return
+  const officesPath = `khmer-autobot/attendance_config/${groupId}/offices`
+  const officesRef = ref(db, officesPath)
 
-  // ✅ Load offices
-  useEffect(() => {
-    if (!groupId) return
-    const officesPath = `khmer-autobot/attendance_config/${groupId}/offices`
-    const officesRef = ref(db, officesPath)
+  onValue(officesRef, (snapshot) => {
+    const data = snapshot.val() || {}
+    console.log("Loaded offices:", data)   // ✅ debug
+    setOffices(data)
 
-    onValue(officesRef, async (snapshot) => {
-      const data = snapshot.val() || {}
-      setOffices(data)
+    push(ref(db, `logs/webapp/${groupId}`), {
+      type: "offices_snapshot",
+      groupId,
+      path: officesPath,
+      exists: snapshot.exists(),
+      keys: Object.keys(data),
+      raw: data,
+      timestamp: new Date().toISOString(),
+    }).catch(err => console.error("Firebase log error:", err))
+  })
+}, [groupId])
 
-      try {
-        await push(ref(db, `logs/webapp/${groupId}`), {
-          type: "offices_snapshot",
-          groupId,
-          path: officesPath,
-          exists: snapshot.exists(),
-          keys: Object.keys(data),
-          raw: data,
-          timestamp: new Date().toISOString(),
-        })
-      } catch (err) {
-        console.error("Firebase log error:", err)
-      }
-    })
-  }, [groupId])
 
   // ✅ Update office
   const updateOffice = (officeName: string, field: string, value: any) => {
