@@ -193,77 +193,77 @@ function AttendancePage() {
   // =========================
   // Detect office (GPS fallback)
   // =========================
-  // const detectOffice = () => {
-  //   navigator.geolocation.getCurrentPosition(
-  //     async (pos) => {
-  //       try {
-  //         const payload = {
-  //           action: nextAction,   // ✅ send checkin/checkout
-  //           group_id: groupId,
-  //           lat: pos.coords.latitude,
-  //           lon: pos.coords.longitude,
-  //           bot_username: "autobot",
-  //           user: tg?.initDataUnsafe?.user || {},
-  //           timestamp: new Date().toISOString(),
-  //         }
+  const detectOffice = () => {
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        try {
+          const payload = {
+            action: nextAction,   // ✅ send checkin/checkout
+            group_id: groupId,
+            lat: pos.coords.latitude,
+            lon: pos.coords.longitude,
+            bot_username: "autobot",
+            user: tg?.initDataUnsafe?.user || {},
+            timestamp: new Date().toISOString(),
+          }
 
-  //         const res = await fetch("https://1c17-136-228-130-1.ngrok-free.app", {
-  //           method: "POST",
-  //           headers: { "Content-Type": "application/json" },
-  //           body: JSON.stringify(payload),
-  //         })
+          const res = await fetch("https://1c17-136-228-130-1.ngrok-free.app", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          })
 
-  //         const data = await res.json()
-  //         setOfficeId(data.office_id || "unknown")
-  //         setOfficeName(data.officeName || "Unknown Office")
-  //         setStatus(data.status || "")
-  //         setDetail(data.detail || "")
-  //         setDistance(data.distance || null)
-  //       } catch (err) {
-  //         console.error("GPS error:", err)
-  //         setOfficeId("unknown")
-  //         setOfficeName("Unknown Office")
-  //         setStatus("error")
-  //         setDetail(String(err))
-  //       }
-  //     },
-  //     (err) => {
-  //       console.error("Geolocation denied:", err)
-  //       setOfficeId("unknown")
-  //       setOfficeName("Unknown Office")
-  //       setStatus("GPS denied")
-  //       setDetail(err.message)
-  //     }
-  //   )
-  // }
+          const data = await res.json()
+          setOfficeId(data.office_id || "unknown")
+          setOfficeName(data.officeName || "Unknown Office")
+          setStatus(data.status || "")
+          setDetail(data.detail || "")
+          setDistance(data.distance || null)
+        } catch (err) {
+          console.error("GPS error:", err)
+          setOfficeId("unknown")
+          setOfficeName("Unknown Office")
+          setStatus("error")
+          setDetail(String(err))
+        }
+      },
+      (err) => {
+        console.error("Geolocation denied:", err)
+        setOfficeId("unknown")
+        setOfficeName("Unknown Office")
+        setStatus("GPS denied")
+        setDetail(err.message)
+      }
+    )
+  }
 
 
   // =========================
   // Record listener (primary source)
   // =========================
-  // useEffect(() => {
-  //   if (!groupId || !userId) return
-  //   const today = new Date().toISOString().slice(0, 10)
-  //   const recordsRef = ref(db, `khmer-autobot/attendance_records/${groupId}/${userId}/${today}`)
+  useEffect(() => {
+    if (!groupId || !userId) return
+    const today = new Date().toISOString().slice(0, 10)
+    const recordsRef = ref(db, `khmer-autobot/attendance_records/${groupId}/${userId}/${today}`)
 
-  //   onValue(recordsRef, (snapshot) => {
-  //     const data = snapshot.val() || {}
-  //     const lastRecord = Object.values(data).pop() as any
+    onValue(recordsRef, (snapshot) => {
+      const data = snapshot.val() || {}
+      const lastRecord = Object.values(data).pop() as any
 
-  //     if (lastRecord) {
-  //       // ✅ Use record values
-  //       setStatus(lastRecord.status || "")
-  //       setDetail(lastRecord.detail || "")
-  //       setOfficeId(lastRecord.office_id || "unknown")
-  //       setOfficeName(lastRecord.officeName || "Unknown Office")
-  //     } else {
-  //       // ❌ No record yet → fallback to GPS detection
-  //       detectOffice()
-  //     }
+      if (lastRecord) {
+        // ✅ Use record values
+        setStatus(lastRecord.status || "")
+        setDetail(lastRecord.detail || "")
+        setOfficeId(lastRecord.office_id || "unknown")
+        setOfficeName(lastRecord.officeName || "Unknown Office")
+      } else {
+        // ❌ No record yet → fallback to GPS detection
+        detectOffice()
+      }
 
-  //     setSessionLoaded(true)
-  //   })
-  // }, [groupId, userId])
+      setSessionLoaded(true)
+    })
+  }, [groupId, userId])
 
   // =========================
   // OFFICE DETECTION (GPS)
@@ -321,107 +321,103 @@ function AttendancePage() {
   //   if (sessionLoaded) detectOffice()
   // }, [sessionLoaded, groupId])
 
-  useEffect(() => {
-    const detectOffice = () => {
-      navigator.geolocation.getCurrentPosition(
-        async (pos) => {
-          try {
-            const lat = pos.coords.latitude;
-            const lon = pos.coords.longitude;
+  // useEffect(() => {
+  //   const detectOffice = () => {
+  //     navigator.geolocation.getCurrentPosition(
+  //       async (pos) => {
+  //         try {
+  //           const lat = pos.coords.latitude;
+  //           const lon = pos.coords.longitude;
 
-            // ✅ Match webhook registration
-            const API_URL = "https://1c17-136-228-130-1.ngrok-free.app";
+  //           // ✅ Match webhook registration
+  //           const API_URL = "https://1c17-136-228-130-1.ngrok-free.app";
 
-            const payload = {
-              action: "office",
-              group_id: groupId,
-              lat,
-              lon,
-              bot_username: "autobot",
-              user: tg?.initDataUnsafe?.user || {},
-              timestamp: new Date().toISOString(),
-            };
+  //           const payload = {
+  //             action: "office",
+  //             group_id: groupId,
+  //             lat,
+  //             lon,
+  //             bot_username: "autobot",
+  //             user: tg?.initDataUnsafe?.user || {},
+  //             timestamp: new Date().toISOString(),
+  //           };
 
-            // 🔹 Log what we’re sending
-            console.log("Sending payload to backend:", payload);
 
-            const res = await fetch(API_URL, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(payload),
-            });
+  //           const res = await fetch(API_URL, {
+  //             method: "POST",
+  //             headers: { "Content-Type": "application/json" },
+  //             body: JSON.stringify(payload),
+  //           });
 
-            console.log("Response status:", res.status);
+  //           let data;
+  //           try {
+  //             data = await res.json();
+  //             console.log("Parsed JSON response:", data);
+  //           } catch (parseErr) {
+  //             const text = await res.text();
+  //             console.error("Failed to parse JSON, raw response:", text);
+  //             throw parseErr;
+  //           }
 
-            let data;
-            try {
-              data = await res.json();
-              console.log("Parsed JSON response:", data);
-            } catch (parseErr) {
-              const text = await res.text();
-              console.error("Failed to parse JSON, raw response:", text);
-              throw parseErr;
-            }
+  //           setOfficeId(data.office_id || "unknown");
+  //           setOfficeName(data.officeName || "Unknown Office");
+  //           setStatus(data.status || "");
+  //           setDetail(data.detail || "");
+  //           setDistance(data.distance || null);
 
-            setOfficeId(data.office_id || "unknown");
-            setOfficeName(data.officeName || "Unknown Office");
-            setStatus(data.status || "");
-            setDetail(data.detail || "");
-            setDistance(data.distance || null);
+  //           log(
+  //             {
+  //               type: "office_detected",
+  //               group_id: groupId,
+  //               office_id: data.office_id || "unknown",
+  //               officeName: data.officeName || "Unknown Office",
+  //               status: data.status || "",
+  //               detail: data.detail || "",
+  //               distance: data.distance || null,
+  //             },
+  //             "logs/webapp/init"
+  //           );
+  //         } catch (err) {
+  //           console.error("GPS error or fetch failed:", err);
+  //           setOfficeId("unknown");
+  //           setOfficeName("Unknown Office");
+  //           setStatus("error");
+  //           setDetail(String(err));
 
-            log(
-              {
-                type: "office_detected",
-                group_id: groupId,
-                office_id: data.office_id || "unknown",
-                officeName: data.officeName || "Unknown Office",
-                status: data.status || "",
-                detail: data.detail || "",
-                distance: data.distance || null,
-              },
-              "logs/webapp/init"
-            );
-          } catch (err) {
-            console.error("GPS error or fetch failed:", err);
-            setOfficeId("unknown");
-            setOfficeName("Unknown Office");
-            setStatus("error");
-            setDetail(String(err));
+  //           log(
+  //             {
+  //               type: "office_detected",
+  //               group_id: groupId,
+  //               office_id: "unknown",
+  //               officeName: "Unknown Office",
+  //               status: "error",
+  //               detail: String(err),
+  //               distance: null,
+  //             },
+  //             "logs/webapp/init"
+  //           );
+  //         }
+  //       },
+  //       (err) => {
+  //         console.error("Geolocation denied:", err);
+  //         log(
+  //           {
+  //             type: "office_detected",
+  //             group_id: groupId,
+  //             office_id: "unknown",
+  //             officeName: "Unknown Office",
+  //             status: "GPS denied",
+  //             detail: String(err.message),
+  //             distance: null,
+  //           },
+  //           "logs/webapp/init"
+  //         );
+  //       }
+  //     );
+  //   };
 
-            log(
-              {
-                type: "office_detected",
-                group_id: groupId,
-                office_id: "unknown",
-                officeName: "Unknown Office",
-                status: "error",
-                detail: String(err),
-                distance: null,
-              },
-              "logs/webapp/init"
-            );
-          }
-        },
-        (err) => {
-          console.error("Geolocation denied:", err);
-          log(
-            {
-              type: "office_detected",
-              group_id: groupId,
-              office_id: "unknown",
-              officeName: "Unknown Office",
-              status: "GPS denied",
-              detail: String(err.message),
-              distance: null,
-            },
-            "logs/webapp/init"
-          );
-        }
-      );
-    };
-
-    if (sessionLoaded) detectOffice();
-  }, [sessionLoaded, groupId]);
+  //   if (sessionLoaded) detectOffice();
+  // }, [sessionLoaded, groupId]);
 
 
   // =========================
