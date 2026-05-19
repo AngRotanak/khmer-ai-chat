@@ -349,32 +349,43 @@ const handleAttendance = async (extra?: { reason?: string }) => {
     )
   }
 
-  // =========================
-  // Record listener (primary source)
-  // =========================
-  useEffect(() => {
-    if (!groupId || !userId) return
-    const today = new Date().toISOString().slice(0, 10)
-    const recordsRef = ref(db, `khmer-autobot/attendance_records/${groupId}/${userId}/${today}`)
+// =========================
+// Record listener (primary source)
+// =========================
+useEffect(() => {
+  if (!groupId || !userId) return
+  const today = new Date().toISOString().slice(0, 10)
+  const recordsRef = ref(db, `khmer-autobot/attendance_records/${groupId}/${userId}/${today}`)
 
-    onValue(recordsRef, (snapshot) => {
-      const data = snapshot.val() || {}
-      const lastRecord = Object.values(data).pop() as any
+  onValue(recordsRef, (snapshot) => {
+    const data = snapshot.val() || {}
+    const lastRecord = Object.values(data).pop() as any
 
-      if (lastRecord) {
-        // ✅ Use record values
-        setStatus(lastRecord.status || "")
-        setDetail(lastRecord.detail || "")
-        setOfficeId(lastRecord.office_id || "unknown")
-        setOfficeName(lastRecord.officeName || "Unknown Office")
+    if (lastRecord) {
+      // ✅ Use record values
+      setStatus(lastRecord.status || "")
+      setDetail(lastRecord.detail || "")
+      setOfficeId(lastRecord.office_id || "unknown")
+      setOfficeName(lastRecord.officeName || "Unknown Office")
+
+      // ✅ Flip nextAction based on last record
+      const normalizedAction = (lastRecord.action || "").toLowerCase()
+      if (normalizedAction === "checkin") {
+        setNextAction("checkout")
+      } else if (normalizedAction === "checkout") {
+        setNextAction("checkin")
       } else {
-        // ❌ No record yet → fallback to GPS detection
-        detectOffice()
+        setNextAction("checkin")
       }
+    } else {
+      // ❌ No record yet → fallback to GPS detection
+      detectOffice()
+    }
 
-      setSessionLoaded(true)
-    })
-  }, [groupId, userId])
+    setSessionLoaded(true)
+  })
+}, [groupId, userId])
+
 
 
   // =========================
