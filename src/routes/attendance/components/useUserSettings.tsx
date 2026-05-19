@@ -37,3 +37,4 @@ export default function useUserSettings(userId: string) {
 
   return { settings, updateSetting }
 }
+

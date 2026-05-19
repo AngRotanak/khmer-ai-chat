@@ -43,8 +43,14 @@ export function getGroupId(): string {
 
   return resolved
 }
-
+// ✅ Get userId from Telegram initData
 export function getUserId(): string | null {
   const tg = (window as any).Telegram?.WebApp
   return tg?.initDataUnsafe?.user?.id || null
+}
+
+// ✅ Optionally get username / fullName
+export function getUserInfo() {
+  const tg = (window as any).Telegram?.WebApp
+  return tg?.initDataUnsafe?.user || null
 }
