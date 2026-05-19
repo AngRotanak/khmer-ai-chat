@@ -97,7 +97,7 @@ function RegisterPage() {
     resetPaymentState()
 
     try {
-      const res = await fetch("https://b0df-136-228-130-3.ngrok-free.app/", {
+      const res = await fetch("https://1c17-136-228-130-1.ngrok-free.app/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
