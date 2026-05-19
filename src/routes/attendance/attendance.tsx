@@ -1,11 +1,13 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 import { db } from '~/lib/firebase'
-import { ref, push, getDatabase, get, onValue } from 'firebase/database'
+import { ref, push, getDatabase, get, onValue} from 'firebase/database'
 import CameraModal from './components/CameraModal'
 import { useTelegramWebApp } from '~/hooks/useTelegramWebApp'
 import AttendanceFooter from './components/AttendanceFooter'
 import { Link } from "@tanstack/react-router"
+import useUserSettings from './components/useUserSettings'
+
 
 export const Route = createFileRoute('/attendance')({
   component: AttendancePage,
@@ -15,7 +17,8 @@ export const Route = createFileRoute('/attendance')({
 function AttendancePage() {
   const tg = useTelegramWebApp()
   const [userId, setUserId] = useState<string | null>(null)
-
+  // ✅ Load settings from Firebase
+  const { settings, updateSetting } = useUserSettings(userId || "guest")
 
   const [loading, setLoading] = useState<'idle' | 'working' | 'success'>('idle')
   const [groupId, setGroupId] = useState<string>('unknown')
@@ -32,12 +35,20 @@ function AttendancePage() {
 
   const openProfile = () => alert("Profile clicked")
   const openHelp = () => alert("Help clicked")
-
+  const [reasonOptions, setReasonOptions] = useState<Record<string, string>>({})
 
 
   const [nextAction, setNextAction] = useState<"checkin" | "checkout">("checkin")
   const [lastCheckInTime, setLastCheckInTime] = useState<string | null>(null)
   const [missedCheckout, setMissedCheckout] = useState(false)
+
+  const fallbackReasons: Record<string, string> = {
+    traffic: "🚗 Traffic",
+    medical: "🏥 Medical",
+    family: "👨‍👩‍👧 Family",
+    other: "✏️ Other",
+  }
+
 
   // =========================
   // SAFE LOGGER
@@ -95,40 +106,6 @@ function AttendancePage() {
     })
   }
 
-  // // Promote/Demote function
-  // async function setUserRole(
-  //   groupId: string,
-  //   userId: string,
-  //   role: string,
-  //   assignedBy: string
-  // ) {
-  //   const roleRef = ref(
-  //     db,
-  //     `khmer-autobot/attendance_config/${groupId}/attendance_roles/${userId}`
-  //   )
-
-  //   // ✅ Update role in database
-  //   await set(roleRef, {
-  //     role,
-  //     assignedBy,
-  //     assignedAt: new Date().toISOString(),
-  //   })
-
-  //   // ✅ Log role change event
-  //   await log(
-  //     {
-  //       type: "role_update",
-  //       groupId,
-  //       user_id: userId,
-  //       newRole: role,
-  //       assignedBy,
-  //       confirm: `Set role=${role} for user=${userId}`,
-  //       path: `khmer-autobot/attendance_config/${groupId}/attendance_roles/${userId}`,
-  //     },
-  //     `webapp/${groupId}`
-  //   )
-  // }
-
   // =========================
   // INIT TELEGRAM
   // =========================
@@ -142,12 +119,9 @@ function AttendancePage() {
         const rawParam = tg.initDataUnsafe?.start_param
         const userInfo = tg?.initDataUnsafe?.user || {}
         const uid = userInfo?.id || null
-        setUserId(uid)   // ✅ store userId in state
+        setUserId(uid)
 
-        await log(
-          { type: "raw_start_param", raw: rawParam, user_id: uid, user_info: userInfo },
-          "logs/webapp/init"
-        )
+        await log({ type: "raw_start_param", raw: rawParam, user_id: uid, user_info: userInfo }, "logs/webapp/init")
 
         if (!rawParam) {
           setGroupId("unknown")
@@ -163,17 +137,11 @@ function AttendancePage() {
         setGroupId(groupID)
         setSessionLoaded(true)
 
-        await log(
-          { type: "parsed_start_param", group_id: groupID, user_id: uid, user_info: userInfo },
-          "logs/webapp/init"
-        )
+        await log({ type: "parsed_start_param", group_id: groupID, user_id: uid, user_info: userInfo }, "logs/webapp/init")
 
-        // ✅ Fetch role once groupId and userId are known
         if (groupID && uid) {
-          // start listening for role changes
           listenUserRole(groupID, uid, setCurrentRole)
         }
-
       } catch (err) {
         console.error("Init error:", err)
         setGroupId("unknown")
@@ -184,6 +152,15 @@ function AttendancePage() {
 
     init()
   }, [tg])
+
+  useEffect(() => {
+    if (!groupId) return
+    const reasonsRef = ref(db, `khmer-autobot/attendance_config/${groupId}/reasons`)
+    onValue(reasonsRef, (snapshot) => {
+      const data = snapshot.val() || {}
+      setReasonOptions({ ...fallbackReasons, ...data })
+    })
+  }, [groupId])
 
 
 
@@ -530,15 +507,27 @@ function AttendancePage() {
     );
   };
 
-
   function BottomSheetMenu({
     currentRole,
     onClose,
     groupId,
+    settings,
+    updateSetting,
   }: {
     currentRole: string
     onClose: () => void
     groupId: string
+    settings: {
+      theme: "dark" | "light"
+      language: "en" | "kh"
+      office_id?: string
+      notifications?: {
+        attendance_reminders?: boolean
+        late_alerts?: boolean
+        summary_reports?: boolean
+      }
+    }
+    updateSetting: (key: keyof typeof settings, value: any) => void
   }) {
     return (
       <div className="fixed inset-0 bg-black/50 flex items-end justify-center z-50">
@@ -551,6 +540,19 @@ function AttendancePage() {
               className="text-gray-400 hover:text-gray-200 transition text-xl"
             >
               ✖
+            </button>
+          </div>
+
+          {/* Example: Theme toggle inside menu */}
+          <div className="flex items-center justify-between px-4 py-2 bg-gray-800 rounded-lg">
+            <span className="text-teal-300">Theme</span>
+            <button
+              onClick={() =>
+                updateSetting("theme", settings.theme === "dark" ? "light" : "dark")
+              }
+              className="px-3 py-1 rounded bg-teal-500 text-black hover:bg-teal-400"
+            >
+              {settings.theme === "dark" ? "☀️ Light" : "🌙 Dark"}
             </button>
           </div>
 
@@ -635,24 +637,34 @@ function AttendancePage() {
   // ============================
 
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-b from-gray-950 via-gray-900 to-gray-800 text-white">
-      {/* Header */}
-      <header className="sticky top-0 w-full px-4 py-6 text-center text-xl font-semibold bg-gray-900/80 backdrop-blur-md shadow-md z-50">
-        🕒 Attendance
+    <div
+      className={`flex flex-col min-h-screen font-sans transition-colors duration-500 ${settings.theme === "dark"
+          ? "bg-gradient-to-b from-gray-950 via-gray-900 to-gray-800 text-white"
+          : "bg-gradient-to-b from-white via-gray-100 to-gray-200 text-gray-900"
+        }`}
+    >
+      <header className="sticky top-0 w-full px-4 py-5 text-center backdrop-blur-md shadow-lg z-50 flex flex-col items-center">
+        <h1 className="text-2xl font-bold tracking-wide flex items-center gap-2">
+          🕒 Attendance
+        </h1>
+
+        {/* ✅ Theme toggle removed — handled in Settings/BottomSheetMenu */}
+
         {sessionLoaded && officeName && (
-          <div className="text-teal-400 text-sm mt-1">🏢 {officeName}</div>
+          <p className="text-teal-400 text-sm mt-1 font-medium">🏢 {officeName}</p>
         )}
+
         {sessionLoaded && status && (
           <div
             className={`mt-2 px-3 py-2 rounded-lg inline-block font-medium ${status.includes("✅")
-              ? "bg-green-600 text-white"
-              : status.includes("⚠️ យឺត")
-                ? "bg-yellow-500 text-black"
-                : status.includes("⚠️ ចេញមុន")
-                  ? "bg-red-500 text-white"
-                  : status.includes("⏱")
-                    ? "bg-purple-500 text-white"
-                    : "bg-gray-600 text-white"
+                ? "bg-green-600 text-white"
+                : status.includes("⚠️ យឺត")
+                  ? "bg-yellow-500 text-black"
+                  : status.includes("⚠️ ចេញមុន")
+                    ? "bg-red-500 text-white"
+                    : status.includes("⏱")
+                      ? "bg-purple-500 text-white"
+                      : "bg-gray-600 text-white"
               }`}
           >
             {status} {detail}
@@ -663,47 +675,51 @@ function AttendancePage() {
         )}
       </header>
 
-      {/* Main centered between header and footer */}
-      <main className="flex-1 flex flex-col items-center justify-center px-6 py-6 space-y-8 max-h-[calc(100vh-12rem)] mx-auto">
-        <div className="w-full max-w-md bg-gray-900 rounded-xl shadow-xl p-6 border border-teal-600 space-y-6">
 
+      {/* Main */}
+      <main className="flex-1 flex flex-col items-center justify-center px-6 py-8 space-y-8 max-h-[calc(100vh-12rem)] mx-auto">
+        {/* Camera capture card */}
+        <div
+          className={`w-full max-w-md rounded-2xl shadow-xl p-6 border space-y-6 ${settings.theme === "dark"
+            ? "bg-gray-900 border-teal-600"
+            : "bg-white border-teal-400"
+            }`}
+        >
           <CameraModal
             onCapture={(photoData) => setPhoto(photoData)}
             disabled={status.includes("Outside Office")}
           />
         </div>
 
-        <div className="w-full max-w-md">
-
-          {/* Confirm button + Ask reason dropdown */}
+        {/* Action area */}
+        <div className="w-full max-w-md space-y-4">
           {loading === "success" ? (
-            <div className="w-full text-center bg-green-900/40 border border-green-500 rounded-lg p-4 animate-fade-in">
-              <div className="text-green-400 text-4xl animate-bounce mb-2">✅</div>
-              <div className="text-green-400 text-lg font-semibold">
+            <div className="w-full text-center bg-green-900/40 border border-green-500 rounded-xl p-6 animate-fade-in">
+              <div className="text-green-400 text-5xl animate-bounce mb-3">✅</div>
+              <p className="text-green-400 text-lg font-semibold">
                 {nextAction === "checkin" ? "Check-In" : "Check-Out"} recorded for{" "}
                 {officeName || "Unknown Office"}
-              </div>
+              </p>
               {nextAction === "checkout" && lastCheckInTime && (
-                <div className="text-gray-300 text-sm mt-1">
+                <p className="text-gray-300 text-sm mt-1">
                   Last Check-In: {new Date(lastCheckInTime).toLocaleTimeString()}
-                </div>
+                </p>
               )}
-              <div className="text-gray-300 text-sm mt-1">
+              <p className="text-gray-300 text-sm mt-1">
                 Thank you! Your attendance has been saved.
-              </div>
+              </p>
             </div>
           ) : (
             <>
+              {/* Confirm button */}
               <button
                 onClick={() => {
-                  if (!sessionLoaded || !status) return;
+                  if (!sessionLoaded || !status) return
                   if (status.includes("Outside Office")) {
-                    alert(
-                      `❌ You are ${distance}m away from the office. Please move within the allowed radius to check-in/out.`
-                    );
-                    return;
+                    alert(`❌ You are ${distance}m away from the office.`)
+                    return
                   }
-                  handleAttendance();
+                  handleAttendance()
                 }}
                 disabled={
                   loading !== "idle" ||
@@ -711,9 +727,13 @@ function AttendancePage() {
                   !status ||
                   status.includes("Outside Office")
                 }
-                className={`w-full py-3 rounded-lg shadow font-semibold transition ${nextAction === "checkin"
-                  ? "bg-green-500 text-black hover:bg-green-400"
-                  : "bg-red-500 text-white hover:bg-red-400"
+                className={`w-full py-3 rounded-xl shadow-lg font-semibold transition ${nextAction === "checkin"
+                  ? settings.theme === "dark"
+                    ? "bg-green-500 text-black hover:bg-green-400"
+                    : "bg-green-600 text-white hover:bg-green-500"
+                  : settings.theme === "dark"
+                    ? "bg-red-500 text-white hover:bg-red-400"
+                    : "bg-red-600 text-white hover:bg-red-500"
                   } ${!status || status.includes("Outside Office")
                     ? "opacity-50 cursor-not-allowed"
                     : ""}`}
@@ -727,61 +747,62 @@ function AttendancePage() {
                       : "✅ Confirm Check-Out"}
               </button>
 
-              {/* 🔹 Ask reason if late/early */}
+              {/* Reason dropdown */}
               {(status.includes("⚠️ យឺត") || status.includes("⚠️ ចេញមុន")) && (
                 <div className="w-full max-w-sm text-center mt-4">
-                  <label className="block text-yellow-400 mb-1 text-sm font-semibold">
+                  <label className="block text-yellow-400 mb-2 text-sm font-semibold">
                     សូមជ្រើសរើសមូលហេតុដែលអ្នកយឺត/ចេញមុន
                   </label>
                   <select
                     onChange={(e) => {
-                      const reason = e.target.value;
-                      if (reason === "Other") {
-                        const custom = prompt("បញ្ចូលមូលហេតុផ្ទាល់ខ្លួន:");
-                        handleAttendance({ reason: custom || "Other" });
+                      const reason = e.target.value
+                      if (reason === "✏️ Other") {
+                        const custom = prompt("បញ្ចូលមូលហេតុផ្ទាល់ខ្លួន:")
+                        handleAttendance({ reason: custom || "Other" })
                       } else if (reason) {
-                        handleAttendance({ reason });
+                        handleAttendance({ reason })
                       }
                     }}
                     defaultValue=""
-                    className="bg-gray-800 text-white p-2 rounded w-full focus:ring-2 focus:ring-yellow-500 text-center appearance-none"
+                    className={`p-2 rounded w-full focus:ring-2 focus:ring-yellow-500 text-center appearance-none ${settings.theme === "dark"
+                      ? "bg-gray-800 text-white"
+                      : "bg-gray-100 text-gray-900"
+                      }`}
                   >
                     <option value="" disabled>
                       -- Select Reason --
                     </option>
-                    <option value="🚗 Traffic">🚗 Traffic</option>
-                    <option value="🏥 Medical">🏥 Medical</option>
-                    <option value="👨‍👩‍👧 Family">👨‍👩‍👧 Family</option>
-                    <option value="Other">✏️ Other</option>
+                    {Object.entries(reasonOptions).map(([key, label]) => (
+                      <option key={key} value={label}>
+                        {label}
+                      </option>
+                    ))}
                   </select>
                 </div>
               )}
 
 
+              {/* Info messages */}
               {distance !== null && (
-                <div className="text-sm text-gray-400 mt-2">
+                <p className="text-sm text-gray-400 mt-2">
                   📍 You are {distance} meters from {officeName || "office"}.
-                </div>
+                </p>
               )}
-
               {nextAction === "checkout" && lastCheckInTime && (
-                <div className="text-sm text-gray-400 mt-1">
+                <p className="text-sm text-gray-400 mt-1">
                   Last Check-In: {new Date(lastCheckInTime).toLocaleTimeString()}
-                </div>
+                </p>
               )}
-
               {missedCheckout && (
-                <div className="text-red-400 text-sm mt-2">
-                  ⚠️ You missed Check-Out yesterday. Attendance cancelled .
-                </div>
+                <p className="text-red-400 text-sm mt-2">
+                  ⚠️ You missed Check-Out yesterday. Attendance cancelled.
+                </p>
               )}
             </>
           )}
-
-
-
         </div>
       </main>
+
 
       {/* Footer pinned at bottom */}
       <AttendanceFooter />
@@ -814,12 +835,14 @@ function AttendancePage() {
         />
       </div>
 
-      {/* ✅ Show modal only when toggled */}
+      {/* Floating menu */}
       {showMore && (
         <BottomSheetMenu
           currentRole={currentRole}
           onClose={() => setShowMore(false)}
-          groupId={groupId}   // ✅ pass groupId into the menu
+          groupId={groupId}
+          settings={settings}
+          updateSetting={updateSetting}
         />
       )}
 

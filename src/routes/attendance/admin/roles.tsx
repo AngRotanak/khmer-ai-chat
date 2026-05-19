@@ -29,16 +29,6 @@ function RolesPage() {
   const [confirmUserId, setConfirmUserId] = useState<string | null>(null)
 
   const groupId = getGroupId()
-// const params = new URLSearchParams(location.search)
-// let groupId = params.get("group_id") || ""
-
-// if (!groupId || groupId === "unknown") {
-//   const tg = (window as any).Telegram?.WebApp
-//   const rawParam = tg?.initDataUnsafe?.start_param
-//   if (rawParam) {
-//     groupId = rawParam
-//   }
-// }
 
   // =========================
   // SAFE LOGGER
