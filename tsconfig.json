@@ -12,7 +12,8 @@
     "paths": {
       "~@/*": ["src/bootstrap/*"],
       "~/*": ["src/*"],
-      "~pages/*": ["src/routes/*"]
+      "~pages/*": ["src/routes/*"],
+      "~lib/*": ["lib/*"]   // ✅ add alias for lib
     },
 
     /* Module compatibility */
@@ -25,7 +26,7 @@
     "skipLibCheck": true,
 
     /* Type support */
-    "types": ["vite/client", "google.maps"],   // ✅ Added google.maps here
+    "types": ["vite/client", "google.maps"],
 
     /* Linting */
     "strict": true,
@@ -39,7 +40,8 @@
     "src",
     "src/types",
     ".generated/**/*.ts",
-    "tsr.config.ts"
+    "tsr.config.ts",
+    "lib"   // ✅ include the whole lib folder
   ],
   "references": [
     { "path": "./tsconfig.node.json" }
