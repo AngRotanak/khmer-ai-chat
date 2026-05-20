@@ -1,4 +1,3 @@
-// src/utils/telegram.ts
 import { db } from "~/lib/firebase"
 import { ref, push } from "firebase/database"
 
@@ -25,8 +24,8 @@ export function getGroupId(): string {
     source = "fallback"
   }
 
-  // ✅ Normalize: strip quotes if present
-  resolved = resolved.replace(/^"+|"+$/g, "")
+  // ✅ Normalize: strip quotes and whitespace
+  resolved = resolved.replace(/^"+|"+$/g, "").trim()
 
   // ✅ Save log to Firebase
   try {
@@ -43,6 +42,7 @@ export function getGroupId(): string {
 
   return resolved
 }
+
 // ✅ Get userId from Telegram initData
 export function getUserId(): string | null {
   const tg = (window as any).Telegram?.WebApp
