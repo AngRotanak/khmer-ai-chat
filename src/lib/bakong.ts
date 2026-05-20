@@ -1,5 +1,5 @@
-import { db } from '../../src/lib/firebase'
-import { ref, push, set } from 'firebase/database'
+import { db } from './firebase'
+import { ref, push} from 'firebase/database'
 
 
 export async function checkBakongTransaction(md5: string) {

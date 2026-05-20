@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next"
-import { checkBakongTransaction } from '../lib/bakong'
+import { checkBakongTransaction } from '../../src/lib/bakong'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "POST") {
