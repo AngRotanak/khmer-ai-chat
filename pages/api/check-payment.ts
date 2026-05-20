@@ -13,7 +13,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     const data = await checkBakongTransaction(md5)
-    return res.status(200).json(data) // ✅ always normalized
+    console.log("Bakong raw:", data) // ✅ debug log
+    return res.status(200).json(data) // normalized {status:"PAID"|"PENDING"|"FAILED"}
   } catch (err) {
     console.error("Bakong check error:", err)
     return res.status(500).json({ error: "Payment check failed" })

@@ -180,6 +180,16 @@ function RegisterPage() {
           })
           const data = await res.json()
 
+          // 🔹 Log every poll attempt
+          await push(ref(db, `logs/webapp/${groupId}`), {
+            type: "poll_attempt",
+            group_id: groupId,
+            user_id: userId,
+            md5,
+            response: data,
+            timestamp: new Date().toISOString(),
+          })
+
           if (data.status === "PAID") {
             clearInterval(interval)
 
@@ -207,6 +217,14 @@ function RegisterPage() {
 
             if (!groupId || groupId === "unknown" || !userId || userId === "guest") {
               console.error("Invalid groupId/userId, skipping license save", { groupId, userId })
+              await push(ref(db, `logs/webapp/${groupId}`), {
+                type: "license_error",
+                group_id: groupId,
+                user_id: userId,
+                reason: "Invalid groupId/userId",
+                licenseData,
+                timestamp: new Date().toISOString(),
+              })
               return
             }
 
@@ -221,6 +239,14 @@ function RegisterPage() {
               })
             } catch (err) {
               console.error("Firebase update error:", err)
+              await push(ref(db, `logs/webapp/${groupId}`), {
+                type: "license_save_failed",
+                group_id: groupId,
+                user_id: userId,
+                error: String(err),
+                licenseData,
+                timestamp: new Date().toISOString(),
+              })
             }
 
             // ✅ Update UI
@@ -233,8 +259,17 @@ function RegisterPage() {
           }
         } catch (err) {
           console.error("Error checking payment:", err)
+          await push(ref(db, `logs/webapp/${groupId}`), {
+            type: "poll_error",
+            group_id: groupId,
+            user_id: userId,
+            md5,
+            error: String(err),
+            timestamp: new Date().toISOString(),
+          })
         }
       }
+
     }, 1000)
 
     return () => clearInterval(interval)
