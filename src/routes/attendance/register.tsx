@@ -2,12 +2,14 @@ import { useState, useEffect, useRef } from "react"
 import { createFileRoute } from "@tanstack/react-router"
 import { AdminLayout } from "./components/AdminLayout"
 import { z } from "zod"
-import { getGroupId } from "./components/utils/telegram"
+import { getGroupId, getUserId } from "./components/utils/telegram"
+import { db } from '~/lib/firebase'
+import { ref, push, set } from 'firebase/database'
 
 export const Route = createFileRoute("/attendance/register")({
   component: RegisterPage,
   validateSearch: z.object({
-   group_id: z.string().optional(),
+    group_id: z.string().optional(),
   }),
 })
 
@@ -15,10 +17,11 @@ export const Route = createFileRoute("/attendance/register")({
 
 function RegisterPage() {
   // At the top of your component....
-  const TIMEOUT_MINUTES = 2   // change to 10 for production
+  const TIMEOUT_MINUTES = 10   // change to 10 for production
   const TIMEOUT_SECONDS = TIMEOUT_MINUTES * 60
   const [remainingSeconds, setRemainingSeconds] = useState(TIMEOUT_SECONDS)
 
+   const userId = getUserId() || "guest"   // ✅ real Telegram userId
   const groupId = getGroupId()
 
 
@@ -92,6 +95,7 @@ function RegisterPage() {
     setShowThankYou(false)
   }
 
+
   const handleGenerateQR = async () => {
     setLoading(true)
     resetPaymentState()
@@ -156,19 +160,65 @@ function RegisterPage() {
       if (countdownValue === 0) {
         const timeoutBeep = new Audio("/timeout.mp3")
         timeoutBeep.play().catch(err => console.error("Timeout beep error:", err))
-
         countdownValue = 60
-       
       }
 
-
       if (secondsPassed % 5 === 0) {
-        // poll backend
+        try {
+          const res = await fetch("https://b0df-136-228-130-3.ngrok-free.app", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "check_payment", md5, selected_package: selectedPackage }),
+          })
+          const data = await res.json()
+
+          if (data.status === "PAID") {
+            clearInterval(interval)
+
+            // ✅ Update Firebase with license info
+            const licensePath = `khmer-autobot/licenses/${groupId}/${userId}` // replace 12345 with real userId
+            const licenseData = {
+              package: selectedPackage,
+              amount,
+              license_id: data.license?.license_id || "",
+              expires: data.license?.expires || "",
+              download_url: data.license?.download_url || "",
+              timestamp: new Date().toISOString(),
+              status: "active",
+            }
+
+            try {
+              await set(ref(db, licensePath), licenseData)
+
+              // Optional: log event
+              await push(ref(db, `logs/webapp/${groupId}`), {
+                type: "license_created",
+                group_id: groupId,
+                user_id: userId,
+                licenseData,
+                timestamp: new Date().toISOString(),
+              })
+            } catch (err) {
+              console.error("Firebase update error:", err)
+            }
+
+            // ✅ Update UI state
+            setShowQRPanel(false)
+            setTimeout(() => {
+              setPaymentComplete(true)
+              setLicenseInfo(licenseData)
+              setShowThankYou(true)
+            }, 500)
+          }
+        } catch (err) {
+          console.error("Error checking payment:", err)
+        }
       }
     }, 1000)
 
     return () => clearInterval(interval)
   }, [md5, paymentComplete, timeoutReached, selectedPackage])
+
 
   useEffect(() => {
     if (showThankYou && thankYouRef.current) {
@@ -359,10 +409,10 @@ function RegisterPage() {
               >
                 <div
                   className={`h-2 rounded-full transition-all duration-1000 ${remainingSeconds > TIMEOUT_SECONDS * 0.6
-                      ? "bg-green-500"
-                      : remainingSeconds > TIMEOUT_SECONDS * 0.3
-                        ? "bg-yellow-500"
-                        : "bg-red-500 animate-pulse"
+                    ? "bg-green-500"
+                    : remainingSeconds > TIMEOUT_SECONDS * 0.3
+                      ? "bg-yellow-500"
+                      : "bg-red-500 animate-pulse"
                     }`}
                   style={{
                     width: `${((TIMEOUT_SECONDS - remainingSeconds) / TIMEOUT_SECONDS) * 100}%`,
