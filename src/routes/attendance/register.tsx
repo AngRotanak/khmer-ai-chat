@@ -3,8 +3,8 @@ import { createFileRoute } from "@tanstack/react-router"
 import { AdminLayout } from "./components/AdminLayout"
 import { z } from "zod"
 import { getGroupId, getUserId } from "./components/utils/telegram"
-import { getDatabase, ref, set, push } from "firebase/database"
-const db = getDatabase(app)
+import { db } from '~/lib/firebase'
+import { ref, push, set } from 'firebase/database'
 
 export const Route = createFileRoute("/attendance/register")({
   component: RegisterPage,
