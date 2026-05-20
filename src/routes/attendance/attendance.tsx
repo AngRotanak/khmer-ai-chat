@@ -113,6 +113,12 @@ function AttendancePage() {
     })
   }, [groupId])
 
+useEffect(() => {
+  (async () => {
+    await initAttendance()
+    await detectOffice(nextAction)   // ✅ detect office once at startup
+  })()
+}, [])
 
   // =========================
   // INIT ATTENDANCE (reusable)
@@ -143,8 +149,8 @@ function AttendancePage() {
     // ✅ Flip nextAction
     setNextAction(decidedAction)
 
-    // ✅ Trigger detectOffice with fresh decidedAction
-    await detectOffice(decidedAction)
+    // // ✅ Trigger detectOffice with fresh decidedAction
+    // await detectOffice(decidedAction)
 
     // Check missed checkout from yesterday
     const missed = await checkMissedCheckout(groupId, userId)
@@ -170,74 +176,77 @@ function AttendancePage() {
   }, [sessionLoaded, groupId, userId])
 
 
-  // =========================
-  // ATTENDANCE HANDLER
-  // =========================
-  const handleAttendance = async (extra?: { reason?: string }) => {
-    if (!sessionLoaded) return
-    if (!navigator.geolocation) return
+// =========================
+// ATTENDANCE HANDLER
+// =========================
+const handleAttendance = async (extra?: { reason?: string }) => {
+  if (!sessionLoaded) return
+  if (!navigator.geolocation) return
 
-    setLoading("working")
+  setLoading("working")
 
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        const currentAction = nextAction  // ✅ current action at time of submit
+  navigator.geolocation.getCurrentPosition(
+    async (pos) => {
+      const currentAction = nextAction  // ✅ current action at time of submit
 
-        const payload = {
-          action: currentAction,
-          lat: pos.coords.latitude,
-          lon: pos.coords.longitude,
-          group_id: groupId,
-          user: tg?.initDataUnsafe?.user || null,
-          chat: tg?.initDataUnsafe?.chat || null,
-          timestamp: new Date().toISOString(),
-          bot_username: "autobot",
-          photo: photo || null,
-          office_id: officeId || "unknown",
-          officeName: officeName || "Unknown Office",
-          reason: extra?.reason || null,
-        }
+      const payload = {
+        action: currentAction,
+        lat: pos.coords.latitude,
+        lon: pos.coords.longitude,
+        group_id: groupId,
+        user: tg?.initDataUnsafe?.user || null,
+        chat: tg?.initDataUnsafe?.chat || null,
+        timestamp: new Date().toISOString(),
+        bot_username: "autobot",
+        photo: photo || null,
+        office_id: officeId || "unknown",
+        officeName: officeName || "Unknown Office",
+        reason: extra?.reason || null,
+      }
 
-        console.log("Submitting attendance payload:", payload)
+      console.log("Submitting attendance payload:", payload)
+
+      await log(
+        { type: "attendance_payload", actionSent: currentAction, payload: { ...payload, photo: "[PHOTO_PRESENT]" } },
+        `logs/webapp/${groupId}`
+      )
+
+      try {
+        const result = await submitAttendance(payload)
+        console.log("Attendance response:", result)
 
         await log(
-          { type: "attendance_payload", actionSent: currentAction, payload: { ...payload, photo: "[PHOTO_PRESENT]" } },
+          { type: "attendance_response", actionSent: currentAction, result },
           `logs/webapp/${groupId}`
         )
 
-        try {
-          const result = await submitAttendance(payload)
-          console.log("Attendance response:", result)
+        // ✅ Compute fresh nextAction
+        const newAction = currentAction === "checkin" ? "checkout" : "checkin"
 
-          await log(
-            { type: "attendance_response", actionSent: currentAction, result },
-            `logs/webapp/${groupId}`
-          )
+        // ✅ Flip locally
+        setNextAction(newAction)
 
-          // ✅ Compute fresh nextAction
-          const newAction = currentAction === "checkin" ? "checkout" : "checkin"
+        // ✅ Re-sync with Firebase
+        await initAttendance()
 
-          // ✅ Flip locally
-          setNextAction(newAction)
+        // // ✅ Trigger detectOffice once here
+        // await detectOffice(newAction)
 
-          // // ✅ Re-sync with Firebase
-          // await initAttendance()
-
-          setLoading("success")
-          tg?.HapticFeedback?.notificationOccurred("success")
-          setTimeout(() => tg?.close(), 1200)
-        } catch (err) {
-          setLoading("idle")
-          await log({ type: "attendance_error", error: String(err) }, `logs/webapp/${groupId}`)
-          alert("❌ Failed attendance: " + String(err))
-        }
-      },
-      (err) => {
+        setLoading("success")
+        tg?.HapticFeedback?.notificationOccurred("success")
+        setTimeout(() => tg?.close(), 1200)
+      } catch (err) {
         setLoading("idle")
-        log({ type: "location_error", error: err.message }, `logs/webapp/${groupId}`)
+        await log({ type: "attendance_error", error: String(err) }, `logs/webapp/${groupId}`)
+        alert("❌ Failed attendance: " + String(err))
       }
-    )
-  }
+    },
+    (err) => {
+      setLoading("idle")
+      log({ type: "location_error", error: err.message }, `logs/webapp/${groupId}`)
+    }
+  )
+}
 
 
   // =========================
