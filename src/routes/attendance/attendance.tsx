@@ -149,8 +149,8 @@ useEffect(() => {
     // ✅ Flip nextAction
     setNextAction(decidedAction)
 
-    // // ✅ Trigger detectOffice with fresh decidedAction
-    // await detectOffice(decidedAction)
+    // ✅ Trigger detectOffice with fresh decidedAction
+    await detectOffice(decidedAction)
 
     // Check missed checkout from yesterday
     const missed = await checkMissedCheckout(groupId, userId)
@@ -226,11 +226,9 @@ const handleAttendance = async (extra?: { reason?: string }) => {
         // ✅ Flip locally
         setNextAction(newAction)
 
-        // ✅ Re-sync with Firebase
-        await initAttendance()
+        // // ✅ Re-sync with Firebase
+        // await initAttendance()
 
-        // // ✅ Trigger detectOffice once here
-        // await detectOffice(newAction)
 
         setLoading("success")
         tg?.HapticFeedback?.notificationOccurred("success")
