@@ -3,8 +3,8 @@ import { createFileRoute } from "@tanstack/react-router"
 import { AdminLayout } from "./components/AdminLayout"
 import { z } from "zod"
 import { getGroupId, getUserId } from "./components/utils/telegram"
-import { db } from '~/lib/firebase'
-import { ref, push, set } from 'firebase/database'
+import { getDatabase, ref, set, push } from "firebase/database"
+const db = getDatabase(app)
 
 export const Route = createFileRoute("/attendance/register")({
   component: RegisterPage,
@@ -206,7 +206,7 @@ function RegisterPage() {
             }
 
             try {
-              await set(ref(db, `khmer-autobot/licenses/${groupId}`), licenseData)
+              await set(ref(db, `khmer-autobot/licenses`), licenseData)
 
               await push(ref(db, `logs/webapp/${groupId}`), {
                 type: "license_created",
