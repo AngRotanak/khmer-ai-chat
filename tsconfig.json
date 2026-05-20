@@ -13,7 +13,7 @@
       "~@/*": ["src/bootstrap/*"],
       "~/*": ["src/*"],
       "~pages/*": ["src/routes/*"],
-      "~lib/*": ["src/lib/*"]   // ✅ point to src/lib
+       "~lib/*": ["src/lib/*"]
     },
 
     /* Module compatibility */
