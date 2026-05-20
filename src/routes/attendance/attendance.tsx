@@ -220,8 +220,8 @@ function AttendancePage() {
           // ✅ Flip locally
           setNextAction(newAction)
 
-          // ✅ Re-sync with Firebase
-          await initAttendance()
+          // // ✅ Re-sync with Firebase
+          // await initAttendance()
 
           setLoading("success")
           tg?.HapticFeedback?.notificationOccurred("success")
