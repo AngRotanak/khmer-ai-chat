@@ -175,7 +175,7 @@ function RegisterPage() {
           const res = await fetch("https://asia-east2-khmer-catalog.cloudfunctions.net/KhmerAutobot", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ action: "check_payment", md5, selected_package: selectedPackage }),
+            body: JSON.stringify({ action: "check_payment", md5, selected_package: selectedPackage, bot_username: "autobot" }),
           })
           const data = await res.json()
 
