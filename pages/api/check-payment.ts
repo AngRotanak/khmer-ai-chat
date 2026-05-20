@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next"
-import { checkBakongTransaction } from  '../lib/bakong'
+import { checkBakongTransaction } from '../lib/bakong'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "POST") {
@@ -13,7 +13,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     const data = await checkBakongTransaction(md5)
-    return res.status(200).json(data)
+    return res.status(200).json(data) // ✅ always normalized
   } catch (err) {
     console.error("Bakong check error:", err)
     return res.status(500).json({ error: "Payment check failed" })

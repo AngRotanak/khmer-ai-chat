@@ -143,102 +143,102 @@ function RegisterPage() {
     }
   }
 
-useEffect(() => {
-  if (!md5 || paymentComplete || timeoutReached) return
+  useEffect(() => {
+    if (!md5 || paymentComplete || timeoutReached) return
 
-  let secondsPassed = 0
-  let countdownValue = 60
+    let secondsPassed = 0
+    let countdownValue = 60
 
-  const interval = setInterval(async () => {
-    countdownValue -= 1
-    secondsPassed += 1
+    const interval = setInterval(async () => {
+      countdownValue -= 1
+      secondsPassed += 1
 
-    if (countdownValue === 10) {
-      const warningBeep = new Audio("/warning.mp3")
-      warningBeep.play().catch(err => console.error("Warning beep error:", err))
-    }
-
-    if (secondsPassed >= TIMEOUT_SECONDS) {
-      setTimeoutReached(true)
-      clearInterval(interval)
-      return
-    }
-
-    if (countdownValue === 0) {
-      const timeoutBeep = new Audio("/timeout.mp3")
-      timeoutBeep.play().catch(err => console.error("Timeout beep error:", err))
-      countdownValue = 60
-    }
-
-    if (secondsPassed % 5 === 0) {
-      try {
-        // ✅ Call your own API route, not Bakong directly
-        const res = await fetch("/api/check-payment", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ md5 })
-        })
-        const data = await res.json()
-
-        if (data.status === "PAID") {
-          clearInterval(interval)
-
-          // ✅ Plan rules
-          const planRules: Record<string, { user_limit: number; duration_days: number }> = {
-            basic: { user_limit: 5, duration_days: 30 },
-            pro: { user_limit: 15, duration_days: 90 },
-            enterprise: { user_limit: 9999, duration_days: 365 }
-          }
-          const rules = planRules[selectedPackage] || planRules.basic
-
-          // ✅ License object
-          const licenseData = {
-            license_id: data.license_id || md5,
-            package: selectedPackage,
-            user_limit: rules.user_limit,
-            duration_days: rules.duration_days,
-            issued_at: new Date().toISOString(),
-            expires_at: new Date(Date.now() + rules.duration_days * 86400000).toISOString(),
-            status: "active",
-            group_id: groupId,
-            owner_id: userId,
-            download_url: data.download_url || ""
-          }
-
-          if (!groupId || groupId === "unknown" || !userId || userId === "guest") {
-            console.error("Invalid groupId/userId, skipping license save", { groupId, userId })
-            return
-          }
-
-          try {
-            await saveLicense(licenseData, groupId, userId)
-            await push(ref(db, `logs/webapp/${groupId}`), {
-              type: "license_created",
-              group_id: groupId,
-              user_id: userId,
-              licenseData,
-              timestamp: new Date().toISOString(),
-            })
-          } catch (err) {
-            console.error("Firebase update error:", err)
-          }
-
-          // ✅ Update UI
-          setShowQRPanel(false)
-          setTimeout(() => {
-            setPaymentComplete(true)
-            setLicenseInfo(licenseData)
-            setShowThankYou(true)
-          }, 500)
-        }
-      } catch (err) {
-        console.error("Error checking payment:", err)
+      if (countdownValue === 10) {
+        const warningBeep = new Audio("/warning.mp3")
+        warningBeep.play().catch(err => console.error("Warning beep error:", err))
       }
-    }
-  }, 1000)
 
-  return () => clearInterval(interval)
-}, [md5, paymentComplete, timeoutReached, selectedPackage])
+      if (secondsPassed >= TIMEOUT_SECONDS) {
+        setTimeoutReached(true)
+        clearInterval(interval)
+        return
+      }
+
+      if (countdownValue === 0) {
+        const timeoutBeep = new Audio("/timeout.mp3")
+        timeoutBeep.play().catch(err => console.error("Timeout beep error:", err))
+        countdownValue = 60
+      }
+
+      if (secondsPassed % 5 === 0) {
+        try {
+          // ✅ Call your own API route, not Bakong directly
+          const res = await fetch("/api/check-payment", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ md5 })
+          })
+          const data = await res.json()
+
+          if (data.status === "PAID") {
+            clearInterval(interval)
+
+            // ✅ Plan rules
+            const planRules: Record<string, { user_limit: number; duration_days: number }> = {
+              basic: { user_limit: 5, duration_days: 30 },
+              pro: { user_limit: 15, duration_days: 90 },
+              enterprise: { user_limit: 9999, duration_days: 365 }
+            }
+            const rules = planRules[selectedPackage] || planRules.basic
+
+            // ✅ License object
+            const licenseData = {
+              license_id: data.license_id || md5,
+              package: selectedPackage,
+              user_limit: rules.user_limit,
+              duration_days: rules.duration_days,
+              issued_at: new Date().toISOString(),
+              expires_at: new Date(Date.now() + rules.duration_days * 86400000).toISOString(),
+              status: "active",
+              group_id: groupId,
+              owner_id: userId,
+              download_url: data.download_url || ""
+            }
+
+            if (!groupId || groupId === "unknown" || !userId || userId === "guest") {
+              console.error("Invalid groupId/userId, skipping license save", { groupId, userId })
+              return
+            }
+
+            try {
+              await saveLicense(licenseData, groupId, userId)
+              await push(ref(db, `logs/webapp/${groupId}`), {
+                type: "license_created",
+                group_id: groupId,
+                user_id: userId,
+                licenseData,
+                timestamp: new Date().toISOString(),
+              })
+            } catch (err) {
+              console.error("Firebase update error:", err)
+            }
+
+            // ✅ Update UI
+            setShowQRPanel(false)
+            setTimeout(() => {
+              setPaymentComplete(true)
+              setLicenseInfo(licenseData)
+              setShowThankYou(true)
+            }, 500)
+          }
+        } catch (err) {
+          console.error("Error checking payment:", err)
+        }
+      }
+    }, 1000)
+
+    return () => clearInterval(interval)
+  }, [md5, paymentComplete, timeoutReached, selectedPackage])
 
   useEffect(() => {
     if (showThankYou && thankYouRef.current) {
