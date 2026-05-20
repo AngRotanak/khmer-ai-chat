@@ -205,8 +205,14 @@ function RegisterPage() {
               download_url: data.download_url || ""   // <-- add this
             }
 
+            if (!groupId || groupId === "unknown" || !userId || userId === "guest") {
+              console.error("Invalid groupId/userId, skipping license save", { groupId, userId })
+              return
+            }
+
+
             try {
-              await set(ref(db, `khmer-autobot/licenses`), licenseData)
+              await saveLicense(licenseData, groupId, userId)
 
               await push(ref(db, `logs/webapp/${groupId}`), {
                 type: "license_created",
@@ -556,4 +562,22 @@ function RegisterPage() {
       </div>
     </AdminLayout>
   )
+}
+
+async function saveLicense(licenseData: any, groupId: string, userId: string) {
+  if (!groupId || groupId === "unknown" || !userId || userId === "guest") {
+    throw new Error("Invalid groupId/userId, cannot save license")
+  }
+
+  const path = `khmer-autobot/licenses/${groupId}/${userId}`
+  console.log("Saving license to:", path, licenseData)
+
+  await set(ref(db, path), licenseData)
+  await push(ref(db, `logs/webapp/${groupId}`), {
+    type: "license_created",
+    group_id: groupId,
+    user_id: userId,
+    licenseData,
+    timestamp: new Date().toISOString(),
+  })
 }
