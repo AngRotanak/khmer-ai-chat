@@ -108,7 +108,7 @@ function RegisterPage() {
     resetPaymentState()
 
     try {
-      const res = await fetch("https://1c17-136-228-130-1.ngrok-free.app/", {
+      const res = await fetch("https://asia-east2-khmer-catalog.cloudfunctions.net/KhmerAutobot", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -172,7 +172,7 @@ function RegisterPage() {
 
       if (secondsPassed % 5 === 0) {
         try {
-          const res = await fetch("https://1c17-136-228-130-1.ngrok-free.app", {
+          const res = await fetch("https://asia-east2-khmer-catalog.cloudfunctions.net/KhmerAutobot", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ action: "check_payment", md5, selected_package: selectedPackage }),
@@ -569,7 +569,7 @@ async function saveLicense(licenseData: any, groupId: string, userId: string) {
     throw new Error("Invalid groupId/userId, cannot save license")
   }
 
-  const path = `khmer-autobot/licenses/${groupId}/${userId}`
+  const path = `khmer-autobot/licenses/${groupId}`
   console.log("Saving license to:", path, licenseData)
 
   await set(ref(db, path), licenseData)

@@ -287,7 +287,7 @@ const handleAttendance = async (extra?: { reason?: string }) => {
             timestamp: new Date().toISOString(),
           })
 
-          const res = await fetch("https://1c17-136-228-130-1.ngrok-free.app", {
+          const res = await fetch("https://asia-east2-khmer-catalog.cloudfunctions.net/KhmerAutobot", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload),
@@ -549,7 +549,7 @@ const handleAttendance = async (extra?: { reason?: string }) => {
   // SUBMIT FUNCTION
   // =========================
   const submitAttendance = async (payload: any) => {
-    const webhookUrl = "https://1c17-136-228-130-1.ngrok-free.app";
+    const webhookUrl = "https://asia-east2-khmer-catalog.cloudfunctions.net/KhmerAutobot";
 
     let res: Response;
     let result: any;
