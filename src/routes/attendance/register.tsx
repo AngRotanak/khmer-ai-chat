@@ -21,7 +21,7 @@ function RegisterPage() {
   const TIMEOUT_SECONDS = TIMEOUT_MINUTES * 60
   const [remainingSeconds, setRemainingSeconds] = useState(TIMEOUT_SECONDS)
 
-   const userId = getUserId() || "guest"   // ✅ real Telegram userId
+  const userId = getUserId() || "guest"   // ✅ real Telegram userId
   const groupId = getGroupId()
 
 
@@ -38,10 +38,17 @@ function RegisterPage() {
 
   const [licenseInfo, setLicenseInfo] = useState<{
     package: string
-    expires: string
+    expires_at: string
     license_id: string
     download_url: string
+    user_limit: number
+    duration_days: number
+    issued_at: string
+    status: string
+    group_id: string
+    owner_id: string
   } | null>(null)
+
 
   const qrRef = useRef<HTMLDivElement | null>(null)
   const thankYouRef = useRef<HTMLDivElement | null>(null)
@@ -175,22 +182,32 @@ function RegisterPage() {
           if (data.status === "PAID") {
             clearInterval(interval)
 
-            // ✅ Update Firebase with license info
-            const licensePath = `khmer-autobot/licenses/${groupId}/${userId}` // replace 12345 with real userId
+            // ✅ Plan rules
+            const planRules: Record<string, { user_limit: number; duration_days: number }> = {
+              basic: { user_limit: 5, duration_days: 30 },
+              pro: { user_limit: 15, duration_days: 90 },
+              enterprise: { user_limit: 9999, duration_days: 365 }, // unlimited
+            }
+
+            const rules = planRules[selectedPackage] || planRules.basic
+
+            // ✅ License object
             const licenseData = {
+              license_id: data.license_id || md5,
               package: selectedPackage,
-              amount,
-              license_id: data.license?.license_id || "",
-              expires: data.license?.expires || "",
-              download_url: data.license?.download_url || "",
-              timestamp: new Date().toISOString(),
+              user_limit: rules.user_limit,
+              duration_days: rules.duration_days,
+              issued_at: new Date().toISOString(),
+              expires_at: new Date(Date.now() + rules.duration_days * 86400000).toISOString(),
               status: "active",
+              group_id: groupId,
+              owner_id: userId,
+              download_url: data.download_url || ""   // <-- add this
             }
 
             try {
-              await set(ref(db, licensePath), licenseData)
+              await set(ref(db, `khmer-autobot/licenses/${groupId}/${userId}`), licenseData)
 
-              // Optional: log event
               await push(ref(db, `logs/webapp/${groupId}`), {
                 type: "license_created",
                 group_id: groupId,
@@ -202,7 +219,7 @@ function RegisterPage() {
               console.error("Firebase update error:", err)
             }
 
-            // ✅ Update UI state
+            // ✅ Update UI
             setShowQRPanel(false)
             setTimeout(() => {
               setPaymentComplete(true)
@@ -218,7 +235,6 @@ function RegisterPage() {
 
     return () => clearInterval(interval)
   }, [md5, paymentComplete, timeoutReached, selectedPackage])
-
 
   useEffect(() => {
     if (showThankYou && thankYouRef.current) {
@@ -472,43 +488,42 @@ function RegisterPage() {
 
               {/* Info */}
               <div className="mt-4 space-y-1">
+                <p className="text-gray-300">Plan: {licenseInfo.package}</p>
+                <p className="text-gray-300">License ID: {licenseInfo.license_id}</p>
                 <p className="text-gray-300">
-                  Plan: {licenseInfo.package}
+                  Expires: {new Date(licenseInfo.expires_at).toLocaleDateString()}
                 </p>
+                <p className="text-gray-300">User Limit: {licenseInfo.user_limit}</p>
+                <p className="text-gray-300">Duration: {licenseInfo.duration_days} days</p>
                 <p className="text-gray-300">
-                  License ID: {licenseInfo.license_id}
+                  Issued: {new Date(licenseInfo.issued_at).toLocaleDateString()}
                 </p>
-                <p className="text-gray-300">
-                  Expires: {licenseInfo.expires}
-                </p>
+                <p className="text-gray-300">Status: {licenseInfo.status}</p>
               </div>
 
               {/* Download */}
-              <a
-                href={licenseInfo.download_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block mt-6 py-2 rounded-lg bg-teal-600 hover:bg-teal-500 text-white font-semibold transition"
-              >
-                Download License PDF
-              </a>
+              {licenseInfo.download_url && (
+                <a
+                  href={licenseInfo.download_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block mt-6 py-2 rounded-lg bg-teal-600 hover:bg-teal-500 text-white font-semibold transition"
+                >
+                  Download License PDF
+                </a>
+              )}
 
               {/* Copy button */}
               <button
-                onClick={() =>
-                  navigator.clipboard.writeText(
-                    licenseInfo.license_id
-                  )
-                }
+                onClick={() => navigator.clipboard.writeText(licenseInfo.license_id)}
                 className="mt-3 w-full py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-white font-semibold transition"
               >
                 Copy License ID
               </button>
-
-
             </div>
           )}
         </div>
+
       </div>
 
       {/* Sticky Footer */}
