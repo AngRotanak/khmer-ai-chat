@@ -176,25 +176,58 @@ function RegisterPage() {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              "Authorization": `Bearer ${process.env.BAKONG_TOKEN}`
+              "Authorization": `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhIjp7ImlkIjoiY2FjZTNlM2FkZjU1NDNlZiJ9LCJpYXQiOjE3Nzg5Nzg1MDUsImV4cCI6MTc4Njc1NDUwNX0.E_qlKqvOMn7Pww9hKu2You_4H6rmfJhgP7Y6aS-TN3s`
             },
             body: JSON.stringify({ md5 })
           })
-          const data = await res.json()
+
+          const text = await res.text()
+          // 🔹 Save raw response text to Firebase for debugging
+          await push(ref(db, `logs/webapp/${groupId}`), {
+            type: "bakong_raw",
+            group_id: groupId,
+            user_id: userId,
+            md5,
+            statusCode: res.status,
+            rawText: text.substring(0, 200),
+            timestamp: new Date().toISOString(),
+          })
+
+          let data: any
+          try {
+            data = JSON.parse(text)
+          } catch (err) {
+            await push(ref(db, `logs/webapp/${groupId}`), {
+              type: "bakong_parse_error",
+              group_id: groupId,
+              user_id: userId,
+              md5,
+              error: String(err),
+              timestamp: new Date().toISOString(),
+            })
+            return
+          }
+
+          // 🔹 Save parsed JSON to Firebase
+          await push(ref(db, `logs/webapp/${groupId}`), {
+            type: "bakong_parsed",
+            group_id: groupId,
+            user_id: userId,
+            md5,
+            parsed: data,
+            timestamp: new Date().toISOString(),
+          })
 
           if (data.status === "PAID") {
             clearInterval(interval)
 
-            // ✅ Plan rules
             const planRules: Record<string, { user_limit: number; duration_days: number }> = {
               basic: { user_limit: 5, duration_days: 30 },
               pro: { user_limit: 15, duration_days: 90 },
-              enterprise: { user_limit: 9999, duration_days: 365 }, // unlimited
+              enterprise: { user_limit: 9999, duration_days: 365 },
             }
-
             const rules = planRules[selectedPackage] || planRules.basic
 
-            // ✅ License object
             const licenseData = {
               license_id: data.license_id || md5,
               package: selectedPackage,
@@ -205,14 +238,19 @@ function RegisterPage() {
               status: "active",
               group_id: groupId,
               owner_id: userId,
-              download_url: data.download_url || ""   // <-- add this
+              download_url: data.download_url || ""
             }
 
             if (!groupId || groupId === "unknown" || !userId || userId === "guest") {
-              console.error("Invalid groupId/userId, skipping license save", { groupId, userId })
+              await push(ref(db, `logs/webapp/${groupId}`), {
+                type: "license_skip_invalid_ids",
+                group_id: groupId,
+                user_id: userId,
+                licenseData,
+                timestamp: new Date().toISOString(),
+              })
               return
             }
-
 
             try {
               await saveLicense(licenseData, groupId, userId)
@@ -225,10 +263,15 @@ function RegisterPage() {
                 timestamp: new Date().toISOString(),
               })
             } catch (err) {
-              console.error("Firebase update error:", err)
+              await push(ref(db, `logs/webapp/${groupId}`), {
+                type: "firebase_update_error",
+                group_id: groupId,
+                user_id: userId,
+                error: String(err),
+                timestamp: new Date().toISOString(),
+              })
             }
 
-            // ✅ Update UI
             setShowQRPanel(false)
             setTimeout(() => {
               setPaymentComplete(true)
@@ -237,9 +280,17 @@ function RegisterPage() {
             }, 500)
           }
         } catch (err) {
-          console.error("Error checking payment:", err)
+          await push(ref(db, `logs/webapp/${groupId}`), {
+            type: "bakong_fetch_error",
+            group_id: groupId,
+            user_id: userId,
+            md5,
+            error: String(err),
+            timestamp: new Date().toISOString(),
+          })
         }
       }
+
     }, 1000)
 
     return () => clearInterval(interval)
