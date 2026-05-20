@@ -206,7 +206,7 @@ function RegisterPage() {
             }
 
             try {
-              await set(ref(db, `khmer-autobot/licenses/${groupId}/${userId}`), licenseData)
+              await set(ref(db, `khmer-autobot/licenses/${groupId}`), licenseData)
 
               await push(ref(db, `logs/webapp/${groupId}`), {
                 type: "license_created",
