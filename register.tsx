@@ -172,15 +172,23 @@ function RegisterPage() {
 
       if (secondsPassed % 5 === 0) {
         try {
-          const res = await fetch("https://api-bakong.nbc.gov.kh/v1/check_transaction_by_md5", {
+          // ✅ Call your own API route, not Bakong directly
+          const res = await fetch("/api/check-payment", {
             method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${process.env.BAKONG_TOKEN}`
-            },
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ md5 })
           })
           const data = await res.json()
+
+          // 🔹 Log every poll attempt
+          await push(ref(db, `logs/webapp/${groupId}`), {
+            type: "poll_attempt",
+            group_id: groupId,
+            user_id: userId,
+            md5,
+            response: data,
+            timestamp: new Date().toISOString(),
+          })
 
           if (data.status === "PAID") {
             clearInterval(interval)
@@ -189,9 +197,8 @@ function RegisterPage() {
             const planRules: Record<string, { user_limit: number; duration_days: number }> = {
               basic: { user_limit: 5, duration_days: 30 },
               pro: { user_limit: 15, duration_days: 90 },
-              enterprise: { user_limit: 9999, duration_days: 365 }, // unlimited
+              enterprise: { user_limit: 9999, duration_days: 365 }
             }
-
             const rules = planRules[selectedPackage] || planRules.basic
 
             // ✅ License object
@@ -205,18 +212,24 @@ function RegisterPage() {
               status: "active",
               group_id: groupId,
               owner_id: userId,
-              download_url: data.download_url || ""   // <-- add this
+              download_url: data.download_url || ""
             }
 
             if (!groupId || groupId === "unknown" || !userId || userId === "guest") {
               console.error("Invalid groupId/userId, skipping license save", { groupId, userId })
+              await push(ref(db, `logs/webapp/${groupId}`), {
+                type: "license_error",
+                group_id: groupId,
+                user_id: userId,
+                reason: "Invalid groupId/userId",
+                licenseData,
+                timestamp: new Date().toISOString(),
+              })
               return
             }
 
-
             try {
               await saveLicense(licenseData, groupId, userId)
-
               await push(ref(db, `logs/webapp/${groupId}`), {
                 type: "license_created",
                 group_id: groupId,
@@ -226,6 +239,14 @@ function RegisterPage() {
               })
             } catch (err) {
               console.error("Firebase update error:", err)
+              await push(ref(db, `logs/webapp/${groupId}`), {
+                type: "license_save_failed",
+                group_id: groupId,
+                user_id: userId,
+                error: String(err),
+                licenseData,
+                timestamp: new Date().toISOString(),
+              })
             }
 
             // ✅ Update UI
@@ -238,8 +259,17 @@ function RegisterPage() {
           }
         } catch (err) {
           console.error("Error checking payment:", err)
+          await push(ref(db, `logs/webapp/${groupId}`), {
+            type: "poll_error",
+            group_id: groupId,
+            user_id: userId,
+            md5,
+            error: String(err),
+            timestamp: new Date().toISOString(),
+          })
         }
       }
+
     }, 1000)
 
     return () => clearInterval(interval)
