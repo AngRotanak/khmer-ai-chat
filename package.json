@@ -5,9 +5,9 @@
   "private": true,
 "scripts": {
   "dev": "next dev",
-  "backend": "node server/index.js",
-  "dev:all": "concurrently \"pnpm run dev\" \"pnpm run backend\"",
-  "build": "next build",
+ "backend": "node server/index.js",
+ "dev:all": "concurrently \"pnpm run dev\" \"pnpm run backend\"",
+ "build": "next build",
   "start": "next start",
   "lint": "eslint . --report-unused-disable-directives --max-warnings 0",
   "lint:fix": "eslint . --fix --report-unused-disable-directives --max-warnings 0",

@@ -1,3 +1,4 @@
+// src/main.tsx
 import { RouterProvider } from '@tanstack/react-router'
 import { Analytics } from '@vercel/analytics/react'
 import { setAutoFreeze } from 'immer'
