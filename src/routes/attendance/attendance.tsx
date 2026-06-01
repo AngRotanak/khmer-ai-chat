@@ -307,95 +307,120 @@ function AttendancePage() {
   }
 
 
-  // =========================
-  // Detect office (GPS fallback)
-  // =========================
-  const detectOffice = async (
-    actionOverride?: "checkin" | "checkout"
-  ): Promise<OfficeDetectionResult> => {
-    const actionToSend = actionOverride || nextAction
-    if (groupId === "unknown" || !actionToSend) {
-      return {
-        officeDetected: false,
-        officeName: "Unknown Office",
-        distance: null,
-        officeId: "unknown",
-        status: "error",
-        detail: "Group unknown or action missing",
-      }
+// =========================
+// Detect office (GPS fallback) with debounce + logging
+// =========================
+let lastDetectCall = 0
+
+const detectOffice = async (
+  actionOverride?: "checkin" | "checkout"
+): Promise<OfficeDetectionResult> => {
+  const now = Date.now()
+  if (now - lastDetectCall < 1000) {
+    // 🚫 Duplicate call skipped
+    await push(ref(db, `logs/webapp/${groupId}`), {
+      type: "debounce_skip",
+      user_id: userId,
+      actionOverride,
+      timestamp: new Date().toISOString(),
+      confirm: "Skipped duplicate detectOffice call"
+    })
+
+    return {
+      officeDetected: false,
+      officeName: "Unknown Office",
+      distance: null,
+      officeId: "unknown",
+      status: "skipped",
+      detail: "Debounced duplicate call"
     }
+  }
+  lastDetectCall = now
 
-    return new Promise<OfficeDetectionResult>((resolve) => {
-      navigator.geolocation.getCurrentPosition(
-        async (pos) => {
-          try {
-            const payload = {
-              action: "office",
-              nextAction: actionToSend,
-              group_id: groupId,
-              lat: pos.coords.latitude,   // ✅ use real GPS
-              lon: pos.coords.longitude,  // ✅ use real GPS
-              bot_username: "autobot",
-              user: tg?.initDataUnsafe?.user || {},
-              timestamp: new Date().toISOString(),
-            }
+  const actionToSend = actionOverride || nextAction
+  if (groupId === "unknown" || !actionToSend) {
+    return {
+      officeDetected: false,
+      officeName: "Unknown Office",
+      distance: null,
+      officeId: "unknown",
+      status: "error",
+      detail: "Group unknown or action missing",
+    }
+  }
 
-            const res = await fetch("https://fea2-136-228-130-3.ngrok-free.app", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(payload),
-            })
-
-            const data = await res.json()
-
-            const result: OfficeDetectionResult = {
-              officeDetected:
-                !!data.office_id && !!data.officeName && !data.status?.includes("error"),
-              officeName: data.officeName || "Unknown Office",
-              distance: data.distance ?? null,
-              officeId: data.office_id || "unknown",
-              status: data.status || "",
-              detail: data.detail || "",
-            }
-
-            // ✅ Update store
-            setOfficeId(result.officeId)
-            setOfficeName(result.officeName)
-            setStatus(result.status)
-            setDetail(result.detail)
-            setDistance(result.distance)
-            setOfficeDetected(result.officeDetected)
-
-            resolve(result)
-          } catch (err) {
-            resolve({
-              officeDetected: false,
-              officeName: "Unknown Office",
-              distance: null,
-              officeId: "unknown",
-              status: "error",
-              detail: String(err),
-            })
+  return new Promise<OfficeDetectionResult>((resolve) => {
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        try {
+          const payload = {
+            action: "office",
+            nextAction: actionToSend,
+            group_id: groupId,
+            lat: pos.coords.latitude,   // ✅ use real GPS
+            lon: pos.coords.longitude,  // ✅ use real GPS
+            bot_username: "autobot",
+            user: tg?.initDataUnsafe?.user || {},
+            timestamp: new Date().toISOString(),
           }
-        },
-        (err) => {
+
+          const res = await fetch("https://fea2-136-228-130-3.ngrok-free.app", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          })
+
+          const data = await res.json()
+
+          const result: OfficeDetectionResult = {
+            officeDetected:
+              !!data.office_id && !!data.officeName && !data.status?.includes("error"),
+            officeName: data.officeName || "Unknown Office",
+            distance: data.distance ?? null,
+            officeId: data.office_id || "unknown",
+            status: data.status || "",
+            detail: data.detail || "",
+          }
+
+          // ✅ Update store
+          setOfficeId(result.officeId)
+          setOfficeName(result.officeName)
+          setStatus(result.status)
+          setDetail(result.detail)
+          setDistance(result.distance)
+          setOfficeDetected(result.officeDetected)
+
+          resolve(result)
+        } catch (err) {
           resolve({
             officeDetected: false,
             officeName: "Unknown Office",
             distance: null,
             officeId: "unknown",
-            status: "GPS denied",
-            detail: err.message,
+            status: "error",
+            detail: String(err),
           })
-        },
-        { timeout: 30000 }
-      )
-    })
-  }
+        }
+      },
+      (err) => {
+        resolve({
+          officeDetected: false,
+          officeName: "Unknown Office",
+          distance: null,
+          officeId: "unknown",
+          status: "GPS denied",
+          detail: err.message,
+        })
+      },
+      { timeout: 30000 }
+    )
+  })
+}
 
 
 // ✅ Wrap detectOffice with debounce AFTER it’s defined
 const debouncedDetectOffice = useDebouncedDetectOffice(detectOffice, 1000)
+
 
 
 
@@ -1086,8 +1111,7 @@ useEffect(() => {
 
 }
 
-
-export function useDebouncedDetectOffice(
+function useDebouncedDetectOffice(
   originalDetectOffice: (actionOverride?: "checkin" | "checkout") => Promise<OfficeDetectionResult>,
   delay = 1000
 ) {
@@ -1096,6 +1120,7 @@ export function useDebouncedDetectOffice(
   return async (actionOverride?: "checkin" | "checkout") => {
     const now = Date.now()
     if (now - lastCallRef.current < delay) {
+      // 🚫 Duplicate call skipped
       return Promise.resolve({
         officeDetected: false,
         officeName: "Unknown Office",
@@ -1105,7 +1130,9 @@ export function useDebouncedDetectOffice(
         detail: "Debounced duplicate call"
       })
     }
+
     lastCallRef.current = now
     return originalDetectOffice(actionOverride)
   }
 }
+
