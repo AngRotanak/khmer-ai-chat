@@ -3,16 +3,13 @@ import react from '@vitejs/plugin-react'
 import unocss from 'unocss/vite'
 import autoImport from 'unplugin-auto-import/vite'
 import unhead from '@unhead/addons/vite'
-// import tanStackRouter from '@tanstack/router-vite-plugin' // ✅ Correct
-
 import path from 'path'
-import { fileURLToPath, URL } from 'node:url'
 
 export default defineConfig({
   optimizeDeps: {
-   include: ['@emoji-mart/react', '@emoji-mart/data'],
-    exclude: ['@tanstack/router-vite-plugin']
-},
+    include: ['@emoji-mart/react', '@emoji-mart/data'],
+    exclude: ['@tanstack/router-vite-plugin'],
+  },
 
   resolve: {
     alias: {
@@ -22,22 +19,33 @@ export default defineConfig({
     },
   },
 
-  // ✅ Correct SCSS include paths
   css: {
     preprocessorOptions: {
       scss: {
-        // optional, can be empty
         additionalData: '',
         includePaths: [path.resolve(__dirname, 'src/assets/styles')],
       },
     },
   },
 
-base: '/',
-  build: {
-    target: 'esnext',
-    outDir: 'dist',
+  base: '/',
+build: {
+  target: 'esnext',
+  outDir: 'dist',
+  chunkSizeWarningLimit: 1000, // raise limit to 1MB
+  rollupOptions: {
+    output: {
+      manualChunks: {
+        firebase: ['firebase/app', 'firebase/database'],
+        router: ['@tanstack/react-router'],
+        charts: ['chart.js', 'react-chartjs-2'],
+        maps: ['leaflet', 'react-leaflet'],
+        tiptap: ['@tiptap/react', '@tiptap/starter-kit'],
+      },
+    },
   },
+},
+
 
   esbuild: {
     supported: {
@@ -47,12 +55,6 @@ base: '/',
 
   plugins: [
     unocss(),
-    // tanStackRouter({
-    //   quoteStyle: 'double',
-    //   routesDirectory: './src/pages',
-    //   generatedRouteTree: './.generated/route-tree.gen.ts',
-    //   semicolons: true,
-    // }),
     react(),
     unhead(),
     autoImport({

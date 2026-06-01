@@ -2,7 +2,9 @@ import { createFileRoute } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 import { db } from '~/lib/firebase'
 import { ref, push, getDatabase, get, onValue } from 'firebase/database'
-import CameraModal from './components/CameraModal'
+import { lazy, Suspense } from 'react'
+
+const CameraModal = lazy(() => import('./components/CameraModal'))
 import { useTelegramWebApp } from '~/hooks/useTelegramWebApp'
 import AttendanceFooter from './components/AttendanceFooter'
 import { Link } from "@tanstack/react-router"
@@ -760,7 +762,7 @@ function AttendancePage() {
       {/* Main */}
       <main className="flex-1 flex flex-col items-center justify-center px-6 py-8 space-y-8">
         {!officeDetected ? (
-          // 🔹 Show spinner overlay only
+          // 🔹 Show spinner overlay only until GPS detection succeeds
           <div className="flex flex-col items-center justify-center space-y-2">
             <svg
               className="animate-spin h-8 w-8 text-teal-500"
@@ -787,14 +789,21 @@ function AttendancePage() {
         ) : (
           <>
             {/* Camera capture card */}
-            <div className={`w-full max-w-md rounded-2xl shadow-xl p-6 border space-y-6 ${settings.theme === "dark" ? "bg-gray-900 border-teal-600" : "bg-white border-teal-400"
-              }`}>
+            <div
+              className={`w-full max-w-md rounded-2xl shadow-xl p-6 border space-y-6 ${settings.theme === "dark"
+                  ? "bg-gray-900 border-teal-600"
+                  : "bg-white border-teal-400"
+                }`}
+            >
               {status.includes("Outside Office") ? (
                 <div className="text-red-400 text-center text-sm">
                   ❌ You are {distance}m away from the office. Camera disabled.
                 </div>
               ) : (
-                <CameraModal onCapture={(photoData) => setPhoto(photoData)} disabled={false} />
+                <CameraModal
+                  onCapture={(photoData) => setPhoto(photoData)}
+                  disabled={false}
+                />
               )}
             </div>
 
@@ -809,7 +818,8 @@ function AttendancePage() {
                   </p>
                   {nextAction === "checkout" && lastCheckInTime && (
                     <p className="text-gray-300 text-sm mt-1">
-                      Last Check-In: {new Date(lastCheckInTime).toLocaleTimeString()}
+                      Last Check-In:{" "}
+                      {new Date(lastCheckInTime).toLocaleTimeString()}
                     </p>
                   )}
                   <p className="text-gray-300 text-sm mt-1">
@@ -829,21 +839,23 @@ function AttendancePage() {
                       handleAttendance()
                     }}
                     disabled={
+                      !officeDetected || // ✅ block until GPS detection succeeds
                       loading !== "idle" ||
                       !sessionLoaded ||
                       !status ||
                       status.includes("Outside Office")
                     }
                     className={`w-full py-3 rounded-xl shadow-lg font-semibold transition ${nextAction === "checkin"
-                      ? settings.theme === "dark"
-                        ? "bg-green-500 text-black hover:bg-green-400"
-                        : "bg-green-600 text-white hover:bg-green-500"
-                      : settings.theme === "dark"
-                        ? "bg-red-500 text-white hover:bg-red-400"
-                        : "bg-red-600 text-white hover:bg-red-500"
-                      } ${!status || status.includes("Outside Office")
+                        ? settings.theme === "dark"
+                          ? "bg-green-500 text-black hover:bg-green-400"
+                          : "bg-green-600 text-white hover:bg-green-500"
+                        : settings.theme === "dark"
+                          ? "bg-red-500 text-white hover:bg-red-400"
+                          : "bg-red-600 text-white hover:bg-red-500"
+                      } ${!officeDetected || !status || status.includes("Outside Office")
                         ? "opacity-50 cursor-not-allowed"
-                        : ""}`}
+                        : ""
+                      }`}
                   >
                     {loading === "working"
                       ? "Processing..."
@@ -853,7 +865,6 @@ function AttendancePage() {
                           ? "✅ Confirm Check-In"
                           : "✅ Confirm Check-Out"}
                   </button>
-
 
                   {/* Reason dropdown */}
                   {(status.includes("⚠️ យឺត") || status.includes("⚠️ ចេញមុន")) && (
@@ -873,8 +884,8 @@ function AttendancePage() {
                         }}
                         defaultValue=""
                         className={`p-2 rounded w-full focus:ring-2 focus:ring-yellow-500 text-center appearance-none ${settings.theme === "dark"
-                          ? "bg-gray-800 text-white"
-                          : "bg-gray-100 text-gray-900"
+                            ? "bg-gray-800 text-white"
+                            : "bg-gray-100 text-gray-900"
                           }`}
                       >
                         <option value="" disabled>
@@ -888,7 +899,6 @@ function AttendancePage() {
                       </select>
                     </div>
                   )}
-
 
                   {/* Info messages */}
                   {status === "" && loading === "working" && (
@@ -914,7 +924,6 @@ function AttendancePage() {
                       ⚠️ You missed Check-Out yesterday. Attendance cancelled.
                     </p>
                   )}
-
                 </>
               )}
             </div>
