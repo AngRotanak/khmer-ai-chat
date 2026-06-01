@@ -713,7 +713,7 @@ function AttendancePage() {
         }`}
     >
 
-      <header className="sticky top-0 w-full px-4 py-5 text-center backdrop-blur-md shadow-lg z-50 flex flex-col items-center">
+      <header className="sticky top-0 w-full px-4 py-9 text-center backdrop-blur-md shadow-lg z-50 flex flex-col items-center">
         <h1 className="text-2xl font-bold tracking-wide flex items-center gap-2">
           🕒 Attendance
         </h1>
