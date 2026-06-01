@@ -36,7 +36,7 @@ function AttendancePage() {
   const [currentRole, setCurrentRole] = useState("member")
   const [showMore, setShowMore] = useState(false)
 
- const {
+  const {
     officeDetected,
     officeName,
     distance,
@@ -292,77 +292,84 @@ function AttendancePage() {
     actionOverride?: "checkin" | "checkout"
   ): Promise<OfficeDetectionResult> => {
     const actionToSend = actionOverride || nextAction
-    if (groupId === "unknown") {
+    if (groupId === "unknown" || !actionToSend) {
       return {
         officeDetected: false,
         officeName: "Unknown Office",
         distance: null,
         officeId: "unknown",
         status: "error",
-        detail: "Group unknown",
+        detail: "Group unknown or action missing",
       }
     }
 
-    try {
-      const payload = {
-        action: "office",
-        nextAction: actionToSend,
-        group_id: groupId,
-        lat: 0,
-        lon: 0,
-        bot_username: "autobot",
-        user: tg?.initDataUnsafe?.user || {},
-        timestamp: new Date().toISOString(),
-      }
+    return new Promise<OfficeDetectionResult>((resolve) => {
+      navigator.geolocation.getCurrentPosition(
+        async (pos) => {
+          try {
+            const payload = {
+              action: "office",
+              nextAction: actionToSend,
+              group_id: groupId,
+              lat: pos.coords.latitude,   // ✅ use real GPS
+              lon: pos.coords.longitude,  // ✅ use real GPS
+              bot_username: "autobot",
+              user: tg?.initDataUnsafe?.user || {},
+              timestamp: new Date().toISOString(),
+            }
 
-      const res = await fetch("https://fea2-136-228-130-3.ngrok-free.app", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      })
+            const res = await fetch("https://fea2-136-228-130-3.ngrok-free.app", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(payload),
+            })
 
-      const data = await res.json()
+            const data = await res.json()
 
-      const result: OfficeDetectionResult = {
-        officeDetected:
-          !!data.office_id && !!data.officeName && !data.status?.includes("error"),
-        officeName: data.officeName || "Unknown Office",
-        distance: data.distance ?? null,
-        officeId: data.office_id || "unknown",
-        status: data.status || "",
-        detail: data.detail || "",
-      }
+            const result: OfficeDetectionResult = {
+              officeDetected:
+                !!data.office_id && !!data.officeName && !data.status?.includes("error"),
+              officeName: data.officeName || "Unknown Office",
+              distance: data.distance ?? null,
+              officeId: data.office_id || "unknown",
+              status: data.status || "",
+              detail: data.detail || "",
+            }
 
-      // ✅ Update store
-      setOfficeId(result.officeId)
-      setOfficeName(result.officeName)
-      setStatus(result.status)
-      setDetail(result.detail)
-      setDistance(result.distance)
-      setOfficeDetected(result.officeDetected)
+            // ✅ Update store
+            setOfficeId(result.officeId)
+            setOfficeName(result.officeName)
+            setStatus(result.status)
+            setDetail(result.detail)
+            setDistance(result.distance)
+            setOfficeDetected(result.officeDetected)
 
-      return result
-    } catch (err) {
-      const result: OfficeDetectionResult = {
-        officeDetected: false,
-        officeName: "Unknown Office",
-        distance: null,
-        officeId: "unknown",
-        status: "error",
-        detail: String(err),
-      }
-
-      setOfficeId(result.officeId)
-      setOfficeName(result.officeName)
-      setStatus(result.status)
-      setDetail(result.detail)
-      setDistance(result.distance)
-      setOfficeDetected(result.officeDetected)
-
-      return result
-    }
+            resolve(result)
+          } catch (err) {
+            resolve({
+              officeDetected: false,
+              officeName: "Unknown Office",
+              distance: null,
+              officeId: "unknown",
+              status: "error",
+              detail: String(err),
+            })
+          }
+        },
+        (err) => {
+          resolve({
+            officeDetected: false,
+            officeName: "Unknown Office",
+            distance: null,
+            officeId: "unknown",
+            status: "GPS denied",
+            detail: err.message,
+          })
+        },
+        { timeout: 30000 }
+      )
+    })
   }
-
 
 
   // =========================
