@@ -341,7 +341,7 @@ const detectOffice = async (
       status: "error",
       detail: "Group unknown or action missing",
     }
-  
+  }
 
   return new Promise<OfficeDetectionResult>((resolve) => {
     navigator.geolocation.getCurrentPosition(
