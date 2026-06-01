@@ -229,75 +229,72 @@ async function initAttendance() {
   }, [sessionLoaded, groupId, userId])
 
 
-  // =========================
-  // ATTENDANCE HANDLER
-  // =========================
-  const handleAttendance = async (extra?: { reason?: string }) => {
-    if (!sessionLoaded) return
-    if (!navigator.geolocation) return
+// =========================
+// ATTENDANCE HANDLER
+// =========================
+const handleAttendance = async (extra?: { reason?: string }) => {
+  if (!sessionLoaded) return
+  if (!navigator.geolocation) return
 
-    setLoading("working")
+  setLoading("working")
 
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        const currentAction = nextAction  // ✅ current action at time of submit
+  navigator.geolocation.getCurrentPosition(
+    async (pos) => {
+      const currentAction = nextAction  // ✅ current action at time of submit
 
-        const payload = {
-          action: currentAction,
-          lat: pos.coords.latitude,
-          lon: pos.coords.longitude,
-          group_id: groupId,
-          user: tg?.initDataUnsafe?.user || null,
-          chat: tg?.initDataUnsafe?.chat || null,
-          timestamp: new Date().toISOString(),
-          bot_username: "autobot",
-          photo: photo || null,
-          office_id: officeId || "unknown",
-          officeName: officeName || "Unknown Office",
-          reason: extra?.reason || null,
-        }
+      const payload = {
+        action: currentAction,
+        lat: pos.coords.latitude,
+        lon: pos.coords.longitude,
+        group_id: groupId,
+        user: tg?.initDataUnsafe?.user || null,
+        chat: tg?.initDataUnsafe?.chat || null,
+        timestamp: new Date().toISOString(),
+        bot_username: "autobot",
+        photo: photo || null,
+        office_id: officeId || "unknown",
+        officeName: officeName || "Unknown Office",
+        reason: extra?.reason || null,
+      }
 
-        console.log("Submitting attendance payload:", payload)
+      console.log("Submitting attendance payload:", payload)
+
+      await log(
+        { type: "attendance_payload", actionSent: currentAction, payload: { ...payload, photo: "[PHOTO_PRESENT]" } },
+        `logs/webapp/${groupId}`
+      )
+
+      try {
+        const result = await submitAttendance(payload)
+        console.log("Attendance response:", result)
 
         await log(
-          { type: "attendance_payload", actionSent: currentAction, payload: { ...payload, photo: "[PHOTO_PRESENT]" } },
+          { type: "attendance_response", actionSent: currentAction, result },
           `logs/webapp/${groupId}`
         )
 
-        try {
-          const result = await submitAttendance(payload)
-          console.log("Attendance response:", result)
+        // ✅ Flip locally for instant UI feedback
+        const newAction = currentAction === "checkin" ? "checkout" : "checkin"
+        setNextAction(newAction)
 
-          await log(
-            { type: "attendance_response", actionSent: currentAction, result },
-            `logs/webapp/${groupId}`
-          )
+        // ❌ Do not call initAttendance here
+        // Record listener will re-sync from Firebase
 
-          // ✅ Compute fresh nextAction
-          const newAction = currentAction === "checkin" ? "checkout" : "checkin"
-
-          // ✅ Flip locally
-          setNextAction(newAction)
-
-          // // ✅ Re-sync with Firebase
-          // await initAttendance()
-
-
-          setLoading("success")
-          tg?.HapticFeedback?.notificationOccurred("success")
-          setTimeout(() => tg?.close(), 1200)
-        } catch (err) {
-          setLoading("idle")
-          await log({ type: "attendance_error", error: String(err) }, `logs/webapp/${groupId}`)
-          alert("❌ Failed attendance: " + String(err))
-        }
-      },
-      (err) => {
+        setLoading("success")
+        tg?.HapticFeedback?.notificationOccurred("success")
+        setTimeout(() => tg?.close(), 1200)
+      } catch (err) {
         setLoading("idle")
-        log({ type: "location_error", error: err.message }, `logs/webapp/${groupId}`)
+        await log({ type: "attendance_error", error: String(err) }, `logs/webapp/${groupId}`)
+        alert("❌ Failed attendance: " + String(err))
       }
-    )
-  }
+    },
+    (err) => {
+      setLoading("idle")
+      log({ type: "location_error", error: err.message }, `logs/webapp/${groupId}`)
+    }
+  )
+}
 
 
 // =========================
@@ -418,6 +415,7 @@ const detectOffice = async (
 // =========================
 // Record listener (primary source)
 // =========================
+// Record listener
 useEffect(() => {
   if (!groupId || !userId) return
   const today = new Date().toISOString().slice(0, 10)
@@ -428,20 +426,12 @@ useEffect(() => {
     const lastRecord = Object.values(data).pop() as any
 
     if (lastRecord) {
-      setStatus(lastRecord.status || "")
-      setDetail(lastRecord.detail || "")
-      setOfficeId(lastRecord.office_id || "unknown")
-      setOfficeName(lastRecord.officeName || "Unknown Office")
-
       const normalizedAction = (lastRecord.action || "").toLowerCase()
       const decidedAction = normalizedAction === "checkin" ? "checkout" : "checkin"
 
       setNextAction(decidedAction)
-
-      // ✅ Only detectOffice here when records exist
       detectOffice(decidedAction).then(() => setPageReady(true))
     } else {
-      // ❌ Only run initAttendance if no record exists
       initAttendance().then(() => setPageReady(true))
     }
 
