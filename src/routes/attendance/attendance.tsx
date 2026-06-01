@@ -779,25 +779,32 @@ async function initAttendance() {
           </>
         )}
         {/* Status badge */}
-        {sessionLoaded && officeDetected && status && (
-          <div
-            className={`mt-2 px-3 py-2 rounded-lg inline-block font-medium ${status.includes("✅")
-              ? "bg-green-600 text-white"
-              : status.includes("⚠️ យឺត")
-                ? "bg-yellow-500 text-black"
-                : status.includes("⚠️ ចេញមុន")
-                  ? "bg-red-500 text-white"
-                  : status.includes("⏱")
-                    ? "bg-purple-500 text-white"
-                    : "bg-gray-600 text-white"
-              }`}
-          >
-            {status} {detail}
-            {/* {distance !== null && (
-              <span className="ml-2 text-xs text-gray-200">({distance}m away)</span>
-            )} */}
-          </div>
-        )}
+{pageReady && officeDetected && status ? (
+  <div
+    className={`mt-2 px-3 py-2 rounded-lg inline-block font-medium ${
+      status.includes("✅")
+        ? "bg-green-600 text-white"
+        : status.includes("⚠️ យឺត")
+        ? "bg-yellow-500 text-black"
+        : status.includes("⚠️ ចេញមុន")
+        ? "bg-red-500 text-white"
+        : status.includes("⏱")
+        ? "bg-purple-500 text-white"
+        : "bg-gray-600 text-white"
+    }`}
+  >
+    {status} {detail}
+    {distance !== null && (
+      <span className="ml-2 text-xs text-gray-200">({distance}m away)</span>
+    )}
+  </div>
+) : (
+  // ✅ Guard: show spinner or placeholder until ready
+  <div className="mt-2 px-3 py-2 rounded-lg inline-block font-medium bg-gray-300 text-gray-600 animate-pulse">
+    Loading attendance…
+  </div>
+)}
+
 
       </header>
 
