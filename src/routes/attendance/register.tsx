@@ -176,8 +176,10 @@ function RegisterPage() {
           const res = await fetch("/api/check-payment", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ md5 })
+            body: JSON.stringify({ md5, mock: true, groupId, userId })
           })
+
+
 
           const data = await res.json()
 
