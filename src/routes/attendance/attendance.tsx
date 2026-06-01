@@ -35,7 +35,7 @@ function AttendancePage() {
   const [sessionLoaded, setSessionLoaded] = useState(false)
   const [currentRole, setCurrentRole] = useState("member")
   const [showMore, setShowMore] = useState(false)
- const [pageReady, setPageReady] = useState(false)
+  const [pageReady, setPageReady] = useState(false)
 
   const {
     officeDetected,
@@ -160,70 +160,70 @@ function AttendancePage() {
     })()
   }, [])
 
-// =========================
-// INIT ATTENDANCE (reusable)
-// =========================
-async function initAttendance() {
-  if (!sessionLoaded || !groupId || groupId === "unknown" || !userId) return
+  // =========================
+  // INIT ATTENDANCE (reusable)
+  // =========================
+  async function initAttendance() {
+    if (!sessionLoaded || !groupId || groupId === "unknown" || !userId) return
 
-  // 🔹 Fetch today's last action
-  const today = await fetchTodayLastAction(groupId, userId)
-  if (!today) {
-    // ❌ No record yet → default to checkin
-    setNextAction("checkin")
-    setLastCheckInTime(null)
-    await detectOffice("checkin")
+    // 🔹 Fetch today's last action
+    const today = await fetchTodayLastAction(groupId, userId)
+    if (!today) {
+      // ❌ No record yet → default to checkin
+      setNextAction("checkin")
+      setLastCheckInTime(null)
+      await detectOffice("checkin")
 
+      await push(ref(db, `logs/webapp/${groupId}`), {
+        type: "attendance_init",
+        group_id: groupId,
+        user_id: userId,
+        lastAction: null,
+        lastTimestamp: null,
+        nextAction: "checkin",
+        missed: false,
+        timestamp: new Date().toISOString(),
+        confirm: "No record found, defaulted to checkin",
+      })
+      return
+    }
+
+    const { lastAction = null, lastTimestamp = null } = today
+    const normalizedAction = (lastAction || "").toLowerCase()
+
+    // 🔹 Decide next action
+    let decidedAction: "checkin" | "checkout" = "checkin"
+    if (normalizedAction === "checkin") {
+      decidedAction = "checkout"
+      setLastCheckInTime(lastTimestamp)
+    } else if (normalizedAction === "checkout") {
+      decidedAction = "checkin"
+      setLastCheckInTime(null)
+    }
+
+    // ✅ Flip nextAction in store
+    setNextAction(decidedAction)
+
+    // ✅ Trigger office detection once with fresh decidedAction
+    await detectOffice(decidedAction)
+
+    // 🔹 Check missed checkout from yesterday
+    const missed = await checkMissedCheckout(groupId, userId)
+    setMissedCheckout(missed)
+
+    // ✅ Log init state with correct decidedAction
     await push(ref(db, `logs/webapp/${groupId}`), {
       type: "attendance_init",
       group_id: groupId,
       user_id: userId,
-      lastAction: null,
-      lastTimestamp: null,
-      nextAction: "checkin",
-      missed: false,
+      lastAction: normalizedAction,
+      lastTimestamp,
+      nextAction: decidedAction,
+      missed,
       timestamp: new Date().toISOString(),
-      confirm: "No record found, defaulted to checkin",
+      confirm: `Fetched lastAction=${normalizedAction}, decided nextAction=${decidedAction}`
     })
-    return
   }
-
-  const { lastAction = null, lastTimestamp = null } = today
-  const normalizedAction = (lastAction || "").toLowerCase()
-
-  // 🔹 Decide next action
-  let decidedAction: "checkin" | "checkout" = "checkin"
-  if (normalizedAction === "checkin") {
-    decidedAction = "checkout"
-    setLastCheckInTime(lastTimestamp)
-  } else if (normalizedAction === "checkout") {
-    decidedAction = "checkin"
-    setLastCheckInTime(null)
-  }
-
-  // ✅ Flip nextAction in store
-  setNextAction(decidedAction)
-
-  // ✅ Trigger office detection once with fresh decidedAction
-  await detectOffice(decidedAction)
-
-  // 🔹 Check missed checkout from yesterday
-  const missed = await checkMissedCheckout(groupId, userId)
-  setMissedCheckout(missed)
-
-  // ✅ Log init state with correct decidedAction
-  await push(ref(db, `logs/webapp/${groupId}`), {
-    type: "attendance_init",
-    group_id: groupId,
-    user_id: userId,
-    lastAction: normalizedAction,
-    lastTimestamp,
-    nextAction: decidedAction,
-    missed,
-    timestamp: new Date().toISOString(),
-    confirm: `Fetched lastAction=${normalizedAction}, decided nextAction=${decidedAction}`
-  })
-}
 
 
   // Run initAttendance on load
@@ -393,7 +393,7 @@ async function initAttendance() {
   // =========================
   // Record listener (primary source)
   // =========================
- // Record listener
+  // Record listener
   useEffect(() => {
     if (!groupId || !userId) return
     const today = new Date().toISOString().slice(0, 10)
@@ -779,31 +779,26 @@ async function initAttendance() {
           </>
         )}
         {/* Status badge */}
-{pageReady && officeDetected && status ? (
-  <div
-    className={`mt-2 px-3 py-2 rounded-lg inline-block font-medium ${
-      status.includes("✅")
-        ? "bg-green-600 text-white"
-        : status.includes("⚠️ យឺត")
-        ? "bg-yellow-500 text-black"
-        : status.includes("⚠️ ចេញមុន")
-        ? "bg-red-500 text-white"
-        : status.includes("⏱")
-        ? "bg-purple-500 text-white"
-        : "bg-gray-600 text-white"
-    }`}
-  >
-    {status} {detail}
-    {distance !== null && (
-      <span className="ml-2 text-xs text-gray-200">({distance}m away)</span>
-    )}
-  </div>
-) : (
-  // ✅ Guard: show spinner or placeholder until ready
-  <div className="mt-2 px-3 py-2 rounded-lg inline-block font-medium bg-gray-300 text-gray-600 animate-pulse">
-    Loading attendance…
-  </div>
-)}
+        {officeDetected && status ? (
+          <div
+            className={`mt-2 px-3 py-2 rounded-lg inline-block font-medium ${status.includes("✅")
+                ? "bg-green-600 text-white"
+                : status.includes("⚠️ យឺត")
+                  ? "bg-yellow-500 text-black"
+                  : status.includes("⚠️ ចេញមុន")
+                    ? "bg-red-500 text-white"
+                    : status.includes("⏱")
+                      ? "bg-purple-500 text-white"
+                      : "bg-gray-600 text-white"
+              }`}
+          >
+            {status} {detail}
+            {distance !== null && (
+              <span className="ml-2 text-xs text-gray-200">({distance}m away)</span>
+            )}
+          </div>
+        ) : null}
+
 
 
       </header>
