@@ -69,17 +69,38 @@ function RootLayout() {
   const apiKey = import.meta.env.VITE_GOOGLE_MAPS_KEY
   const mapsLoaded = useLoadGoogleMaps(apiKey!)
 
-  if (!mapsLoaded) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <p className="text-gray-600">Loading Google Maps…</p>
-      </div>
-    )
-  }
-
-return (
+  return (
     <>
-      <Outlet />   {/* ✅ This will render $tracking_id.tsx when you visit /track/:tracking_id */}
+      <Outlet />
+
+      {!mapsLoaded && (
+        <div className="fixed inset-0 flex items-center justify-center bg-white/70 backdrop-blur-sm z-50">
+          <div className="flex items-center gap-2 text-gray-600">
+            <svg
+              className="animate-spin h-5 w-5 text-teal-500"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              ></circle>
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8v8H4z"
+              ></path>
+            </svg>
+            Loading Google Maps…
+          </div>
+        </div>
+      )}
+
       <Whenever condition={isProduction}>
         <Suspense>
           <TanStackRouterDevtools />
