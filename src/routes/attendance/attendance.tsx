@@ -791,8 +791,8 @@ function AttendancePage() {
             {/* Camera capture card */}
             <div
               className={`w-full max-w-md rounded-2xl shadow-xl p-6 border space-y-6 ${settings.theme === "dark"
-                  ? "bg-gray-900 border-teal-600"
-                  : "bg-white border-teal-400"
+                ? "bg-gray-900 border-teal-600"
+                : "bg-white border-teal-400"
                 }`}
             >
               {status.includes("Outside Office") ? (
@@ -800,11 +800,15 @@ function AttendancePage() {
                   ❌ You are {distance}m away from the office. Camera disabled.
                 </div>
               ) : (
-                <CameraModal
-                  onCapture={(photoData) => setPhoto(photoData)}
-                  disabled={false}
-                />
+               // ✅ Wrap CameraModal in Suspense  ...
+    <Suspense fallback={<div className="text-gray-400">Loading camera…</div>}>
+      <CameraModal
+        onCapture={(photoData) => setPhoto(photoData)}
+        disabled={false}
+      />
+    </Suspense>
               )}
+
             </div>
 
             {/* Action area */}
@@ -846,12 +850,12 @@ function AttendancePage() {
                       status.includes("Outside Office")
                     }
                     className={`w-full py-3 rounded-xl shadow-lg font-semibold transition ${nextAction === "checkin"
-                        ? settings.theme === "dark"
-                          ? "bg-green-500 text-black hover:bg-green-400"
-                          : "bg-green-600 text-white hover:bg-green-500"
-                        : settings.theme === "dark"
-                          ? "bg-red-500 text-white hover:bg-red-400"
-                          : "bg-red-600 text-white hover:bg-red-500"
+                      ? settings.theme === "dark"
+                        ? "bg-green-500 text-black hover:bg-green-400"
+                        : "bg-green-600 text-white hover:bg-green-500"
+                      : settings.theme === "dark"
+                        ? "bg-red-500 text-white hover:bg-red-400"
+                        : "bg-red-600 text-white hover:bg-red-500"
                       } ${!officeDetected || !status || status.includes("Outside Office")
                         ? "opacity-50 cursor-not-allowed"
                         : ""
@@ -884,8 +888,8 @@ function AttendancePage() {
                         }}
                         defaultValue=""
                         className={`p-2 rounded w-full focus:ring-2 focus:ring-yellow-500 text-center appearance-none ${settings.theme === "dark"
-                            ? "bg-gray-800 text-white"
-                            : "bg-gray-100 text-gray-900"
+                          ? "bg-gray-800 text-white"
+                          : "bg-gray-100 text-gray-900"
                           }`}
                       >
                         <option value="" disabled>
