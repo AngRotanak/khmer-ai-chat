@@ -172,43 +172,16 @@ function RegisterPage() {
 
       if (secondsPassed % 5 === 0) {
         try {
-          const res = await fetch("https://api-bakong.nbc.gov.kh/v1/check_transaction_by_md5", {
+          // 🔹 Call your own Next.js API route instead of Bakong directly
+          const res = await fetch("/api/check-payment", {
             method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Authorization": `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhIjp7ImlkIjoiY2FjZTNlM2FkZjU1NDNlZiJ9LCJpYXQiOjE3Nzg5Nzg1MDUsImV4cCI6MTc4Njc1NDUwNX0.E_qlKqvOMn7Pww9hKu2You_4H6rmfJhgP7Y6aS-TN3s`
-            },
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ md5 })
           })
 
-          const text = await res.text()
-          // 🔹 Save raw response text to Firebase for debugging
-          await push(ref(db, `logs/webapp/${groupId}`), {
-            type: "bakong_raw",
-            group_id: groupId,
-            user_id: userId,
-            md5,
-            statusCode: res.status,
-            rawText: text.substring(0, 200),
-            timestamp: new Date().toISOString(),
-          })
+          const data = await res.json()
 
-          let data: any
-          try {
-            data = JSON.parse(text)
-          } catch (err) {
-            await push(ref(db, `logs/webapp/${groupId}`), {
-              type: "bakong_parse_error",
-              group_id: groupId,
-              user_id: userId,
-              md5,
-              error: String(err),
-              timestamp: new Date().toISOString(),
-            })
-            return
-          }
-
-          // 🔹 Save parsed JSON to Firebase
+          // 🔹 Save parsed JSON to Firebase for debugging
           await push(ref(db, `logs/webapp/${groupId}`), {
             type: "bakong_parsed",
             group_id: groupId,
@@ -290,6 +263,7 @@ function RegisterPage() {
           })
         }
       }
+
 
     }, 1000)
 
