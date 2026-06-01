@@ -447,17 +447,16 @@ useEffect(() => {
 
       setNextAction(decidedAction)
 
-      // ✅ Debounced call
-      debouncedDetectOffice(decidedAction).then(() => setPageReady(true))
+      // ✅ Only detectOffice here
+      detectOffice(decidedAction).then(() => setPageReady(true))
     } else {
+      // ❌ Only run initAttendance if no record exists
       initAttendance().then(() => setPageReady(true))
     }
 
     setSessionLoaded(true)
   })
 }, [groupId, userId])
-
-
 
 
 
