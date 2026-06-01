@@ -747,7 +747,7 @@ function AttendancePage() {
         </p>
       ) : officeName ? (
         <p className="text-green-400 text-sm mt-1 font-medium flex items-center gap-2">
-          ✅ Office detected: {officeName}
+          ✅  {officeName}
         </p>
       ) : (
         <p className="text-red-400 text-sm mt-1">
@@ -756,27 +756,28 @@ function AttendancePage() {
       )}
     </>
   )}
+{/* Status badge */}
+{sessionLoaded && officeDetected && status && (
+  <div
+    className={`mt-2 px-3 py-2 rounded-lg inline-block font-medium ${
+      status.includes("✅")
+        ? "bg-green-600 text-white"
+        : status.includes("⚠️ យឺត")
+        ? "bg-yellow-500 text-black"
+        : status.includes("⚠️ ចេញមុន")
+        ? "bg-red-500 text-white"
+        : status.includes("⏱")
+        ? "bg-purple-500 text-white"
+        : "bg-gray-600 text-white"
+    }`}
+  >
+    {status} {detail}
+    {distance !== null && (
+      <span className="ml-2 text-xs text-gray-200">({distance}m away)</span>
+    )}
+  </div>
+)}
 
-  {sessionLoaded && status && (
-    <div
-      className={`mt-2 px-3 py-2 rounded-lg inline-block font-medium ${
-        status.includes("✅")
-          ? "bg-green-600 text-white"
-          : status.includes("⚠️ យឺត")
-          ? "bg-yellow-500 text-black"
-          : status.includes("⚠️ ចេញមុន")
-          ? "bg-red-500 text-white"
-          : status.includes("⏱")
-          ? "bg-purple-500 text-white"
-          : "bg-gray-600 text-white"
-      }`}
-    >
-      {status} {detail}
-      {distance !== null && (
-        <span className="ml-2 text-xs text-gray-200">({distance}m away)</span>
-      )}
-    </div>
-  )}
 </header>
 
 
