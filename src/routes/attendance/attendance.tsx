@@ -319,11 +319,12 @@ const detectOffice = async (
       confirm: "Skipped duplicate detectOffice call"
     })
 
+    // ✅ Return a safe result so UI doesn’t freeze
     return {
       officeDetected: false,
-      officeName: "Unknown Office",
-      distance: null,
-      officeId: "unknown",
+      officeName: officeName || "Unknown Office",
+      distance: distance ?? null,
+      officeId: officeId || "unknown",
       status: "skipped",
       detail: "Debounced duplicate call"
     }
@@ -340,7 +341,7 @@ const detectOffice = async (
       status: "error",
       detail: "Group unknown or action missing",
     }
-  }
+  
 
   return new Promise<OfficeDetectionResult>((resolve) => {
     navigator.geolocation.getCurrentPosition(
@@ -437,7 +438,7 @@ useEffect(() => {
 
       setNextAction(decidedAction)
 
-      // ✅ Only detectOffice here
+      // ✅ Only detectOffice here when records exist
       detectOffice(decidedAction).then(() => setPageReady(true))
     } else {
       // ❌ Only run initAttendance if no record exists
