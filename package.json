@@ -4,10 +4,11 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "dev": "vite",
+    "dev": "next dev",
     "backend": "node server/index.js",
     "dev:all": "concurrently \"pnpm run dev\" \"pnpm run backend\"",
-    "build": "tsc && vite build",
+    "build": "next build",
+    "start": "next start",
     "lint": "eslint . --report-unused-disable-directives --max-warnings 0",
     "lint:fix": "eslint . --fix --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
