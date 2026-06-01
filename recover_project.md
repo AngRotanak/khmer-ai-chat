@@ -67,7 +67,7 @@ git push origin feature/my-branch
 
 git add .
 git commit -m "Update Animation payment with KHQR"
-git push origin main 
+git push origin main --force
 
 Invoke-WebRequest -Method POST "https://api.vercel.com/v1/integrations/deploy/prj_K0DthcsbqtxqI3SitILU56jeTB0e/4vw16XFEgj"
 

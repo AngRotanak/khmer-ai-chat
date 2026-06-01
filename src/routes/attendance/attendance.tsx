@@ -29,14 +29,15 @@ function AttendancePage() {
   const [distance, setDistance] = useState<number | null>(null)
   const [currentRole, setCurrentRole] = useState("member")
   const [showMore, setShowMore] = useState(false)
+  const [officeDetected, setOfficeDetected] = useState(false)
 
 
 
   const [officeId, setOfficeId] = useState<string>("unknown")
   const [officeName, setOfficeName] = useState<string>("")
 
-  const openProfile = () => alert("Profile clicked")
-  const openHelp = () => alert("Help clicked")
+  // const openProfile = () => alert("Profile clicked")
+  // const openHelp = () => alert("Help clicked")
   const [reasonOptions, setReasonOptions] = useState<Record<string, string>>({})
 
 
@@ -113,12 +114,12 @@ function AttendancePage() {
     })
   }, [groupId])
 
-useEffect(() => {
-  (async () => {
-    await initAttendance()
-    await detectOffice(nextAction)   // ✅ detect office once at startup
-  })()
-}, [])
+  useEffect(() => {
+    (async () => {
+      await initAttendance()
+      await detectOffice(nextAction)   // ✅ detect office once at startup
+    })()
+  }, [])
 
   // =========================
   // INIT ATTENDANCE (reusable)
@@ -176,75 +177,75 @@ useEffect(() => {
   }, [sessionLoaded, groupId, userId])
 
 
-// =========================
-// ATTENDANCE HANDLER
-// =========================
-const handleAttendance = async (extra?: { reason?: string }) => {
-  if (!sessionLoaded) return
-  if (!navigator.geolocation) return
+  // =========================
+  // ATTENDANCE HANDLER
+  // =========================
+  const handleAttendance = async (extra?: { reason?: string }) => {
+    if (!sessionLoaded) return
+    if (!navigator.geolocation) return
 
-  setLoading("working")
+    setLoading("working")
 
-  navigator.geolocation.getCurrentPosition(
-    async (pos) => {
-      const currentAction = nextAction  // ✅ current action at time of submit
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const currentAction = nextAction  // ✅ current action at time of submit
 
-      const payload = {
-        action: currentAction,
-        lat: pos.coords.latitude,
-        lon: pos.coords.longitude,
-        group_id: groupId,
-        user: tg?.initDataUnsafe?.user || null,
-        chat: tg?.initDataUnsafe?.chat || null,
-        timestamp: new Date().toISOString(),
-        bot_username: "autobot",
-        photo: photo || null,
-        office_id: officeId || "unknown",
-        officeName: officeName || "Unknown Office",
-        reason: extra?.reason || null,
-      }
+        const payload = {
+          action: currentAction,
+          lat: pos.coords.latitude,
+          lon: pos.coords.longitude,
+          group_id: groupId,
+          user: tg?.initDataUnsafe?.user || null,
+          chat: tg?.initDataUnsafe?.chat || null,
+          timestamp: new Date().toISOString(),
+          bot_username: "autobot",
+          photo: photo || null,
+          office_id: officeId || "unknown",
+          officeName: officeName || "Unknown Office",
+          reason: extra?.reason || null,
+        }
 
-      console.log("Submitting attendance payload:", payload)
-
-      await log(
-        { type: "attendance_payload", actionSent: currentAction, payload: { ...payload, photo: "[PHOTO_PRESENT]" } },
-        `logs/webapp/${groupId}`
-      )
-
-      try {
-        const result = await submitAttendance(payload)
-        console.log("Attendance response:", result)
+        console.log("Submitting attendance payload:", payload)
 
         await log(
-          { type: "attendance_response", actionSent: currentAction, result },
+          { type: "attendance_payload", actionSent: currentAction, payload: { ...payload, photo: "[PHOTO_PRESENT]" } },
           `logs/webapp/${groupId}`
         )
 
-        // ✅ Compute fresh nextAction
-        const newAction = currentAction === "checkin" ? "checkout" : "checkin"
+        try {
+          const result = await submitAttendance(payload)
+          console.log("Attendance response:", result)
 
-        // ✅ Flip locally
-        setNextAction(newAction)
+          await log(
+            { type: "attendance_response", actionSent: currentAction, result },
+            `logs/webapp/${groupId}`
+          )
 
-        // // ✅ Re-sync with Firebase
-        // await initAttendance()
+          // ✅ Compute fresh nextAction
+          const newAction = currentAction === "checkin" ? "checkout" : "checkin"
+
+          // ✅ Flip locally
+          setNextAction(newAction)
+
+          // // ✅ Re-sync with Firebase
+          // await initAttendance()
 
 
-        setLoading("success")
-        tg?.HapticFeedback?.notificationOccurred("success")
-        setTimeout(() => tg?.close(), 1200)
-      } catch (err) {
+          setLoading("success")
+          tg?.HapticFeedback?.notificationOccurred("success")
+          setTimeout(() => tg?.close(), 1200)
+        } catch (err) {
+          setLoading("idle")
+          await log({ type: "attendance_error", error: String(err) }, `logs/webapp/${groupId}`)
+          alert("❌ Failed attendance: " + String(err))
+        }
+      },
+      (err) => {
         setLoading("idle")
-        await log({ type: "attendance_error", error: String(err) }, `logs/webapp/${groupId}`)
-        alert("❌ Failed attendance: " + String(err))
+        log({ type: "location_error", error: err.message }, `logs/webapp/${groupId}`)
       }
-    },
-    (err) => {
-      setLoading("idle")
-      log({ type: "location_error", error: err.message }, `logs/webapp/${groupId}`)
-    }
-  )
-}
+    )
+  }
 
 
   // =========================
@@ -255,7 +256,7 @@ const handleAttendance = async (extra?: { reason?: string }) => {
     if (groupId === "unknown") return
     if (!actionToSend) return
 
-    // ✅ Log the nextAction being sent
+    // ✅ Log the attempt
     await push(ref(db, `logs/webapp/${groupId}`), {
       type: "detectOffice_start",
       group_id: groupId,
@@ -270,7 +271,7 @@ const handleAttendance = async (extra?: { reason?: string }) => {
         try {
           const payload = {
             action: "office",
-            nextAction: actionToSend,   // ✅ always fresh value
+            nextAction: actionToSend,
             group_id: groupId,
             lat: pos.coords.latitude,
             lon: pos.coords.longitude,
@@ -287,7 +288,7 @@ const handleAttendance = async (extra?: { reason?: string }) => {
             timestamp: new Date().toISOString(),
           })
 
-          const res = await fetch("https://asia-east2-khmer-catalog.cloudfunctions.net/KhmerAutobot", {
+          const res = await fetch("https://fea2-136-228-130-3.ngrok-free.app", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload),
@@ -300,6 +301,13 @@ const handleAttendance = async (extra?: { reason?: string }) => {
           setStatus(data.status || "")
           setDetail(data.detail || "")
           setDistance(data.distance || null)
+
+          // ✅ Flip flag only if office is valid
+          if (data.office_id && data.officeName && !data.status.includes("error")) {
+            setOfficeDetected(true)
+          } else {
+            setOfficeDetected(false)
+          }
 
           await push(ref(db, `logs/webapp/${groupId}`), {
             type: "detectOffice_preview",
@@ -318,6 +326,7 @@ const handleAttendance = async (extra?: { reason?: string }) => {
           setOfficeName("Unknown Office")
           setStatus("error")
           setDetail(String(err))
+          setOfficeDetected(false)
 
           await push(ref(db, `logs/webapp/${groupId}`), {
             type: "detectOffice_error",
@@ -335,6 +344,7 @@ const handleAttendance = async (extra?: { reason?: string }) => {
         setOfficeName("Unknown Office")
         setStatus("GPS denied")
         setDetail(err.message)
+        setOfficeDetected(false)
 
         await push(ref(db, `logs/webapp/${groupId}`), {
           type: "detectOffice_denied",
@@ -344,7 +354,8 @@ const handleAttendance = async (extra?: { reason?: string }) => {
           error: err.message,
           timestamp: new Date().toISOString(),
         })
-      }
+      },
+      { timeout: 30000 } // ✅ optional: fail after 30s
     )
   }
 
@@ -549,7 +560,7 @@ const handleAttendance = async (extra?: { reason?: string }) => {
   // SUBMIT FUNCTION
   // =========================
   const submitAttendance = async (payload: any) => {
-    const webhookUrl = "https://asia-east2-khmer-catalog.cloudfunctions.net/KhmerAutobot";
+    const webhookUrl = "https://fea2-136-228-130-3.ngrok-free.app";
 
     let res: Response;
     let result: any;
@@ -586,6 +597,8 @@ const handleAttendance = async (extra?: { reason?: string }) => {
     groupId,
     settings,
     updateSetting,
+    openProfile,   // ✅ added
+    openHelp       // ✅ added
   }: {
     currentRole: string
     onClose: () => void
@@ -601,6 +614,8 @@ const handleAttendance = async (extra?: { reason?: string }) => {
       }
     }
     updateSetting: (key: keyof typeof settings, value: any) => void
+    openProfile: () => void   // ✅ added
+    openHelp: () => void      // ✅ added
   }) {
     return (
       <div className="fixed inset-0 bg-black/50 flex items-end justify-center z-50">
@@ -616,7 +631,7 @@ const handleAttendance = async (extra?: { reason?: string }) => {
             </button>
           </div>
 
-          {/* Example: Theme toggle inside menu */}
+          {/* Theme toggle */}
           <div className="flex items-center justify-between px-4 py-2 bg-gray-800 rounded-lg">
             <span className="text-teal-300">Theme</span>
             <button
@@ -654,43 +669,23 @@ const handleAttendance = async (extra?: { reason?: string }) => {
               <span>⚙️</span><span>Settings</span>
             </Link>
 
-            {/* ✅ Admin-only links */}
+            {/* Admin-only links */}
             {currentRole === "admin" && (
               <>
-                <Link
-                  to="/attendance/register"
-                  search={{ group_id: groupId }}   // ✅ pass groupId here
-                  className="flex items-center gap-3 px-4 py-3 rounded-lg bg-gray-800 hover:bg-gray-700 text-teal-300 transition"
-                >
+                <Link to="/attendance/register" search={{ group_id: groupId }} className="flex items-center gap-3 px-4 py-3 rounded-lg bg-gray-800 hover:bg-gray-700 text-teal-300 transition">
                   <span>📝</span><span>Register / Lease License</span>
                 </Link>
-
-                <Link
-                  to="/attendance/admin/roles"
-                  search={{ group_id: groupId }}
-                  className="flex items-center gap-3 px-4 py-3 rounded-lg bg-gray-800 hover:bg-gray-700 text-teal-300 transition"
-                >
+                <Link to="/attendance/admin/roles" search={{ group_id: groupId }} className="flex items-center gap-3 px-4 py-3 rounded-lg bg-gray-800 hover:bg-gray-700 text-teal-300 transition">
                   <span>👑</span><span>Manage Roles</span>
                 </Link>
-
-                <Link
-                  to="/attendance/admin/config"
-                  search={{ group_id: groupId }}
-                  className="flex items-center gap-3 px-4 py-3 rounded-lg bg-gray-800 hover:bg-gray-700 text-teal-300 transition"
-                >
+                <Link to="/attendance/admin/config" search={{ group_id: groupId }} className="flex items-center gap-3 px-4 py-3 rounded-lg bg-gray-800 hover:bg-gray-700 text-teal-300 transition">
                   <span>🏢</span><span>Attendance Config</span>
                 </Link>
-
-                <Link
-                  to="/attendance/report"
-                  search={{ group_id: groupId }}
-                  className="flex items-center gap-3 px-4 py-3 rounded-lg bg-gray-800 hover:bg-gray-700 text-teal-300 transition"
-                >
+                <Link to="/attendance/report" search={{ group_id: groupId }} className="flex items-center gap-3 px-4 py-3 rounded-lg bg-gray-800 hover:bg-gray-700 text-teal-300 transition">
                   <span>📊</span><span>Attendance Report</span>
                 </Link>
               </>
             )}
-
 
             <button
               onClick={openHelp}
@@ -762,196 +757,190 @@ const handleAttendance = async (extra?: { reason?: string }) => {
         )}
       </header>
 
-
-
       {/* Main */}
-      <main className="flex-1 flex flex-col items-center justify-center px-6 py-8 space-y-8 max-h-[calc(100vh-12rem)] mx-auto">
-        {/* Camera capture card */}
-        <div
-          className={`w-full max-w-md rounded-2xl shadow-xl p-6 border space-y-6 ${settings.theme === "dark"
-            ? "bg-gray-900 border-teal-600"
-            : "bg-white border-teal-400"
-            }`}
-        >
-          {status === "" ? (
-            // 🔹 Show spinner overlay while detecting
-            <div className="flex flex-col items-center justify-center space-y-2">
-              <svg
-                className="animate-spin h-8 w-8 text-teal-500"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-              >
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                ></circle>
-                <path
-                  className="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8v8H4z"
-                ></path>
-              </svg>
-              <span className="text-sm text-gray-500">Detecting office via GPS…</span>
-            </div>
-          ) : status.includes("Outside Office") ? (
-            // 🔹 Show warning if outside office
-            <div className="text-red-400 text-center text-sm">
-              ❌ You are {distance}m away from the office. Camera disabled.
-            </div>
-          ) : (
-            // 🔹 Show camera when inside office
-            <CameraModal
-              onCapture={(photoData) => setPhoto(photoData)}
-              disabled={false}
-            />
-          )}
-        </div>
-
-
-
-        {/* Action area */}
-        <div className="w-full max-w-md space-y-4">
-          {loading === "success" ? (
-            <div className="w-full text-center bg-green-900/40 border border-green-500 rounded-xl p-6 animate-fade-in">
-              <div className="text-green-400 text-5xl animate-bounce mb-3">✅</div>
-              <p className="text-green-400 text-lg font-semibold">
-                {nextAction === "checkin" ? "Check-In" : "Check-Out"} recorded for{" "}
-                {officeName || "Unknown Office"}
-              </p>
-              {nextAction === "checkout" && lastCheckInTime && (
-                <p className="text-gray-300 text-sm mt-1">
-                  Last Check-In: {new Date(lastCheckInTime).toLocaleTimeString()}
-                </p>
-              )}
-              <p className="text-gray-300 text-sm mt-1">
-                Thank you! Your attendance has been saved.
-              </p>
-            </div>
-          ) : (
-            <>
-              {/* Confirm button */}
-              <button
-                onClick={() => {
-                  if (!sessionLoaded || !status) return
-                  if (status.includes("Outside Office")) {
-                    alert(`❌ You are ${distance}m away from the office.`)
-                    return
-                  }
-                  handleAttendance()
-                }}
-                disabled={
-                  loading !== "idle" ||
-                  !sessionLoaded ||
-                  !status ||
-                  status.includes("Outside Office")
-                }
-                className={`w-full py-3 rounded-xl shadow-lg font-semibold transition ${nextAction === "checkin"
-                  ? settings.theme === "dark"
-                    ? "bg-green-500 text-black hover:bg-green-400"
-                    : "bg-green-600 text-white hover:bg-green-500"
-                  : settings.theme === "dark"
-                    ? "bg-red-500 text-white hover:bg-red-400"
-                    : "bg-red-600 text-white hover:bg-red-500"
-                  } ${!status || status.includes("Outside Office")
-                    ? "opacity-50 cursor-not-allowed"
-                    : ""}`}
-              >
-                {loading === "working"
-                  ? "Processing..."
-                  : !status
-                    ? "⏳ Detecting Office..."
-                    : nextAction === "checkin"
-                      ? "✅ Confirm Check-In"
-                      : "✅ Confirm Check-Out"}
-              </button>
-
-
-              {/* Reason dropdown */}
-              {(status.includes("⚠️ យឺត") || status.includes("⚠️ ចេញមុន")) && (
-                <div className="w-full max-w-sm text-center mt-4">
-                  <label className="block text-yellow-400 mb-2 text-sm font-semibold">
-                    សូមជ្រើសរើសមូលហេតុដែលអ្នកយឺត/ចេញមុន
-                  </label>
-                  <select
-                    onChange={(e) => {
-                      const reason = e.target.value
-                      if (reason === "✏️ Other") {
-                        const custom = prompt("បញ្ចូលមូលហេតុផ្ទាល់ខ្លួន:")
-                        handleAttendance({ reason: custom || "Other" })
-                      } else if (reason) {
-                        handleAttendance({ reason })
-                      }
-                    }}
-                    defaultValue=""
-                    className={`p-2 rounded w-full focus:ring-2 focus:ring-yellow-500 text-center appearance-none ${settings.theme === "dark"
-                      ? "bg-gray-800 text-white"
-                      : "bg-gray-100 text-gray-900"
-                      }`}
-                  >
-                    <option value="" disabled>
-                      -- Select Reason --
-                    </option>
-                    {Object.entries(reasonOptions).map(([key, label]) => (
-                      <option key={key} value={label}>
-                        {label}
-                      </option>
-                    ))}
-                  </select>
+      <main className="flex-1 flex flex-col items-center justify-center px-6 py-8 space-y-8">
+        {!officeDetected ? (
+          // 🔹 Show spinner overlay only
+          <div className="flex flex-col items-center justify-center space-y-2">
+            <svg
+              className="animate-spin h-8 w-8 text-teal-500"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              ></circle>
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8v8H4z"
+              ></path>
+            </svg>
+            <span className="text-sm text-gray-500">Detecting office via GPS…</span>
+          </div>
+        ) : (
+          <>
+            {/* Camera capture card */}
+            <div className={`w-full max-w-md rounded-2xl shadow-xl p-6 border space-y-6 ${settings.theme === "dark" ? "bg-gray-900 border-teal-600" : "bg-white border-teal-400"
+              }`}>
+              {status.includes("Outside Office") ? (
+                <div className="text-red-400 text-center text-sm">
+                  ❌ You are {distance}m away from the office. Camera disabled.
                 </div>
+              ) : (
+                <CameraModal onCapture={(photoData) => setPhoto(photoData)} disabled={false} />
               )}
+            </div>
+
+            {/* Action area */}
+            <div className="w-full max-w-md space-y-4">
+              {loading === "success" ? (
+                <div className="w-full text-center bg-green-900/40 border border-green-500 rounded-xl p-6 animate-fade-in">
+                  <div className="text-green-400 text-5xl animate-bounce mb-3">✅</div>
+                  <p className="text-green-400 text-lg font-semibold">
+                    {nextAction === "checkin" ? "Check-In" : "Check-Out"} recorded for{" "}
+                    {officeName || "Unknown Office"}
+                  </p>
+                  {nextAction === "checkout" && lastCheckInTime && (
+                    <p className="text-gray-300 text-sm mt-1">
+                      Last Check-In: {new Date(lastCheckInTime).toLocaleTimeString()}
+                    </p>
+                  )}
+                  <p className="text-gray-300 text-sm mt-1">
+                    Thank you! Your attendance has been saved.
+                  </p>
+                </div>
+              ) : (
+                <>
+                  {/* Confirm button */}
+                  <button
+                    onClick={() => {
+                      if (!sessionLoaded || !status) return
+                      if (status.includes("Outside Office")) {
+                        alert(`❌ You are ${distance}m away from the office.`)
+                        return
+                      }
+                      handleAttendance()
+                    }}
+                    disabled={
+                      loading !== "idle" ||
+                      !sessionLoaded ||
+                      !status ||
+                      status.includes("Outside Office")
+                    }
+                    className={`w-full py-3 rounded-xl shadow-lg font-semibold transition ${nextAction === "checkin"
+                      ? settings.theme === "dark"
+                        ? "bg-green-500 text-black hover:bg-green-400"
+                        : "bg-green-600 text-white hover:bg-green-500"
+                      : settings.theme === "dark"
+                        ? "bg-red-500 text-white hover:bg-red-400"
+                        : "bg-red-600 text-white hover:bg-red-500"
+                      } ${!status || status.includes("Outside Office")
+                        ? "opacity-50 cursor-not-allowed"
+                        : ""}`}
+                  >
+                    {loading === "working"
+                      ? "Processing..."
+                      : !status
+                        ? "⏳ Detecting Office..."
+                        : nextAction === "checkin"
+                          ? "✅ Confirm Check-In"
+                          : "✅ Confirm Check-Out"}
+                  </button>
 
 
-              {/* Info messages */}
-              {status === "" && loading === "working" && (
-                <p className="text-sm text-gray-400 mt-2 animate-pulse">
-                  ⏳ Detecting office via GPS…
-                </p>
+                  {/* Reason dropdown */}
+                  {(status.includes("⚠️ យឺត") || status.includes("⚠️ ចេញមុន")) && (
+                    <div className="w-full max-w-sm text-center mt-4">
+                      <label className="block text-yellow-400 mb-2 text-sm font-semibold">
+                        សូមជ្រើសរើសមូលហេតុដែលអ្នកយឺត/ចេញមុន
+                      </label>
+                      <select
+                        onChange={(e) => {
+                          const reason = e.target.value
+                          if (reason === "✏️ Other") {
+                            const custom = prompt("បញ្ចូលមូលហេតុផ្ទាល់ខ្លួន:")
+                            handleAttendance({ reason: custom || "Other" })
+                          } else if (reason) {
+                            handleAttendance({ reason })
+                          }
+                        }}
+                        defaultValue=""
+                        className={`p-2 rounded w-full focus:ring-2 focus:ring-yellow-500 text-center appearance-none ${settings.theme === "dark"
+                          ? "bg-gray-800 text-white"
+                          : "bg-gray-100 text-gray-900"
+                          }`}
+                      >
+                        <option value="" disabled>
+                          -- Select Reason --
+                        </option>
+                        {Object.entries(reasonOptions).map(([key, label]) => (
+                          <option key={key} value={label}>
+                            {label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+
+                  {/* Info messages */}
+                  {status === "" && loading === "working" && (
+                    <p className="text-sm text-gray-400 mt-2 animate-pulse">
+                      ⏳ Detecting office via GPS…
+                    </p>
+                  )}
+
+                  {distance !== null && (
+                    <p className="text-sm text-gray-400 mt-2">
+                      📍 You are {distance} meters from {officeName || "office"}.
+                    </p>
+                  )}
+
+                  {nextAction === "checkout" && lastCheckInTime && (
+                    <p className="text-sm text-gray-400 mt-1">
+                      Last Check-In: {new Date(lastCheckInTime).toLocaleTimeString()}
+                    </p>
+                  )}
+
+                  {missedCheckout && (
+                    <p className="text-red-400 text-sm mt-2">
+                      ⚠️ You missed Check-Out yesterday. Attendance cancelled.
+                    </p>
+                  )}
+
+                </>
               )}
-
-              {distance !== null && (
-                <p className="text-sm text-gray-400 mt-2">
-                  📍 You are {distance} meters from {officeName || "office"}.
-                </p>
-              )}
-
-              {nextAction === "checkout" && lastCheckInTime && (
-                <p className="text-sm text-gray-400 mt-1">
-                  Last Check-In: {new Date(lastCheckInTime).toLocaleTimeString()}
-                </p>
-              )}
-
-              {missedCheckout && (
-                <p className="text-red-400 text-sm mt-2">
-                  ⚠️ You missed Check-Out yesterday. Attendance cancelled.
-                </p>
-              )}
-
-            </>
-          )}
-        </div>
+            </div>
+          </>
+        )}
       </main>
 
 
+
       {/* Footer pinned at bottom */}
-      <AttendanceFooter />
+      {officeDetected && <AttendanceFooter />}
 
       {/* Symbol buttons row pinned above footer */}
-      <div className="fixed bottom-20 left-0 w-full flex justify-center text-3xl text-teal-500 z-40">
-        <button
-          onClick={() => setShowMore(true)}
-          className="hover:text-teal-300 transition"
-        >
-          ⋯
-        </button>
-      </div>
+      {officeDetected && (
+        <div className="fixed bottom-20 left-0 w-full flex justify-center text-3xl text-teal-500 z-40">
+          <button
+            onClick={() => setShowMore(true)}
+            className="hover:text-teal-300 transition"
+          >
+            ⋯
+          </button>
+        </div>
+      )}
 
       {/* Bottom sheet modal */}
-      {showMore && (
+      {officeDetected && showMore && (
         <div className="fixed inset-0 bg-black/50 flex items-end justify-center z-50">
           <div className="w-full max-w-md bg-gray-900 rounded-t-2xl p-5 space-y-3 animate-slide-up shadow-lg">
             {/* Header + menu items */}
@@ -969,13 +958,15 @@ const handleAttendance = async (extra?: { reason?: string }) => {
       </div>
 
       {/* Floating menu */}
-      {showMore && (
+      {officeDetected && showMore && (
         <BottomSheetMenu
           currentRole={currentRole}
           onClose={() => setShowMore(false)}
           groupId={groupId}
           settings={settings}
           updateSetting={updateSetting}
+          openProfile={() => alert("Profile clicked")}
+          openHelp={() => alert("Help clicked")}
         />
       )}
 
