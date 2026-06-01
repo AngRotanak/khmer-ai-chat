@@ -724,16 +724,16 @@ useEffect(() => {
   // ============================
   // UI
   // ============================
-  useEffect(() => {
-    // Fallback: if pageReady not set within 5s, force it
-    const timer = setTimeout(() => {
-      if (!pageReady) {
-        setPageReady(true)
-      }
-    }, 5000)
+  // useEffect(() => {
+  //   // Fallback: if pageReady not set within 5s, force it
+  //   const timer = setTimeout(() => {
+  //     if (!pageReady) {
+  //       setPageReady(true)
+  //     }
+  //   }, 5000)
 
-    return () => clearTimeout(timer)
-  }, [pageReady, setPageReady])
+  //   return () => clearTimeout(timer)
+  // }, [pageReady, setPageReady])
 
   // // Render guard
   // if (!pageReady) {
