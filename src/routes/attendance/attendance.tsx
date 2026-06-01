@@ -418,9 +418,6 @@ const detectOffice = async (
 }
 
 
-// ✅ Wrap detectOffice with debounce AFTER it’s defined
-const debouncedDetectOffice = useDebouncedDetectOffice(detectOffice, 1000)
-
 
 
 
@@ -1109,29 +1106,3 @@ useEffect(() => {
   );
 
 }
-
-function useDebouncedDetectOffice(
-  originalDetectOffice: (actionOverride?: "checkin" | "checkout") => Promise<OfficeDetectionResult>,
-  delay = 1000
-) {
-  const lastCallRef = useRef<number>(0)
-
-  return async (actionOverride?: "checkin" | "checkout") => {
-    const now = Date.now()
-    if (now - lastCallRef.current < delay) {
-      // 🚫 Duplicate call skipped
-      return Promise.resolve({
-        officeDetected: false,
-        officeName: "Unknown Office",
-        distance: null,
-        officeId: "unknown",
-        status: "skipped",
-        detail: "Debounced duplicate call"
-      })
-    }
-
-    lastCallRef.current = now
-    return originalDetectOffice(actionOverride)
-  }
-}
-
