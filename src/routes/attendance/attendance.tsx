@@ -414,7 +414,6 @@ function AttendancePage() {
 
         setPageReady(true) // ✅ mark ready after record restored
       } else {
-        // No record yet → run initAttendance
         initAttendance().then(() => setPageReady(true))
       }
 
@@ -798,12 +797,10 @@ function AttendancePage() {
             )}
           </div>
         ) : (
-          // ✅ Guard: show spinner or placeholder until ready
           <div className="mt-2 px-3 py-2 rounded-lg inline-block font-medium bg-gray-300 text-gray-600 animate-pulse">
             Loading attendance…
           </div>
         )}
-
 
       </header>
 

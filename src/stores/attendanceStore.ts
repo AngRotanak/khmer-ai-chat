@@ -3,6 +3,7 @@ import { create } from "zustand"
 
 interface AttendanceState {
   // GPS detection
+  pageReady: boolean
   officeDetected: boolean
   officeName: string
   distance: number | null
@@ -17,6 +18,7 @@ interface AttendanceState {
   photo: string | null
 
   // Actions
+  setPageReady: (val: boolean) => void
   setOfficeDetected: (val: boolean) => void
   setOfficeName: (name: string) => void
   setDistance: (d: number | null) => void
@@ -32,6 +34,7 @@ interface AttendanceState {
 
 export const useAttendanceStore = create<AttendanceState>((set) => ({
   // Initial values
+   pageReady: false,
   officeDetected: false,
   officeName: "",
   distance: null,
@@ -56,4 +59,5 @@ export const useAttendanceStore = create<AttendanceState>((set) => ({
   setStatus: (s) => set({ status: s }),
   setDetail: (d) => set({ detail: d }),
   setPhoto: (p) => set({ photo: p }),
+    setPageReady: (val) => set({ pageReady: val }),
 }))
