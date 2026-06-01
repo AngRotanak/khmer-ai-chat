@@ -24,9 +24,6 @@ interface OfficeDetectionResult {
 }
 
 
-
-
-
 function AttendancePage() {
   const tg = useTelegramWebApp()
   const [userId, setUserId] = useState<string | null>(null)
@@ -163,70 +160,71 @@ function AttendancePage() {
     })()
   }, [])
 
-  // =========================
-  // INIT ATTENDANCE (reusable)
-  // =========================
-  async function initAttendance() {
-    if (!sessionLoaded || !groupId || groupId === "unknown" || !userId) return
+// =========================
+// INIT ATTENDANCE (minimal)
+// =========================
+async function initAttendance() {
+  if (!sessionLoaded || !groupId || groupId === "unknown" || !userId) return
 
-    // 🔹 Fetch today's last action
-    const today = await fetchTodayLastAction(groupId, userId)
-    if (!today) {
-      // ❌ No record yet → default to checkin
-      setNextAction("checkin")
-      setLastCheckInTime(null)
-      await detectOffice("checkin")
+  // 🔹 Fetch today's last action
+  const today = await fetchTodayLastAction(groupId, userId)
+  if (!today) {
+    // ❌ No record yet → default to checkin
+    setNextAction("checkin")
+    setLastCheckInTime(null)
 
-      await push(ref(db, `logs/webapp/${groupId}`), {
-        type: "attendance_init",
-        group_id: groupId,
-        user_id: userId,
-        lastAction: null,
-        lastTimestamp: null,
-        nextAction: "checkin",
-        missed: false,
-        timestamp: new Date().toISOString(),
-        confirm: "No record found, defaulted to checkin",
-      })
-      return
-    }
+    // ✅ Only detectOffice here if no record exists
+    await detectOffice("checkin")
 
-    const { lastAction = null, lastTimestamp = null } = today
-    const normalizedAction = (lastAction || "").toLowerCase()
-
-    // 🔹 Decide next action
-    let decidedAction: "checkin" | "checkout" = "checkin"
-    if (normalizedAction === "checkin") {
-      decidedAction = "checkout"
-      setLastCheckInTime(lastTimestamp)
-    } else if (normalizedAction === "checkout") {
-      decidedAction = "checkin"
-      setLastCheckInTime(null)
-    }
-
-    // ✅ Flip nextAction in store
-    setNextAction(decidedAction)
-
-    // ✅ Trigger office detection once with fresh decidedAction
-    await detectOffice(decidedAction)
-
-    // 🔹 Check missed checkout from yesterday
-    const missed = await checkMissedCheckout(groupId, userId)
-    setMissedCheckout(missed)
-
-    // ✅ Log init state with correct decidedAction
     await push(ref(db, `logs/webapp/${groupId}`), {
       type: "attendance_init",
       group_id: groupId,
       user_id: userId,
-      lastAction: normalizedAction,
-      lastTimestamp,
-      nextAction: decidedAction,
-      missed,
+      lastAction: null,
+      lastTimestamp: null,
+      nextAction: "checkin",
+      missed: false,
       timestamp: new Date().toISOString(),
-      confirm: `Fetched lastAction=${normalizedAction}, decided nextAction=${decidedAction}`
+      confirm: "No record found, defaulted to checkin",
     })
+    return
   }
+
+  const { lastAction = null, lastTimestamp = null } = today
+  const normalizedAction = (lastAction || "").toLowerCase()
+
+  // 🔹 Decide next action
+  let decidedAction: "checkin" | "checkout" = "checkin"
+  if (normalizedAction === "checkin") {
+    decidedAction = "checkout"
+    setLastCheckInTime(lastTimestamp)
+  } else if (normalizedAction === "checkout") {
+    decidedAction = "checkin"
+    setLastCheckInTime(null)
+  }
+
+  // ✅ Flip nextAction in store
+  setNextAction(decidedAction)
+
+  // ❌ Do NOT call detectOffice here — record listener will handle it
+
+  // 🔹 Check missed checkout from yesterday
+  const missed = await checkMissedCheckout(groupId, userId)
+  setMissedCheckout(missed)
+
+  // ✅ Log init state with correct decidedAction
+  await push(ref(db, `logs/webapp/${groupId}`), {
+    type: "attendance_init",
+    group_id: groupId,
+    user_id: userId,
+    lastAction: normalizedAction,
+    lastTimestamp,
+    nextAction: decidedAction,
+    missed,
+    timestamp: new Date().toISOString(),
+    confirm: `Fetched lastAction=${normalizedAction}, decided nextAction=${decidedAction}`
+  })
+}
 
 
   // Run initAttendance on load

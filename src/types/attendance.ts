@@ -1,5 +1,5 @@
 // types/attendance.ts
-export interface OfficeDetectionResult {
+export default interface OfficeDetectionResult {
   officeDetected: boolean
   officeName: string
   distance: number | null
