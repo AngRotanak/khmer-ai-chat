@@ -10,6 +10,7 @@ import AttendanceFooter from './components/AttendanceFooter'
 import { Link } from "@tanstack/react-router"
 import useUserSettings from './components/useUserSettings'
 
+
 export const Route = createFileRoute('/attendance')({
   component: AttendancePage,
 })
@@ -34,8 +35,7 @@ function AttendancePage() {
   const [sessionLoaded, setSessionLoaded] = useState(false)
   const [currentRole, setCurrentRole] = useState("member")
   const [showMore, setShowMore] = useState(false)
-  const [pageReady, setPageReady] = useState(false)
-
+ const [pageReady, setPageReady] = useState(false)
 
   const {
     officeDetected,
@@ -161,18 +161,17 @@ function AttendancePage() {
   }, [])
 
 // =========================
-// INIT ATTENDANCE (fallback only)
+// INIT ATTENDANCE (reusable)
 // =========================
 async function initAttendance() {
   if (!sessionLoaded || !groupId || groupId === "unknown" || !userId) return
 
+  // 🔹 Fetch today's last action
   const today = await fetchTodayLastAction(groupId, userId)
   if (!today) {
     // ❌ No record yet → default to checkin
     setNextAction("checkin")
     setLastCheckInTime(null)
-
-    // ✅ Only detectOffice here if no record exists
     await detectOffice("checkin")
 
     await push(ref(db, `logs/webapp/${groupId}`), {
@@ -192,6 +191,7 @@ async function initAttendance() {
   const { lastAction = null, lastTimestamp = null } = today
   const normalizedAction = (lastAction || "").toLowerCase()
 
+  // 🔹 Decide next action
   let decidedAction: "checkin" | "checkout" = "checkin"
   if (normalizedAction === "checkin") {
     decidedAction = "checkout"
@@ -204,11 +204,14 @@ async function initAttendance() {
   // ✅ Flip nextAction in store
   setNextAction(decidedAction)
 
-  // ❌ Do NOT call detectOffice here — record listener will handle it
+  // ✅ Trigger office detection once with fresh decidedAction
+  await detectOffice(decidedAction)
 
+  // 🔹 Check missed checkout from yesterday
   const missed = await checkMissedCheckout(groupId, userId)
   setMissedCheckout(missed)
 
+  // ✅ Log init state with correct decidedAction
   await push(ref(db, `logs/webapp/${groupId}`), {
     type: "attendance_init",
     group_id: groupId,
@@ -229,215 +232,195 @@ async function initAttendance() {
   }, [sessionLoaded, groupId, userId])
 
 
-// =========================
-// ATTENDANCE HANDLER
-// =========================
-const handleAttendance = async (extra?: { reason?: string }) => {
-  if (!sessionLoaded) return
-  if (!navigator.geolocation) return
+  // =========================
+  // ATTENDANCE HANDLER
+  // =========================
+  const handleAttendance = async (extra?: { reason?: string }) => {
+    if (!sessionLoaded) return
+    if (!navigator.geolocation) return
 
-  setLoading("working")
+    setLoading("working")
 
-  navigator.geolocation.getCurrentPosition(
-    async (pos) => {
-      const currentAction = nextAction  // ✅ current action at time of submit
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const currentAction = nextAction  // ✅ current action at time of submit
 
-      const payload = {
-        action: currentAction,
-        lat: pos.coords.latitude,
-        lon: pos.coords.longitude,
-        group_id: groupId,
-        user: tg?.initDataUnsafe?.user || null,
-        chat: tg?.initDataUnsafe?.chat || null,
-        timestamp: new Date().toISOString(),
-        bot_username: "autobot",
-        photo: photo || null,
-        office_id: officeId || "unknown",
-        officeName: officeName || "Unknown Office",
-        reason: extra?.reason || null,
-      }
+        const payload = {
+          action: currentAction,
+          lat: pos.coords.latitude,
+          lon: pos.coords.longitude,
+          group_id: groupId,
+          user: tg?.initDataUnsafe?.user || null,
+          chat: tg?.initDataUnsafe?.chat || null,
+          timestamp: new Date().toISOString(),
+          bot_username: "autobot",
+          photo: photo || null,
+          office_id: officeId || "unknown",
+          officeName: officeName || "Unknown Office",
+          reason: extra?.reason || null,
+        }
 
-      console.log("Submitting attendance payload:", payload)
-
-      await log(
-        { type: "attendance_payload", actionSent: currentAction, payload: { ...payload, photo: "[PHOTO_PRESENT]" } },
-        `logs/webapp/${groupId}`
-      )
-
-      try {
-        const result = await submitAttendance(payload)
-        console.log("Attendance response:", result)
+        console.log("Submitting attendance payload:", payload)
 
         await log(
-          { type: "attendance_response", actionSent: currentAction, result },
+          { type: "attendance_payload", actionSent: currentAction, payload: { ...payload, photo: "[PHOTO_PRESENT]" } },
           `logs/webapp/${groupId}`
         )
 
-        // ✅ Flip locally for instant UI feedback
-        const newAction = currentAction === "checkin" ? "checkout" : "checkin"
-        setNextAction(newAction)
-
-        // ❌ Do not call initAttendance here
-        // Record listener will re-sync from Firebase
-
-        setLoading("success")
-        tg?.HapticFeedback?.notificationOccurred("success")
-        setTimeout(() => tg?.close(), 1200)
-      } catch (err) {
-        setLoading("idle")
-        await log({ type: "attendance_error", error: String(err) }, `logs/webapp/${groupId}`)
-        alert("❌ Failed attendance: " + String(err))
-      }
-    },
-    (err) => {
-      setLoading("idle")
-      log({ type: "location_error", error: err.message }, `logs/webapp/${groupId}`)
-    }
-  )
-}
-
-
-// =========================
-// Detect office (GPS fallback) with debounce + logging
-// =========================
-let lastDetectCall = 0
-
-const detectOffice = async (
-  actionOverride?: "checkin" | "checkout"
-): Promise<OfficeDetectionResult> => {
-  const now = Date.now()
-  if (now - lastDetectCall < 1000) {
-    // 🚫 Duplicate call skipped
-    await push(ref(db, `logs/webapp/${groupId}`), {
-      type: "debounce_skip",
-      user_id: userId,
-      actionOverride,
-      timestamp: new Date().toISOString(),
-      confirm: "Skipped duplicate detectOffice call"
-    })
-
-    // ✅ Return a safe result so UI doesn’t freeze
-    return {
-      officeDetected: false,
-      officeName: officeName || "Unknown Office",
-      distance: distance ?? null,
-      officeId: officeId || "unknown",
-      status: "skipped",
-      detail: "Debounced duplicate call"
-    }
-  }
-  lastDetectCall = now
-
-  const actionToSend = actionOverride || nextAction
-  if (groupId === "unknown" || !actionToSend) {
-    return {
-      officeDetected: false,
-      officeName: "Unknown Office",
-      distance: null,
-      officeId: "unknown",
-      status: "error",
-      detail: "Group unknown or action missing",
-    }
-  }
-
-  return new Promise<OfficeDetectionResult>((resolve) => {
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
         try {
-          const payload = {
-            action: "office",
-            nextAction: actionToSend,
-            group_id: groupId,
-            lat: pos.coords.latitude,   // ✅ use real GPS
-            lon: pos.coords.longitude,  // ✅ use real GPS
-            bot_username: "autobot",
-            user: tg?.initDataUnsafe?.user || {},
-            timestamp: new Date().toISOString(),
-          }
+          const result = await submitAttendance(payload)
+          console.log("Attendance response:", result)
 
-          const res = await fetch("https://fea2-136-228-130-3.ngrok-free.app", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
-          })
+          await log(
+            { type: "attendance_response", actionSent: currentAction, result },
+            `logs/webapp/${groupId}`
+          )
 
-          const data = await res.json()
+          // ✅ Compute fresh nextAction
+          const newAction = currentAction === "checkin" ? "checkout" : "checkin"
 
-          const result: OfficeDetectionResult = {
-            officeDetected:
-              !!data.office_id && !!data.officeName && !data.status?.includes("error"),
-            officeName: data.officeName || "Unknown Office",
-            distance: data.distance ?? null,
-            officeId: data.office_id || "unknown",
-            status: data.status || "",
-            detail: data.detail || "",
-          }
+          // ✅ Flip locally
+          setNextAction(newAction)
 
-          // ✅ Update store
-          setOfficeId(result.officeId)
-          setOfficeName(result.officeName)
-          setStatus(result.status)
-          setDetail(result.detail)
-          setDistance(result.distance)
-          setOfficeDetected(result.officeDetected)
+          // // ✅ Re-sync with Firebase
+          // await initAttendance()
 
-          resolve(result)
+
+          setLoading("success")
+          tg?.HapticFeedback?.notificationOccurred("success")
+          setTimeout(() => tg?.close(), 1200)
         } catch (err) {
+          setLoading("idle")
+          await log({ type: "attendance_error", error: String(err) }, `logs/webapp/${groupId}`)
+          alert("❌ Failed attendance: " + String(err))
+        }
+      },
+      (err) => {
+        setLoading("idle")
+        log({ type: "location_error", error: err.message }, `logs/webapp/${groupId}`)
+      }
+    )
+  }
+
+
+  // =========================
+  // Detect office (GPS fallback)
+  // =========================
+  const detectOffice = async (
+    actionOverride?: "checkin" | "checkout"
+  ): Promise<OfficeDetectionResult> => {
+    const actionToSend = actionOverride || nextAction
+    if (groupId === "unknown" || !actionToSend) {
+      return {
+        officeDetected: false,
+        officeName: "Unknown Office",
+        distance: null,
+        officeId: "unknown",
+        status: "error",
+        detail: "Group unknown or action missing",
+      }
+    }
+
+    return new Promise<OfficeDetectionResult>((resolve) => {
+      navigator.geolocation.getCurrentPosition(
+        async (pos) => {
+          try {
+            const payload = {
+              action: "office",
+              nextAction: actionToSend,
+              group_id: groupId,
+              lat: pos.coords.latitude,   // ✅ use real GPS
+              lon: pos.coords.longitude,  // ✅ use real GPS
+              bot_username: "autobot",
+              user: tg?.initDataUnsafe?.user || {},
+              timestamp: new Date().toISOString(),
+            }
+
+            const res = await fetch("https://fea2-136-228-130-3.ngrok-free.app", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(payload),
+            })
+
+            const data = await res.json()
+
+            const result: OfficeDetectionResult = {
+              officeDetected:
+                !!data.office_id && !!data.officeName && !data.status?.includes("error"),
+              officeName: data.officeName || "Unknown Office",
+              distance: data.distance ?? null,
+              officeId: data.office_id || "unknown",
+              status: data.status || "",
+              detail: data.detail || "",
+            }
+
+            // ✅ Update store
+            setOfficeId(result.officeId)
+            setOfficeName(result.officeName)
+            setStatus(result.status)
+            setDetail(result.detail)
+            setDistance(result.distance)
+            setOfficeDetected(result.officeDetected)
+
+            resolve(result)
+          } catch (err) {
+            resolve({
+              officeDetected: false,
+              officeName: "Unknown Office",
+              distance: null,
+              officeId: "unknown",
+              status: "error",
+              detail: String(err),
+            })
+          }
+        },
+        (err) => {
           resolve({
             officeDetected: false,
             officeName: "Unknown Office",
             distance: null,
             officeId: "unknown",
-            status: "error",
-            detail: String(err),
+            status: "GPS denied",
+            detail: err.message,
           })
-        }
-      },
-      (err) => {
-        resolve({
-          officeDetected: false,
-          officeName: "Unknown Office",
-          distance: null,
-          officeId: "unknown",
-          status: "GPS denied",
-          detail: err.message,
-        })
-      },
-      { timeout: 30000 }
-    )
-  })
-}
+        },
+        { timeout: 30000 }
+      )
+    })
+  }
 
 
+  // =========================
+  // Record listener (primary source)
+  // =========================
+ // Record listener
+  useEffect(() => {
+    if (!groupId || !userId) return
+    const today = new Date().toISOString().slice(0, 10)
+    const recordsRef = ref(db, `khmer-autobot/attendance_records/${groupId}/${userId}/${today}`)
 
+    onValue(recordsRef, (snapshot) => {
+      const data = snapshot.val() || {}
+      const lastRecord = Object.values(data).pop() as any
 
+      if (lastRecord) {
+        setStatus(lastRecord.status || "")
+        setDetail(lastRecord.detail || "")
+        setOfficeId(lastRecord.office_id || "unknown")
+        setOfficeName(lastRecord.officeName || "Unknown Office")
 
-// =========================
-// Record listener (primary source)
-// =========================
-// Record listener
-useEffect(() => {
-  if (!groupId || !userId) return
-  const today = new Date().toISOString().slice(0, 10)
-  const recordsRef = ref(db, `khmer-autobot/attendance_records/${groupId}/${userId}/${today}`)
+        const normalizedAction = (lastRecord.action || "").toLowerCase()
+        setNextAction(normalizedAction === "checkin" ? "checkout" : "checkin")
 
-  onValue(recordsRef, (snapshot) => {
-    const data = snapshot.val() || {}
-    const lastRecord = Object.values(data).pop() as any
+        setPageReady(true) // ✅ mark ready after record restored
+      } else {
+        // No record yet → run initAttendance
+        initAttendance().then(() => setPageReady(true))
+      }
 
-    if (lastRecord) {
-      const normalizedAction = (lastRecord.action || "").toLowerCase()
-      const decidedAction = normalizedAction === "checkin" ? "checkout" : "checkin"
-
-      setNextAction(decidedAction)
-      detectOffice(decidedAction).then(() => setPageReady(true))
-    } else {
-      initAttendance().then(() => setPageReady(true))
-    }
-
-    setSessionLoaded(true)
-  })
-}, [groupId, userId])
+      setSessionLoaded(true)
+    })
+  }, [groupId, userId])
 
 
   // =========================
@@ -740,24 +723,10 @@ useEffect(() => {
   // ============================
   // UI
   // ============================
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (!pageReady) {
-        setPageReady(true)
-      }
-    }, 5000)
-    return () => clearTimeout(timer)
-  }, [pageReady])
-
   // Render guard
   if (!pageReady) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        Loading…
-      </div>
-    )
+    return <div className="flex items-center justify-center h-full">Loading attendance…</div>
   }
-
   return (
     <div
       className={`flex flex-col min-h-screen font-sans transition-colors duration-500 ${settings.theme === "dark"
@@ -809,54 +778,26 @@ useEffect(() => {
             )}
           </>
         )}
-        {!pageReady ? (
-          <div className="mt-2 px-3 py-2 rounded-lg inline-block font-medium bg-gray-300 text-gray-600 flex items-center gap-2 animate-pulse">
-            <svg
-              className="animate-spin h-4 w-4 text-teal-500"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-            >
-              <circle
-                className="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                strokeWidth="4"
-              ></circle>
-              <path
-                className="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8v8H4z"
-              ></path>
-            </svg>
-            Loading attendance…
-          </div>
-        ) : officeDetected && status ? (
+        {/* Status badge */}
+        {sessionLoaded && officeDetected && status && (
           <div
             className={`mt-2 px-3 py-2 rounded-lg inline-block font-medium ${status.includes("✅")
-                ? "bg-green-600 text-white"
-                : status.includes("⚠️ យឺត")
-                  ? "bg-yellow-500 text-black"
-                  : status.includes("⚠️ ចេញមុន")
-                    ? "bg-red-500 text-white"
-                    : status.includes("⏱")
-                      ? "bg-purple-500 text-white"
-                      : "bg-gray-600 text-white"
+              ? "bg-green-600 text-white"
+              : status.includes("⚠️ យឺត")
+                ? "bg-yellow-500 text-black"
+                : status.includes("⚠️ ចេញមុន")
+                  ? "bg-red-500 text-white"
+                  : status.includes("⏱")
+                    ? "bg-purple-500 text-white"
+                    : "bg-gray-600 text-white"
               }`}
           >
             {status} {detail}
-            {distance !== null && (
+            {/* {distance !== null && (
               <span className="ml-2 text-xs text-gray-200">({distance}m away)</span>
-            )}
-          </div>
-        ) : (
-          <div className="mt-2 px-3 py-2 rounded-lg inline-block font-medium bg-red-500 text-white">
-            ⚠️ Could not detect attendance data
+            )} */}
           </div>
         )}
-
 
       </header>
 
@@ -1089,3 +1030,4 @@ useEffect(() => {
   );
 
 }
+
