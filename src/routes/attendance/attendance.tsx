@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { db } from '~/lib/firebase'
 import { ref, push, getDatabase, get, onValue } from 'firebase/database'
 import { lazy, Suspense } from 'react'
-
+import { useAttendanceStore } from "~/stores/attendanceStore"
 const CameraModal = lazy(() => import('./components/CameraModal'))
 import { useTelegramWebApp } from '~/hooks/useTelegramWebApp'
 import AttendanceFooter from './components/AttendanceFooter'
@@ -15,37 +15,74 @@ export const Route = createFileRoute('/attendance')({
   component: AttendancePage,
 })
 
+interface OfficeDetectionResult {
+  officeDetected: boolean
+  officeName: string
+  distance: number | null
+  officeId: string
+  status: string
+  detail: string
+}
+
 
 function AttendancePage() {
   const tg = useTelegramWebApp()
   const [userId, setUserId] = useState<string | null>(null)
-  // ✅ Load settings from Firebase
   const { settings, updateSetting } = useUserSettings(userId || "guest")
 
   const [loading, setLoading] = useState<'idle' | 'working' | 'success'>('idle')
   const [groupId, setGroupId] = useState<string>('unknown')
   const [sessionLoaded, setSessionLoaded] = useState(false)
-  const [photo, setPhoto] = useState<string | null>(null)
-  const [status, setStatus] = useState("")
-  const [detail, setDetail] = useState("")
-  const [distance, setDistance] = useState<number | null>(null)
   const [currentRole, setCurrentRole] = useState("member")
   const [showMore, setShowMore] = useState(false)
-  const [officeDetected, setOfficeDetected] = useState(false)
 
-
-
-  const [officeId, setOfficeId] = useState<string>("unknown")
-  const [officeName, setOfficeName] = useState<string>("")
-
-  // const openProfile = () => alert("Profile clicked")
-  // const openHelp = () => alert("Help clicked")
+ const {
+    officeDetected,
+    officeName,
+    distance,
+    officeId,          // ✅ now comes from store
+    nextAction,
+    lastCheckInTime,
+    missedCheckout,
+    status,
+    detail,
+    photo,
+    setOfficeDetected,
+    setOfficeName,
+    setDistance,
+    setOfficeId,       // ✅ store mutator
+    setNextAction,
+    setLastCheckInTime,
+    setMissedCheckout,
+    setStatus,
+    setDetail,
+    setPhoto,
+  } = useAttendanceStore()
   const [reasonOptions, setReasonOptions] = useState<Record<string, string>>({})
 
+  // Example effect: run detection only if not already detected
+  useEffect(() => {
+    if (!officeDetected) {
+      detectOffice(nextAction) // no .then, because it doesn’t return anything
+    }
+  }, [officeDetected, nextAction])
 
-  const [nextAction, setNextAction] = useState<"checkin" | "checkout">("checkin")
-  const [lastCheckInTime, setLastCheckInTime] = useState<string | null>(null)
-  const [missedCheckout, setMissedCheckout] = useState(false)
+
+  // ✅ Remove duplicate detectOffice effect
+  // Detection now only runs inside initAttendance
+  useEffect(() => {
+    if (!officeDetected) {
+      detectOffice(nextAction).then((result) => {
+        setOfficeDetected(result.officeDetected)
+        setOfficeName(result.officeName)
+        setDistance(result.distance)
+        setOfficeId(result.officeId)
+        setStatus(result.status)
+        setDetail(result.detail)
+      })
+    }
+  }, [officeDetected, nextAction])
+
 
   const fallbackReasons: Record<string, string> = {
     traffic: "🚗 Traffic",
@@ -103,7 +140,6 @@ function AttendancePage() {
   }, [tg])
 
 
-
   // =========================
   // REASONS LISTENER
   // =========================
@@ -127,17 +163,15 @@ function AttendancePage() {
   // INIT ATTENDANCE (reusable)
   // =========================
   async function initAttendance() {
-    if (!sessionLoaded) return
-    if (!groupId || groupId === "unknown") return
-    if (!userId) return
+    if (!sessionLoaded || !groupId || groupId === "unknown" || !userId) return
 
-    // Fetch today's last action
+    // 🔹 Fetch today's last action
     const today = await fetchTodayLastAction(groupId, userId)
     const { lastAction = null, lastTimestamp = null } = today || {}
     const normalizedAction = (lastAction || "").toLowerCase()
 
+    // 🔹 Decide next action
     let decidedAction: "checkin" | "checkout" = "checkin"
-
     if (normalizedAction === "checkin") {
       decidedAction = "checkout"
       setLastCheckInTime(lastTimestamp)
@@ -149,13 +183,13 @@ function AttendancePage() {
       setLastCheckInTime(null)
     }
 
-    // ✅ Flip nextAction
+    // ✅ Flip nextAction in store
     setNextAction(decidedAction)
 
-    // ✅ Trigger detectOffice with fresh decidedAction
+    // ✅ Trigger office detection once with fresh decidedAction
     await detectOffice(decidedAction)
 
-    // Check missed checkout from yesterday
+    // 🔹 Check missed checkout from yesterday
     const missed = await checkMissedCheckout(groupId, userId)
     setMissedCheckout(missed)
 
@@ -172,6 +206,7 @@ function AttendancePage() {
       confirm: `Fetched lastAction=${normalizedAction}, decided nextAction=${decidedAction}`
     })
   }
+
 
   // Run initAttendance on load
   useEffect(() => {
@@ -253,113 +288,81 @@ function AttendancePage() {
   // =========================
   // Detect office (GPS fallback)
   // =========================
-  const detectOffice = async (actionOverride?: "checkin" | "checkout") => {
+  const detectOffice = async (
+    actionOverride?: "checkin" | "checkout"
+  ): Promise<OfficeDetectionResult> => {
     const actionToSend = actionOverride || nextAction
-    if (groupId === "unknown") return
-    if (!actionToSend) return
+    if (groupId === "unknown") {
+      return {
+        officeDetected: false,
+        officeName: "Unknown Office",
+        distance: null,
+        officeId: "unknown",
+        status: "error",
+        detail: "Group unknown",
+      }
+    }
 
-    // ✅ Log the attempt
-    await push(ref(db, `logs/webapp/${groupId}`), {
-      type: "detectOffice_start",
-      group_id: groupId,
-      user_id: userId,
-      nextAction: actionToSend,
-      timestamp: new Date().toISOString(),
-      confirm: `Preparing detectOffice with nextAction=${actionToSend}`
-    })
+    try {
+      const payload = {
+        action: "office",
+        nextAction: actionToSend,
+        group_id: groupId,
+        lat: 0,
+        lon: 0,
+        bot_username: "autobot",
+        user: tg?.initDataUnsafe?.user || {},
+        timestamp: new Date().toISOString(),
+      }
 
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        try {
-          const payload = {
-            action: "office",
-            nextAction: actionToSend,
-            group_id: groupId,
-            lat: pos.coords.latitude,
-            lon: pos.coords.longitude,
-            bot_username: "autobot",
-            user: tg?.initDataUnsafe?.user || {},
-            timestamp: new Date().toISOString(),
-          }
+      const res = await fetch("https://fea2-136-228-130-3.ngrok-free.app", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      })
 
-          await push(ref(db, `logs/webapp/${groupId}`), {
-            type: "detectOffice_payload",
-            group_id: groupId,
-            user_id: userId,
-            payload,
-            timestamp: new Date().toISOString(),
-          })
+      const data = await res.json()
 
-          const res = await fetch("https://fea2-136-228-130-3.ngrok-free.app", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
-          })
+      const result: OfficeDetectionResult = {
+        officeDetected:
+          !!data.office_id && !!data.officeName && !data.status?.includes("error"),
+        officeName: data.officeName || "Unknown Office",
+        distance: data.distance ?? null,
+        officeId: data.office_id || "unknown",
+        status: data.status || "",
+        detail: data.detail || "",
+      }
 
-          const data = await res.json()
+      // ✅ Update store
+      setOfficeId(result.officeId)
+      setOfficeName(result.officeName)
+      setStatus(result.status)
+      setDetail(result.detail)
+      setDistance(result.distance)
+      setOfficeDetected(result.officeDetected)
 
-          setOfficeId(data.office_id || "unknown")
-          setOfficeName(data.officeName || "Unknown Office")
-          setStatus(data.status || "")
-          setDetail(data.detail || "")
-          setDistance(data.distance || null)
+      return result
+    } catch (err) {
+      const result: OfficeDetectionResult = {
+        officeDetected: false,
+        officeName: "Unknown Office",
+        distance: null,
+        officeId: "unknown",
+        status: "error",
+        detail: String(err),
+      }
 
-          // ✅ Flip flag only if office is valid
-          if (data.office_id && data.officeName && !data.status.includes("error")) {
-            setOfficeDetected(true)
-          } else {
-            setOfficeDetected(false)
-          }
+      setOfficeId(result.officeId)
+      setOfficeName(result.officeName)
+      setStatus(result.status)
+      setDetail(result.detail)
+      setDistance(result.distance)
+      setOfficeDetected(result.officeDetected)
 
-          await push(ref(db, `logs/webapp/${groupId}`), {
-            type: "detectOffice_preview",
-            group_id: groupId,
-            user_id: userId,
-            nextAction: actionToSend,
-            office_id: data.office_id || "unknown",
-            status: data.status || "",
-            detail: data.detail || "",
-            preview: true,
-            timestamp: new Date().toISOString(),
-          })
-        } catch (err) {
-          console.error("GPS error:", err)
-          setOfficeId("unknown")
-          setOfficeName("Unknown Office")
-          setStatus("error")
-          setDetail(String(err))
-          setOfficeDetected(false)
-
-          await push(ref(db, `logs/webapp/${groupId}`), {
-            type: "detectOffice_error",
-            group_id: groupId,
-            user_id: userId,
-            nextAction: actionToSend,
-            error: String(err),
-            timestamp: new Date().toISOString(),
-          })
-        }
-      },
-      async (err) => {
-        console.error("Geolocation denied:", err)
-        setOfficeId("unknown")
-        setOfficeName("Unknown Office")
-        setStatus("GPS denied")
-        setDetail(err.message)
-        setOfficeDetected(false)
-
-        await push(ref(db, `logs/webapp/${groupId}`), {
-          type: "detectOffice_denied",
-          group_id: groupId,
-          user_id: userId,
-          nextAction: actionToSend,
-          error: err.message,
-          timestamp: new Date().toISOString(),
-        })
-      },
-      { timeout: 30000 } // ✅ optional: fail after 30s
-    )
+      return result
+    }
   }
+
 
 
   // =========================
@@ -760,14 +763,14 @@ function AttendancePage() {
         {sessionLoaded && officeDetected && status && (
           <div
             className={`mt-2 px-3 py-2 rounded-lg inline-block font-medium ${status.includes("✅")
-                ? "bg-green-600 text-white"
-                : status.includes("⚠️ យឺត")
-                  ? "bg-yellow-500 text-black"
-                  : status.includes("⚠️ ចេញមុន")
-                    ? "bg-red-500 text-white"
-                    : status.includes("⏱")
-                      ? "bg-purple-500 text-white"
-                      : "bg-gray-600 text-white"
+              ? "bg-green-600 text-white"
+              : status.includes("⚠️ យឺត")
+                ? "bg-yellow-500 text-black"
+                : status.includes("⚠️ ចេញមុន")
+                  ? "bg-red-500 text-white"
+                  : status.includes("⏱")
+                    ? "bg-purple-500 text-white"
+                    : "bg-gray-600 text-white"
               }`}
           >
             {status} {detail}
