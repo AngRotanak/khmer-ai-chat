@@ -735,14 +735,14 @@ useEffect(() => {
     return () => clearTimeout(timer)
   }, [pageReady, setPageReady])
 
-  // Render guard
-  if (!pageReady) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        Loading attendance…
-      </div>
-    )
-  }
+  // // Render guard
+  // if (!pageReady) {
+  //   return (
+  //     <div className="flex items-center justify-center h-full">
+  //       Loading attendance…
+  //     </div>
+  //   )
+  // }
   return (
     <div
       className={`flex flex-col min-h-screen font-sans transition-colors duration-500 ${settings.theme === "dark"
