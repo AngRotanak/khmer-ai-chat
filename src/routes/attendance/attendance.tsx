@@ -722,9 +722,24 @@ function AttendancePage() {
   // ============================
   // UI
   // ============================
+  useEffect(() => {
+    // Fallback: if pageReady not set within 5s, force it
+    const timer = setTimeout(() => {
+      if (!pageReady) {
+        setPageReady(true)
+      }
+    }, 5000)
+
+    return () => clearTimeout(timer)
+  }, [pageReady, setPageReady])
+
   // Render guard
   if (!pageReady) {
-    return <div className="flex items-center justify-center h-full">Loading attendance…</div>
+    return (
+      <div className="flex items-center justify-center h-full">
+        Loading attendance…
+      </div>
+    )
   }
   return (
     <div
@@ -778,17 +793,17 @@ function AttendancePage() {
           </>
         )}
         {/* Status badge */}
-        {pageReady && officeDetected && status ? (
+        {officeDetected && status ? (
           <div
             className={`mt-2 px-3 py-2 rounded-lg inline-block font-medium ${status.includes("✅")
-                ? "bg-green-600 text-white"
-                : status.includes("⚠️ យឺត")
-                  ? "bg-yellow-500 text-black"
-                  : status.includes("⚠️ ចេញមុន")
-                    ? "bg-red-500 text-white"
-                    : status.includes("⏱")
-                      ? "bg-purple-500 text-white"
-                      : "bg-gray-600 text-white"
+              ? "bg-green-600 text-white"
+              : status.includes("⚠️ យឺត")
+                ? "bg-yellow-500 text-black"
+                : status.includes("⚠️ ចេញមុន")
+                  ? "bg-red-500 text-white"
+                  : status.includes("⏱")
+                    ? "bg-purple-500 text-white"
+                    : "bg-gray-600 text-white"
               }`}
           >
             {status} {detail}
@@ -798,9 +813,11 @@ function AttendancePage() {
           </div>
         ) : (
           <div className="mt-2 px-3 py-2 rounded-lg inline-block font-medium bg-gray-300 text-gray-600 animate-pulse">
-            Loading attendance…
+            ⏱ Waiting for attendance data…
           </div>
         )}
+
+
 
       </header>
 
