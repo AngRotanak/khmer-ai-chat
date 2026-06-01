@@ -35,6 +35,7 @@ function AttendancePage() {
   const [sessionLoaded, setSessionLoaded] = useState(false)
   const [currentRole, setCurrentRole] = useState("member")
   const [showMore, setShowMore] = useState(false)
+  const [pageReady, setPageReady] = useState(false)
 
   const {
     officeDetected,
@@ -167,7 +168,27 @@ function AttendancePage() {
 
     // 🔹 Fetch today's last action
     const today = await fetchTodayLastAction(groupId, userId)
-    const { lastAction = null, lastTimestamp = null } = today || {}
+    if (!today) {
+      // ❌ No record yet → default to checkin
+      setNextAction("checkin")
+      setLastCheckInTime(null)
+      await detectOffice("checkin")
+
+      await push(ref(db, `logs/webapp/${groupId}`), {
+        type: "attendance_init",
+        group_id: groupId,
+        user_id: userId,
+        lastAction: null,
+        lastTimestamp: null,
+        nextAction: "checkin",
+        missed: false,
+        timestamp: new Date().toISOString(),
+        confirm: "No record found, defaulted to checkin",
+      })
+      return
+    }
+
+    const { lastAction = null, lastTimestamp = null } = today
     const normalizedAction = (lastAction || "").toLowerCase()
 
     // 🔹 Decide next action
@@ -176,9 +197,6 @@ function AttendancePage() {
       decidedAction = "checkout"
       setLastCheckInTime(lastTimestamp)
     } else if (normalizedAction === "checkout") {
-      decidedAction = "checkin"
-      setLastCheckInTime(null)
-    } else {
       decidedAction = "checkin"
       setLastCheckInTime(null)
     }
@@ -375,6 +393,7 @@ function AttendancePage() {
   // =========================
   // Record listener (primary source)
   // =========================
+  // Record listener
   useEffect(() => {
     if (!groupId || !userId) return
     const today = new Date().toISOString().slice(0, 10)
@@ -385,33 +404,23 @@ function AttendancePage() {
       const lastRecord = Object.values(data).pop() as any
 
       if (lastRecord) {
-        // ✅ Use record values
         setStatus(lastRecord.status || "")
         setDetail(lastRecord.detail || "")
         setOfficeId(lastRecord.office_id || "unknown")
         setOfficeName(lastRecord.officeName || "Unknown Office")
 
-        // ✅ Flip nextAction based on last record
         const normalizedAction = (lastRecord.action || "").toLowerCase()
-        if (normalizedAction === "checkin") {
-          setNextAction("checkout")
-        } else if (normalizedAction === "checkout") {
-          setNextAction("checkin")
-        } else {
-          setNextAction("checkin")
-        }
+        setNextAction(normalizedAction === "checkin" ? "checkout" : "checkin")
+
+        setPageReady(true) // ✅ mark ready after record restored
       } else {
-        // ❌ No record yet → just clear state, initAttendance will call detectOffice
-        setStatus("")
-        setDetail("")
-        setOfficeId("unknown")
-        setOfficeName("Unknown Office")
+        // No record yet → run initAttendance
+        initAttendance().then(() => setPageReady(true))
       }
 
       setSessionLoaded(true)
     })
   }, [groupId, userId])
-
 
 
   // =========================
@@ -714,7 +723,10 @@ function AttendancePage() {
   // ============================
   // UI
   // ============================
-
+  // Render guard
+  if (!pageReady) {
+    return <div className="flex items-center justify-center h-full">Loading attendance…</div>
+  }
   return (
     <div
       className={`flex flex-col min-h-screen font-sans transition-colors duration-500 ${settings.theme === "dark"
@@ -767,25 +779,31 @@ function AttendancePage() {
           </>
         )}
         {/* Status badge */}
-        {sessionLoaded && officeDetected && status && (
+        {pageReady && officeDetected && status ? (
           <div
             className={`mt-2 px-3 py-2 rounded-lg inline-block font-medium ${status.includes("✅")
-              ? "bg-green-600 text-white"
-              : status.includes("⚠️ យឺត")
-                ? "bg-yellow-500 text-black"
-                : status.includes("⚠️ ចេញមុន")
-                  ? "bg-red-500 text-white"
-                  : status.includes("⏱")
-                    ? "bg-purple-500 text-white"
-                    : "bg-gray-600 text-white"
+                ? "bg-green-600 text-white"
+                : status.includes("⚠️ យឺត")
+                  ? "bg-yellow-500 text-black"
+                  : status.includes("⚠️ ចេញមុន")
+                    ? "bg-red-500 text-white"
+                    : status.includes("⏱")
+                      ? "bg-purple-500 text-white"
+                      : "bg-gray-600 text-white"
               }`}
           >
             {status} {detail}
-            {/* {distance !== null && (
+            {distance !== null && (
               <span className="ml-2 text-xs text-gray-200">({distance}m away)</span>
-            )} */}
+            )}
+          </div>
+        ) : (
+          // ✅ Guard: show spinner or placeholder until ready
+          <div className="mt-2 px-3 py-2 rounded-lg inline-block font-medium bg-gray-300 text-gray-600 animate-pulse">
+            Loading attendance…
           </div>
         )}
+
 
       </header>
 
