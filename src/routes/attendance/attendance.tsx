@@ -713,72 +713,71 @@ function AttendancePage() {
         }`}
     >
 
-<header className="sticky top-0 w-full px-4 py-5 text-center backdrop-blur-md shadow-lg z-50 flex flex-col items-center">
-  <h1 className="text-2xl font-bold tracking-wide flex items-center gap-2">
-    🕒 Attendance
-  </h1>
+      <header className="sticky top-0 w-full px-4 py-5 text-center backdrop-blur-md shadow-lg z-50 flex flex-col items-center">
+        <h1 className="text-2xl font-bold tracking-wide flex items-center gap-2">
+          🕒 Attendance
+        </h1>
 
-  {/* Info messages */}
-  {sessionLoaded && (
-    <>
-      {!officeDetected ? (
-        <p className="text-gray-400 text-sm mt-1 animate-pulse flex items-center gap-2">
-          <svg
-            className="animate-spin h-4 w-4 text-teal-400"
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
+        {/* Info messages */}
+        {sessionLoaded && (
+          <>
+            {!officeDetected ? (
+              <p className="text-gray-400 text-sm mt-1 animate-pulse flex items-center gap-2">
+                <svg
+                  className="animate-spin h-4 w-4 text-teal-400"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8v8H4z"
+                  ></path>
+                </svg>
+                ⏳ Detecting office via GPS…
+              </p>
+            ) : officeName ? (
+              <p className="text-green-400 text-sm mt-1 font-medium flex items-center gap-2">
+                ✅  {officeName}
+              </p>
+            ) : (
+              <p className="text-red-400 text-sm mt-1">
+                ❌ Office not detected
+              </p>
+            )}
+          </>
+        )}
+        {/* Status badge */}
+        {sessionLoaded && officeDetected && status && (
+          <div
+            className={`mt-2 px-3 py-2 rounded-lg inline-block font-medium ${status.includes("✅")
+                ? "bg-green-600 text-white"
+                : status.includes("⚠️ យឺត")
+                  ? "bg-yellow-500 text-black"
+                  : status.includes("⚠️ ចេញមុន")
+                    ? "bg-red-500 text-white"
+                    : status.includes("⏱")
+                      ? "bg-purple-500 text-white"
+                      : "bg-gray-600 text-white"
+              }`}
           >
-            <circle
-              className="opacity-25"
-              cx="12"
-              cy="12"
-              r="10"
-              stroke="currentColor"
-              strokeWidth="4"
-            ></circle>
-            <path
-              className="opacity-75"
-              fill="currentColor"
-              d="M4 12a8 8 0 018-8v8H4z"
-            ></path>
-          </svg>
-          ⏳ Detecting office via GPS…
-        </p>
-      ) : officeName ? (
-        <p className="text-green-400 text-sm mt-1 font-medium flex items-center gap-2">
-          ✅  {officeName}
-        </p>
-      ) : (
-        <p className="text-red-400 text-sm mt-1">
-          ❌ Office not detected
-        </p>
-      )}
-    </>
-  )}
-{/* Status badge */}
-{sessionLoaded && officeDetected && status && (
-  <div
-    className={`mt-2 px-3 py-2 rounded-lg inline-block font-medium ${
-      status.includes("✅")
-        ? "bg-green-600 text-white"
-        : status.includes("⚠️ យឺត")
-        ? "bg-yellow-500 text-black"
-        : status.includes("⚠️ ចេញមុន")
-        ? "bg-red-500 text-white"
-        : status.includes("⏱")
-        ? "bg-purple-500 text-white"
-        : "bg-gray-600 text-white"
-    }`}
-  >
-    {status} {detail}
-    {distance !== null && (
-      <span className="ml-2 text-xs text-gray-200">({distance}m away)</span>
-    )}
-  </div>
-)}
+            {status} {detail}
+            {/* {distance !== null && (
+              <span className="ml-2 text-xs text-gray-200">({distance}m away)</span>
+            )} */}
+          </div>
+        )}
 
-</header>
+      </header>
 
 
       {/* Main */}
