@@ -9,7 +9,6 @@ import { useTelegramWebApp } from '~/hooks/useTelegramWebApp'
 import AttendanceFooter from './components/AttendanceFooter'
 import { Link } from "@tanstack/react-router"
 import useUserSettings from './components/useUserSettings'
-import { useRef } from "react"
 
 export const Route = createFileRoute('/attendance')({
   component: AttendancePage,
