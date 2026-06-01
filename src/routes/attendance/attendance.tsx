@@ -394,33 +394,33 @@ function AttendancePage() {
   // Record listener (primary source)
   // =========================
   // Record listener
-  useEffect(() => {
-    if (!groupId || !userId) return
-    const today = new Date().toISOString().slice(0, 10)
-    const recordsRef = ref(db, `khmer-autobot/attendance_records/${groupId}/${userId}/${today}`)
+useEffect(() => {
+  if (!groupId || !userId) return
+  const today = new Date().toISOString().slice(0, 10)
+  const recordsRef = ref(db, `khmer-autobot/attendance_records/${groupId}/${userId}/${today}`)
 
-    onValue(recordsRef, (snapshot) => {
-      const data = snapshot.val() || {}
-      const lastRecord = Object.values(data).pop() as any
+  onValue(recordsRef, (snapshot) => {
+    const data = snapshot.val() || {}
+    const lastRecord = Object.values(data).pop() as any
 
-      if (lastRecord) {
-        setStatus(lastRecord.status || "")
-        setDetail(lastRecord.detail || "")
-        setOfficeId(lastRecord.office_id || "unknown")
-        setOfficeName(lastRecord.officeName || "Unknown Office")
+    if (lastRecord) {
+      setStatus(lastRecord.status || "")
+      setDetail(lastRecord.detail || "")
+      setOfficeId(lastRecord.office_id || "unknown")
+      setOfficeName(lastRecord.officeName || "Unknown Office")
 
-        const normalizedAction = (lastRecord.action || "").toLowerCase()
-        setNextAction(normalizedAction === "checkin" ? "checkout" : "checkin")
+      const normalizedAction = (lastRecord.action || "").toLowerCase()
+      setNextAction(normalizedAction === "checkin" ? "checkout" : "checkin")
 
-        setPageReady(true)
-        detectOffice(nextAction) // ✅ preview with correct nextAction
-      } else {
-        initAttendance().then(() => setPageReady(true))
-      }
+      setPageReady(true)
+      detectOffice(nextAction) // ✅ preview with correct nextAction
+    } else {
+      initAttendance().then(() => setPageReady(true))
+    }
 
-      setSessionLoaded(true)
-    })
-  }, [groupId, userId])
+    setSessionLoaded(true)
+  })
+}, [groupId, userId])
 
 
 
@@ -743,7 +743,7 @@ function AttendancePage() {
       </div>
     )
   }
-
+  
   return (
     <div
       className={`flex flex-col min-h-screen font-sans transition-colors duration-500 ${settings.theme === "dark"
@@ -752,84 +752,101 @@ function AttendancePage() {
         }`}
     >
 
-      <header className="sticky top-0 w-full px-8 py-9 text-center backdrop-blur-md shadow-lg z-50 flex flex-col items-center">
-        <h1 className="text-2xl font-bold tracking-wide flex items-center gap-2">
-          🕒 Attendance
-        </h1>
+ <header className="sticky top-0 w-full px-8 py-9 text-center backdrop-blur-md shadow-lg z-50 flex flex-col items-center">
+  <h1 className="text-2xl font-bold tracking-wide flex items-center gap-2">
+    🕒 Attendance
+  </h1>
 
-        {/* Info messages */}
-        {sessionLoaded && (
-          <>
-            {!officeDetected ? (
-              <p className="text-gray-400 text-sm mt-1 animate-pulse flex items-center gap-2">
-                <svg
-                  className="animate-spin h-4 w-4 text-teal-400"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  ></circle>
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8v8H4z"
-                  ></path>
-                </svg>
-                ⏳ Detecting office via GPS…
-              </p>
-            ) : officeName ? (
-              <p className="text-green-400 text-sm mt-1 font-medium flex items-center gap-2">
-                ✅  {officeName}
-              </p>
-            ) : (
-              <p className="text-red-400 text-sm mt-1">
-                ❌ Office not detected
-              </p>
-            )}
-          </>
-        )}
-        {/* Status badge */}
-        {pageReady ? (
-          officeDetected && status ? (
-            <div
-              className={`mt-2 px-3 py-2 rounded-lg inline-block font-medium ${status.includes("✅")
-                  ? "bg-green-600 text-white"
-                  : status.includes("⚠️ យឺត")
-                    ? "bg-yellow-500 text-black"
-                    : status.includes("⚠️ ចេញមុន")
-                      ? "bg-red-500 text-white"
-                      : status.includes("⏱")
-                        ? "bg-purple-500 text-white"
-                        : "bg-gray-600 text-white"
-                }`}
-            >
-              {status} {detail}
-              {distance !== null && (
-                <span className="ml-2 text-xs text-gray-200">({distance}m away)</span>
-              )}
-            </div>
-          ) : (
-            <div className="mt-2 px-3 py-2 rounded-lg inline-block font-medium bg-gray-300 text-gray-600 animate-pulse">
-              ⏱ Waiting for attendance data…
-            </div>
-          )
-        ) : (
-          <div className="mt-2 px-3 py-2 rounded-lg inline-block font-medium bg-gray-300 text-gray-600 animate-pulse">
-            Loading…
-          </div>
-        )}
+  {/* Info messages */}
+  {sessionLoaded && (
+    <>
+      {!officeDetected ? (
+        <p className="text-gray-400 text-sm mt-1 animate-pulse flex items-center gap-2">
+          <svg
+            className="animate-spin h-4 w-4 text-teal-400"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <circle
+              className="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              strokeWidth="4"
+            ></circle>
+            <path
+              className="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8v8H4z"
+            ></path>
+          </svg>
+          ⏳ Detecting office via GPS…
+        </p>
+      ) : officeName ? (
+        <p className="text-green-400 text-sm mt-1 font-medium flex items-center gap-2">
+          ✅ {officeName}
+        </p>
+      ) : (
+        <p className="text-red-400 text-sm mt-1">
+          ❌ Office not detected
+        </p>
+      )}
+    </>
+  )}
 
-
-
-
-      </header>
+  {/* Status badge */}
+  {!pageReady ? (
+    // 🔹 Show spinner overlay while waiting
+    <div className="mt-2 px-3 py-2 rounded-lg inline-block font-medium bg-gray-300 text-gray-600 flex items-center gap-2 animate-pulse">
+      <svg
+        className="animate-spin h-4 w-4 text-teal-500"
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 24 24"
+      >
+        <circle
+          className="opacity-25"
+          cx="12"
+          cy="12"
+          r="10"
+          stroke="currentColor"
+          strokeWidth="4"
+        ></circle>
+        <path
+          className="opacity-75"
+          fill="currentColor"
+          d="M4 12a8 8 0 018-8v8H4z"
+        ></path>
+      </svg>
+      Loading attendance…
+    </div>
+  ) : officeDetected && status ? (
+    <div
+      className={`mt-2 px-3 py-2 rounded-lg inline-block font-medium ${
+        status.includes("✅")
+          ? "bg-green-600 text-white"
+          : status.includes("⚠️ យឺត")
+          ? "bg-yellow-500 text-black"
+          : status.includes("⚠️ ចេញមុន")
+          ? "bg-red-500 text-white"
+          : status.includes("⏱")
+          ? "bg-purple-500 text-white"
+          : "bg-gray-600 text-white"
+      }`}
+    >
+      {status} {detail}
+      {distance !== null && (
+        <span className="ml-2 text-xs text-gray-200">({distance}m away)</span>
+      )}
+    </div>
+  ) : (
+    <div className="mt-2 px-3 py-2 rounded-lg inline-block font-medium bg-gray-300 text-gray-600 animate-pulse">
+      ⏱ Waiting for attendance data…
+    </div>
+  )}
+</header>
 
 
       {/* Main */}
