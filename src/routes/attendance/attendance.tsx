@@ -393,34 +393,36 @@ function AttendancePage() {
   // =========================
   // Record listener (primary source)
   // =========================
-  // Record listener
-  useEffect(() => {
-    if (!groupId || !userId) return
-    const today = new Date().toISOString().slice(0, 10)
-    const recordsRef = ref(db, `khmer-autobot/attendance_records/${groupId}/${userId}/${today}`)
+useEffect(() => {
+  if (!groupId || !userId) return
+  const today = new Date().toISOString().slice(0, 10)
+  const recordsRef = ref(db, `khmer-autobot/attendance_records/${groupId}/${userId}/${today}`)
 
-    onValue(recordsRef, (snapshot) => {
-      const data = snapshot.val() || {}
-      const lastRecord = Object.values(data).pop() as any
+  onValue(recordsRef, (snapshot) => {
+    const data = snapshot.val() || {}
+    const lastRecord = Object.values(data).pop() as any
 
-      if (lastRecord) {
-        setStatus(lastRecord.status || "")
-        setDetail(lastRecord.detail || "")
-        setOfficeId(lastRecord.office_id || "unknown")
-        setOfficeName(lastRecord.officeName || "Unknown Office")
+    if (lastRecord) {
+      setStatus(lastRecord.status || "")
+      setDetail(lastRecord.detail || "")
+      setOfficeId(lastRecord.office_id || "unknown")
+      setOfficeName(lastRecord.officeName || "Unknown Office")
 
-        const normalizedAction = (lastRecord.action || "").toLowerCase()
-        setNextAction(normalizedAction === "checkin" ? "checkout" : "checkin")
+      const normalizedAction = (lastRecord.action || "").toLowerCase()
+      // ✅ Single source of truth: record listener decides nextAction
+      setNextAction(normalizedAction === "checkin" ? "checkout" : "checkin")
 
-        setPageReady(true)
-        detectOffice(nextAction) // ✅ preview with correct nextAction
-      } else {
-        initAttendance().then(() => setPageReady(true))
-      }
+      setPageReady(true)
+      // Preview with correct nextAction
+      detectOffice(nextAction)
+    } else {
+      // ❌ Only run initAttendance if no record exists
+      initAttendance().then(() => setPageReady(true))
+    }
 
-      setSessionLoaded(true)
-    })
-  }, [groupId, userId])
+    setSessionLoaded(true)
+  })
+}, [groupId, userId])
 
 
 
@@ -743,7 +745,7 @@ function AttendancePage() {
       </div>
     )
   }
-
+  
   return (
     <div
       className={`flex flex-col min-h-screen font-sans transition-colors duration-500 ${settings.theme === "dark"
@@ -786,7 +788,7 @@ function AttendancePage() {
               </p>
             ) : officeName ? (
               <p className="text-green-400 text-sm mt-1 font-medium flex items-center gap-2">
-                ✅ {officeName}
+                ✅  {officeName}
               </p>
             ) : (
               <p className="text-red-400 text-sm mt-1">
@@ -795,44 +797,18 @@ function AttendancePage() {
             )}
           </>
         )}
-
-        {/* Status badge */}
-        {!pageReady ? (
-          // 🔹 Show spinner overlay while waiting
-          <div className="mt-2 px-3 py-2 rounded-lg inline-block font-medium bg-gray-300 text-gray-600 flex items-center gap-2 animate-pulse">
-            <svg
-              className="animate-spin h-4 w-4 text-teal-500"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-            >
-              <circle
-                className="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                strokeWidth="4"
-              ></circle>
-              <path
-                className="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8v8H4z"
-              ></path>
-            </svg>
-            Loading attendance…
-          </div>
-        ) : officeDetected && status ? (
+        {/* Status badge ...*/}
+        {officeDetected && status ? (
           <div
             className={`mt-2 px-3 py-2 rounded-lg inline-block font-medium ${status.includes("✅")
-                ? "bg-green-600 text-white"
-                : status.includes("⚠️ យឺត")
-                  ? "bg-yellow-500 text-black"
-                  : status.includes("⚠️ ចេញមុន")
-                    ? "bg-red-500 text-white"
-                    : status.includes("⏱")
-                      ? "bg-purple-500 text-white"
-                      : "bg-gray-600 text-white"
+              ? "bg-green-600 text-white"
+              : status.includes("⚠️ យឺត")
+                ? "bg-yellow-500 text-black"
+                : status.includes("⚠️ ចេញមុន")
+                  ? "bg-red-500 text-white"
+                  : status.includes("⏱")
+                    ? "bg-purple-500 text-white"
+                    : "bg-gray-600 text-white"
               }`}
           >
             {status} {detail}
@@ -841,10 +817,11 @@ function AttendancePage() {
             )}
           </div>
         ) : (
-          <div className="mt-2 px-3 py-2 rounded-lg inline-block font-medium bg-red-500 text-white">
-            ⚠️ Could not detect attendance data
+          <div className="mt-2 px-3 py-2 rounded-lg inline-block font-medium bg-gray-300 text-gray-600 animate-pulse">
+            ⏱ Waiting for attendance data…
           </div>
         )}
+
       </header>
 
 
