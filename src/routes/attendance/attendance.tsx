@@ -35,7 +35,6 @@ function AttendancePage() {
   const [sessionLoaded, setSessionLoaded] = useState(false)
   const [currentRole, setCurrentRole] = useState("member")
   const [showMore, setShowMore] = useState(false)
-  const [pageReady, setPageReady] = useState(false)
 
   const {
     officeDetected,
@@ -389,38 +388,35 @@ function AttendancePage() {
     })
   }
 
+// =========================
+// Record listener (primary source)
+// =========================
+useEffect(() => {
+  if (!groupId || !userId) return
+  const today = new Date().toISOString().slice(0, 10)
+  const recordsRef = ref(db, `khmer-autobot/attendance_records/${groupId}/${userId}/${today}`)
 
-  // =========================
-  // Record listener (primary source)
-  // =========================
-  // Record listener
-  useEffect(() => {
-    if (!groupId || !userId) return
-    const today = new Date().toISOString().slice(0, 10)
-    const recordsRef = ref(db, `khmer-autobot/attendance_records/${groupId}/${userId}/${today}`)
+  onValue(recordsRef, (snapshot) => {
+    const data = snapshot.val() || {}
+    const lastRecord = Object.values(data).pop() as any
 
-    onValue(recordsRef, (snapshot) => {
-      const data = snapshot.val() || {}
-      const lastRecord = Object.values(data).pop() as any
+    if (lastRecord) {
+      setStatus(lastRecord.status || "")
+      setDetail(lastRecord.detail || "")
+      setOfficeId(lastRecord.office_id || "unknown")
+      setOfficeName(lastRecord.officeName || "Unknown Office")
 
-      if (lastRecord) {
-        setStatus(lastRecord.status || "")
-        setDetail(lastRecord.detail || "")
-        setOfficeId(lastRecord.office_id || "unknown")
-        setOfficeName(lastRecord.officeName || "Unknown Office")
+      const normalizedAction = (lastRecord.action || "").toLowerCase()
+      setNextAction(normalizedAction === "checkin" ? "checkout" : "checkin")
+    } else {
+      // No record yet → run initAttendance
+      initAttendance()
+    }
 
-        const normalizedAction = (lastRecord.action || "").toLowerCase()
-        setNextAction(normalizedAction === "checkin" ? "checkout" : "checkin")
+    setSessionLoaded(true)
+  })
+}, [groupId, userId])
 
-        setPageReady(true) // ✅ mark ready after record restored
-      } else {
-        // No record yet → run initAttendance
-        initAttendance().then(() => setPageReady(true))
-      }
-
-      setSessionLoaded(true)
-    })
-  }, [groupId, userId])
 
 
   // =========================
