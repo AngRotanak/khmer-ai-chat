@@ -394,33 +394,33 @@ function AttendancePage() {
   // Record listener (primary source)
   // =========================
   // Record listener
-useEffect(() => {
-  if (!groupId || !userId) return
-  const today = new Date().toISOString().slice(0, 10)
-  const recordsRef = ref(db, `khmer-autobot/attendance_records/${groupId}/${userId}/${today}`)
+  useEffect(() => {
+    if (!groupId || !userId) return
+    const today = new Date().toISOString().slice(0, 10)
+    const recordsRef = ref(db, `khmer-autobot/attendance_records/${groupId}/${userId}/${today}`)
 
-  onValue(recordsRef, (snapshot) => {
-    const data = snapshot.val() || {}
-    const lastRecord = Object.values(data).pop() as any
+    onValue(recordsRef, (snapshot) => {
+      const data = snapshot.val() || {}
+      const lastRecord = Object.values(data).pop() as any
 
-    if (lastRecord) {
-      setStatus(lastRecord.status || "")
-      setDetail(lastRecord.detail || "")
-      setOfficeId(lastRecord.office_id || "unknown")
-      setOfficeName(lastRecord.officeName || "Unknown Office")
+      if (lastRecord) {
+        setStatus(lastRecord.status || "")
+        setDetail(lastRecord.detail || "")
+        setOfficeId(lastRecord.office_id || "unknown")
+        setOfficeName(lastRecord.officeName || "Unknown Office")
 
-      const normalizedAction = (lastRecord.action || "").toLowerCase()
-      setNextAction(normalizedAction === "checkin" ? "checkout" : "checkin")
+        const normalizedAction = (lastRecord.action || "").toLowerCase()
+        setNextAction(normalizedAction === "checkin" ? "checkout" : "checkin")
 
-      setPageReady(true)
-      detectOffice(nextAction) // ✅ preview with correct nextAction
-    } else {
-      initAttendance().then(() => setPageReady(true))
-    }
+        setPageReady(true)
+        detectOffice(nextAction) // ✅ preview with correct nextAction
+      } else {
+        initAttendance().then(() => setPageReady(true))
+      }
 
-    setSessionLoaded(true)
-  })
-}, [groupId, userId])
+      setSessionLoaded(true)
+    })
+  }, [groupId, userId])
 
 
 
@@ -743,6 +743,7 @@ useEffect(() => {
       </div>
     )
   }
+
   return (
     <div
       className={`flex flex-col min-h-screen font-sans transition-colors duration-500 ${settings.theme === "dark"
@@ -795,29 +796,36 @@ useEffect(() => {
           </>
         )}
         {/* Status badge */}
-        {officeDetected && status ? (
-          <div
-            className={`mt-2 px-3 py-2 rounded-lg inline-block font-medium ${status.includes("✅")
-              ? "bg-green-600 text-white"
-              : status.includes("⚠️ យឺត")
-                ? "bg-yellow-500 text-black"
-                : status.includes("⚠️ ចេញមុន")
-                  ? "bg-red-500 text-white"
-                  : status.includes("⏱")
-                    ? "bg-purple-500 text-white"
-                    : "bg-gray-600 text-white"
-              }`}
-          >
-            {status} {detail}
-            {distance !== null && (
-              <span className="ml-2 text-xs text-gray-200">({distance}m away)</span>
-            )}
-          </div>
+        {pageReady ? (
+          officeDetected && status ? (
+            <div
+              className={`mt-2 px-3 py-2 rounded-lg inline-block font-medium ${status.includes("✅")
+                  ? "bg-green-600 text-white"
+                  : status.includes("⚠️ យឺត")
+                    ? "bg-yellow-500 text-black"
+                    : status.includes("⚠️ ចេញមុន")
+                      ? "bg-red-500 text-white"
+                      : status.includes("⏱")
+                        ? "bg-purple-500 text-white"
+                        : "bg-gray-600 text-white"
+                }`}
+            >
+              {status} {detail}
+              {distance !== null && (
+                <span className="ml-2 text-xs text-gray-200">({distance}m away)</span>
+              )}
+            </div>
+          ) : (
+            <div className="mt-2 px-3 py-2 rounded-lg inline-block font-medium bg-gray-300 text-gray-600 animate-pulse">
+              ⏱ Waiting for attendance data…
+            </div>
+          )
         ) : (
           <div className="mt-2 px-3 py-2 rounded-lg inline-block font-medium bg-gray-300 text-gray-600 animate-pulse">
-            ⏱ Waiting for attendance data…
+            Loading…
           </div>
         )}
+
 
 
 
