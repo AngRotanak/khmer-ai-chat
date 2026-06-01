@@ -44,7 +44,7 @@ import { isProduction } from 'std-env'
 import { Whenever } from '~@/components/generics/whenever'
 import { useApplicationState } from '~/stores/application-state'
 import { createRootRoute } from '@tanstack/react-router'
-import { useLoadGoogleMaps } from '~/lib/useLoadGoogleMaps'
+// import { useLoadGoogleMaps } from '~/lib/useLoadGoogleMaps'
 
 const TanStackRouterDevtools = import.meta.env.PROD
   ? () => null
@@ -66,14 +66,14 @@ function RootLayout() {
     setMobileView(isMobile)
   }, [isMobile])
 
-  const apiKey = import.meta.env.VITE_GOOGLE_MAPS_KEY
-  const mapsLoaded = useLoadGoogleMaps(apiKey!)
+  // const apiKey = import.meta.env.VITE_GOOGLE_MAPS_KEY
+  // const mapsLoaded = useLoadGoogleMaps(apiKey!)
 
   return (
     <>
       <Outlet />
 
-      {!mapsLoaded && (
+      {/* {!mapsLoaded && (
         <div className="fixed inset-0 flex items-center justify-center bg-white/70 backdrop-blur-sm z-50">
           <div className="flex items-center gap-2 text-gray-600">
             <svg
@@ -99,7 +99,7 @@ function RootLayout() {
             Loading Google Maps…
           </div>
         </div>
-      )}
+      )} */}
 
       <Whenever condition={isProduction}>
         <Suspense>

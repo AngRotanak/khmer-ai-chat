@@ -9,7 +9,7 @@ import { useTelegramWebApp } from '~/hooks/useTelegramWebApp'
 import AttendanceFooter from './components/AttendanceFooter'
 import { Link } from "@tanstack/react-router"
 import useUserSettings from './components/useUserSettings'
-
+import { useRef } from "react"
 
 export const Route = createFileRoute('/attendance')({
   component: AttendancePage,
@@ -25,6 +25,9 @@ interface OfficeDetectionResult {
 }
 
 
+
+
+
 function AttendancePage() {
   const tg = useTelegramWebApp()
   const [userId, setUserId] = useState<string | null>(null)
@@ -36,6 +39,7 @@ function AttendancePage() {
   const [currentRole, setCurrentRole] = useState("member")
   const [showMore, setShowMore] = useState(false)
   const [pageReady, setPageReady] = useState(false)
+
 
   const {
     officeDetected,
@@ -390,6 +394,11 @@ function AttendancePage() {
   }
 
 
+// ✅ Wrap detectOffice with debounce AFTER it’s defined
+const debouncedDetectOffice = useDebouncedDetectOffice(detectOffice, 1000)
+
+
+
   // =========================
   // Record listener (primary source)
   // =========================
@@ -409,20 +418,21 @@ useEffect(() => {
       setOfficeName(lastRecord.officeName || "Unknown Office")
 
       const normalizedAction = (lastRecord.action || "").toLowerCase()
-      // ✅ Single source of truth: record listener decides nextAction
-      setNextAction(normalizedAction === "checkin" ? "checkout" : "checkin")
+      const decidedAction = normalizedAction === "checkin" ? "checkout" : "checkin"
 
-      setPageReady(true)
-      // Preview with correct nextAction
-      detectOffice(nextAction)
+      setNextAction(decidedAction)
+
+      // ✅ Debounced call
+      debouncedDetectOffice(decidedAction).then(() => setPageReady(true))
     } else {
-      // ❌ Only run initAttendance if no record exists
       initAttendance().then(() => setPageReady(true))
     }
 
     setSessionLoaded(true)
   })
 }, [groupId, userId])
+
+
 
 
 
@@ -727,15 +737,13 @@ useEffect(() => {
   // UI
   // ============================
   useEffect(() => {
-    // Fallback: if pageReady not set within 5s, force it
     const timer = setTimeout(() => {
       if (!pageReady) {
         setPageReady(true)
       }
     }, 5000)
-
     return () => clearTimeout(timer)
-  }, [pageReady, setPageReady])
+  }, [pageReady])
 
   // Render guard
   if (!pageReady) {
@@ -745,7 +753,7 @@ useEffect(() => {
       </div>
     )
   }
-  
+
   return (
     <div
       className={`flex flex-col min-h-screen font-sans transition-colors duration-500 ${settings.theme === "dark"
@@ -797,18 +805,41 @@ useEffect(() => {
             )}
           </>
         )}
-        {/* Status badge ...*/}
-        {officeDetected && status ? (
+        {!pageReady ? (
+          <div className="mt-2 px-3 py-2 rounded-lg inline-block font-medium bg-gray-300 text-gray-600 flex items-center gap-2 animate-pulse">
+            <svg
+              className="animate-spin h-4 w-4 text-teal-500"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              ></circle>
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8v8H4z"
+              ></path>
+            </svg>
+            Loading attendance…
+          </div>
+        ) : officeDetected && status ? (
           <div
             className={`mt-2 px-3 py-2 rounded-lg inline-block font-medium ${status.includes("✅")
-              ? "bg-green-600 text-white"
-              : status.includes("⚠️ យឺត")
-                ? "bg-yellow-500 text-black"
-                : status.includes("⚠️ ចេញមុន")
-                  ? "bg-red-500 text-white"
-                  : status.includes("⏱")
-                    ? "bg-purple-500 text-white"
-                    : "bg-gray-600 text-white"
+                ? "bg-green-600 text-white"
+                : status.includes("⚠️ យឺត")
+                  ? "bg-yellow-500 text-black"
+                  : status.includes("⚠️ ចេញមុន")
+                    ? "bg-red-500 text-white"
+                    : status.includes("⏱")
+                      ? "bg-purple-500 text-white"
+                      : "bg-gray-600 text-white"
               }`}
           >
             {status} {detail}
@@ -817,10 +848,11 @@ useEffect(() => {
             )}
           </div>
         ) : (
-          <div className="mt-2 px-3 py-2 rounded-lg inline-block font-medium bg-gray-300 text-gray-600 animate-pulse">
-            ⏱ Waiting for attendance data…
+          <div className="mt-2 px-3 py-2 rounded-lg inline-block font-medium bg-red-500 text-white">
+            ⚠️ Could not detect attendance data
           </div>
         )}
+
 
       </header>
 
@@ -1054,3 +1086,26 @@ useEffect(() => {
 
 }
 
+
+export function useDebouncedDetectOffice(
+  originalDetectOffice: (actionOverride?: "checkin" | "checkout") => Promise<OfficeDetectionResult>,
+  delay = 1000
+) {
+  const lastCallRef = useRef<number>(0)
+
+  return async (actionOverride?: "checkin" | "checkout") => {
+    const now = Date.now()
+    if (now - lastCallRef.current < delay) {
+      return Promise.resolve({
+        officeDetected: false,
+        officeName: "Unknown Office",
+        distance: null,
+        officeId: "unknown",
+        status: "skipped",
+        detail: "Debounced duplicate call"
+      })
+    }
+    lastCallRef.current = now
+    return originalDetectOffice(actionOverride)
+  }
+}
