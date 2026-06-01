@@ -27,7 +27,6 @@ export function getGroupId(): string {
   // ✅ Normalize: strip quotes and whitespace
   resolved = resolved.replace(/^"+|"+$/g, "").trim()
 
-  // ✅ Save log to Firebase
   try {
     push(ref(db, `logs/webapp/groupId`), {
       type: "groupId_resolve",
@@ -42,6 +41,7 @@ export function getGroupId(): string {
 
   return resolved
 }
+
 
 // ✅ Get userId from Telegram initData
 export function getUserId(): string | null {

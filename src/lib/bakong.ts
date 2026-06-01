@@ -1,4 +1,7 @@
-export async function checkBakongTransaction(md5: string) {
+import { db } from "~/lib/firebase"
+import { ref, push } from "firebase/database"
+
+export async function checkBakongTransaction(md5: string, groupId?: string) {
   if (!md5) throw new Error("Missing md5")
 
   const response = await fetch("https://api-bakong.nbc.gov.kh/v1/check_transaction_by_md5", {
@@ -7,10 +10,24 @@ export async function checkBakongTransaction(md5: string) {
       "Content-Type": "application/json",
       "Authorization": `Bearer ${process.env.BAKONG_TOKEN}`
     },
-    body: JSON.stringify({ md5 }) // ⚠️ confirm if Bakong expects "hash" instead
+    body: JSON.stringify({ hash: md5 }) // ⚠️ confirm if Bakong expects "hash"
   })
 
   const text = await response.text()
+
+  // ✅ Add raw response logging here
+  try {
+    await push(ref(db, `logs/webapp/${groupId || "unknown"}`), {
+      type: "bakong_raw_response",
+      md5,
+      rawText: text.slice(0, 200),
+      statusCode: response.status,
+      timestamp: new Date().toISOString(),
+    })
+  } catch (err) {
+    console.error("Failed to log raw Bakong response:", err)
+  }
+
   if (!text) throw new Error("Empty response from Bakong")
 
   let raw: any
@@ -20,7 +37,6 @@ export async function checkBakongTransaction(md5: string) {
     throw new Error("Invalid JSON from Bakong: " + text.slice(0, 200))
   }
 
-  // ✅ Normalize response
   let status: "PAID" | "PENDING" | "FAILED" = "PENDING"
   if (raw?.status === "success" || raw?.transaction_status === "completed") {
     status = "PAID"
@@ -31,6 +47,7 @@ export async function checkBakongTransaction(md5: string) {
   return {
     status,
     license_id: raw?.license_id,
-    download_url: raw?.download_url
+    download_url: raw?.download_url,
+    raw
   }
 }
