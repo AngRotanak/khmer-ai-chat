@@ -161,12 +161,11 @@ function AttendancePage() {
   }, [])
 
 // =========================
-// INIT ATTENDANCE (minimal)
+// INIT ATTENDANCE (fallback only)
 // =========================
 async function initAttendance() {
   if (!sessionLoaded || !groupId || groupId === "unknown" || !userId) return
 
-  // 🔹 Fetch today's last action
   const today = await fetchTodayLastAction(groupId, userId)
   if (!today) {
     // ❌ No record yet → default to checkin
@@ -193,7 +192,6 @@ async function initAttendance() {
   const { lastAction = null, lastTimestamp = null } = today
   const normalizedAction = (lastAction || "").toLowerCase()
 
-  // 🔹 Decide next action
   let decidedAction: "checkin" | "checkout" = "checkin"
   if (normalizedAction === "checkin") {
     decidedAction = "checkout"
@@ -208,11 +206,9 @@ async function initAttendance() {
 
   // ❌ Do NOT call detectOffice here — record listener will handle it
 
-  // 🔹 Check missed checkout from yesterday
   const missed = await checkMissedCheckout(groupId, userId)
   setMissedCheckout(missed)
 
-  // ✅ Log init state with correct decidedAction
   await push(ref(db, `logs/webapp/${groupId}`), {
     type: "attendance_init",
     group_id: groupId,
@@ -418,9 +414,9 @@ const detectOffice = async (
 
 
 
-  // =========================
-  // Record listener (primary source)
-  // =========================
+// =========================
+// Record listener (primary source)
+// =========================
 useEffect(() => {
   if (!groupId || !userId) return
   const today = new Date().toISOString().slice(0, 10)
@@ -451,7 +447,6 @@ useEffect(() => {
     setSessionLoaded(true)
   })
 }, [groupId, userId])
-
 
 
   // =========================
