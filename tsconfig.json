@@ -3,19 +3,29 @@
     "target": "ES2020",
     "module": "ESNext",
     "moduleResolution": "node",
-    "jsx": "react-jsx",
-    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "jsx": "preserve",
+    "lib": [
+      "ES2020",
+      "DOM",
+      "DOM.Iterable"
+    ],
     "useDefineForClassFields": true,
-
     /* Path aliases */
     "baseUrl": ".",
     "paths": {
-      "~@/*": ["src/bootstrap/*"],
-      "~/*": ["src/*"],
-      "~pages/*": ["src/routes/*"],
-       "~lib/*": ["src/lib/*"]
+      "~@/*": [
+        "src/bootstrap/*"
+      ],
+      "~/*": [
+        "src/*"
+      ],
+      "~pages/*": [
+        "src/routes/*"
+      ],
+      "~lib/*": [
+        "src/lib/*"
+      ]
     },
-
     /* Module compatibility */
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
@@ -24,25 +34,32 @@
     "isolatedModules": true,
     "verbatimModuleSyntax": true,
     "skipLibCheck": true,
-
     /* Type support */
-    "types": ["vite/client", "google.maps"],
-
+    "types": [
+      "vite/client",
+      "google.maps"
+    ],
     /* Linting */
     "strict": true,
     "noFallthroughCasesInSwitch": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "noEmit": true
+    "noEmit": true,
+    "allowJs": true,
+    "incremental": true
   },
-  "exclude": ["vite.config.ts"],
-"include": [
-  "src",
-  "src/types",
-  ".generated/**/*.ts",
-  "tsr.config.ts"
-],
+  "exclude": [
+    "vite.config.ts"
+  ],
+  "include": [
+    "src",
+    "src/types",
+    ".generated/**/*.ts",
+    "tsr.config.ts"
+  ],
   "references": [
-    { "path": "./tsconfig.node.json" }
+    {
+      "path": "./tsconfig.node.json"
+    }
   ]
 }
