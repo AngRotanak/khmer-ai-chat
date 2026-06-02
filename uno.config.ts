@@ -21,23 +21,27 @@ export default defineConfig({
       },
     }),
     presetWebFonts({
+      provider: 'google',
       fonts: {
-        sans: [
-          {
-            name: 'Inter',
-            weights: ['400', '500', '600', '700', '800', '900'],
-            italic: true,
-          },
-          { name: 'Nokora', provider: 'google' },
-        ],
+        sans: 'Inter',
+        khmer: 'Nokora',
       },
     }),
     presetAnimations(),
     presetUseful() as any, // ✅ no need for `as any` if you’re on latest
   ],
 
-  theme: {
+   theme: {
     colors: {
+      brand: {
+        teal: '#14b8a6',
+        tealDark: '#0f766e',
+      },
+      khmer: {
+        primary: '#14b8a6',
+        danger: '#ef4444',
+        warning: '#f59e0b',
+      },
       dark: {
         900: '#0f172a',
         800: '#1e293b',
@@ -53,7 +57,6 @@ export default defineConfig({
         400: '#94a3b8',
         500: '#64748b',
       },
-      khmer: { primary: '#14b8a6', danger: '#ef4444', warning: '#f59e0b' },
     },
     extend: {
       keyframes: {
@@ -72,7 +75,6 @@ export default defineConfig({
       },
     },
   },
-
 
   shortcuts: {
     // Classic node container

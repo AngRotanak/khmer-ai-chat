@@ -335,7 +335,7 @@ function AttendancePage() {
               timestamp: new Date().toISOString(),
             }
 
-            const res = await fetch("https://fea2-136-228-130-3.ngrok-free.app", {
+            const res = await fetch("https://4b96-136-228-130-3.ngrok-free.app", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify(payload),
@@ -577,7 +577,7 @@ useEffect(() => {
   // SUBMIT FUNCTION
   // =========================
   const submitAttendance = async (payload: any) => {
-    const webhookUrl = "https://fea2-136-228-130-3.ngrok-free.app";
+    const webhookUrl = "https://4b96-136-228-130-3.ngrok-free.app";
 
     let res: Response;
     let result: any;
