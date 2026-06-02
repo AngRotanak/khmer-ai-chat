@@ -2,7 +2,9 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import unocss from 'unocss/vite'
 import autoImport from 'unplugin-auto-import/vite'
-import unhead from '@unhead/addons/vite'
+import unhead from "@unhead/addons/vite";
+
+
 import path from 'path'
 
 export default defineConfig({
