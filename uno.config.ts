@@ -109,7 +109,7 @@ export default defineConfig({
     // Bottom sheet
     'bottom-sheet':
       'absolute bottom-0 left-0 right-0 bg-dark-800 rounded-t-lg shadow-lg p-4',
-      
+
     // Floating Scroll to Top button
     'scroll-top-btn':
       'fixed bottom-6 right-6 bg-gray-700 text-white px-3 py-2 rounded-full shadow-lg transition-all duration-500 transform ' +
