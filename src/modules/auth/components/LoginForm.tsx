@@ -13,7 +13,7 @@ const handleSubmit = async (e: React.FormEvent) => {
   })
 
   if (res.ok) {
-    // TODO: redirect to dashboard
+    // TODO: redirect to dashboard...
   } else {
     alert('Login failed')
   }
