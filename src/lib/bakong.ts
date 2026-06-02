@@ -15,7 +15,7 @@ export async function checkBakongTransaction(md5: string, groupId?: string) {
 
   const text = await response.text()
 
-  // ✅ Add raw response logging here
+  // ✅ Add raw response logging here ...
   try {
     await push(ref(db, `logs/webapp/${groupId || "unknown"}`), {
       type: "bakong_raw_response",
